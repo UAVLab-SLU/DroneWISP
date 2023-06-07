@@ -22,13 +22,17 @@ def plot_10_u():
 
 
 if __name__ == '__main__':
-    # plot_10_u()
+    path_to_u = '../run/cavity/0.1/U'
+    u_field = ParsedParameterFile(path_to_u).content
+    print("u_field:", u_field)
+    # u_field['internalField'].boundaryField
 
 
     # combine all processors data
-    total_num = 0
-    for i in range(0, 5):
-        # run/motorBike/processor0/1/U
-        filePath = '../run/motorBike/processor' + str(i) + '/1/U'
-        total_num += len(read_u(filePath))
-    print("total_num:", total_num)
+    # total_num = 0
+    # for i in range(0, 5):
+    #     # run/motorBike/processor0/1/U
+    #     filePath = '../run/motorBike/processor' + str(i) + '/1/U'
+    #     total_num += len(read_u(filePath))
+    # print("total_num:", total_num)
+
