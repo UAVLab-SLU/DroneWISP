@@ -12,10 +12,12 @@ runApplication decomposePar -copyZero
 runParallel snappyHexMesh -overwrite
 
 runParallel patchSummary
-runParallel simpleFoam
+runParallel potentialFoam
 runParallel $(getApplication)
 
 runApplication reconstructParMesh -constant
-runApplication reconstructPar -latestTime
+runApplication reconstructPar
+touch results.foam
+
 
 #------------------------------------------------------------------------------
