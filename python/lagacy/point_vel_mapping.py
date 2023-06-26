@@ -1,3 +1,5 @@
+import Ofpp
+
 import read_U
 import read_points
 import matplotlib.pyplot as plt
@@ -27,8 +29,7 @@ def plot_vel_and_point_interactive(points, U):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     fig = px.scatter_3d()
-    points = read_points.read_points('../run/motorBike/constant/polyMesh/points')
-    points = points[:1701]
+    points = Ofpp.FoamMesh("../../run/blockEnv").points
     fig.add_scatter3d(x=[point[0] for point in points],
                       y=[point[1] for point in points],
                       z=[point[2] for point in points],
@@ -52,18 +53,19 @@ def plot_vel_and_point_interactive(points, U):
     fig.update_traces(connectgaps=False)
     # delete html file if exists
     import os
-    if os.path.exists('test.html'):
-        os.remove('test.html')
+    if os.path.exists('../test.html'):
+        os.remove('../test.html')
     fig.write_html('test.html')
     plt.close()
 
 
 
 if __name__ == '__main__':
+    mesh = Ofpp.FoamMesh("../../run/blockEnv")
     # read the points
-    points = read_points.read_points('../run/motorBike/constant/polyMesh/points')
+    points = mesh.points
     # read the U file
-    U = read_U.read_u('../run/motorBike/1/U')
+    U = Ofpp.parse_internal_field("../run/blockEnv/1/U")
     if len(points) > len(U):
         print("difference:", len(points) - len(U))
         print("points count > U count")

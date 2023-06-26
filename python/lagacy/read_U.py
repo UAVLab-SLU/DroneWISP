@@ -6,11 +6,19 @@ def read_u(path_to_u):
     :param path_to_u: path to the U file
     :return: list of velocity values
     """
-    u = ParsedParameterFile(path_to_u).content
-    u_field = u['internalField'].val
-    print("U count:",len(u_field))
-    return u_field
+    u = ParsedParameterFile(path_to_u)
+    return u
 
+def read_U_ofpp(path_to_u):
+    u = Ofpp.parse_internal_field(path_to_u)
+    print(u.shape)
+    return u
+
+
+def read_internal_field(path):
+    bf = Ofpp.parse_boundary_field(path)
+    print(bf)
+    return bf
 
 def plot_10_u():
     filePath = '../run/motorBike/10/U'
@@ -22,9 +30,16 @@ def plot_10_u():
 
 
 if __name__ == '__main__':
-    path_to_u = '../run/cavity/0.1/U'
-    u_field = ParsedParameterFile(path_to_u).content
-    print("u_field:", u_field)
+
+
+    path = '../../run/motorBike2/system/controlDict'
+    u = read_u(path)
+    #path_to_boundary = '../run/blockEnv/1/U'
+    # read_U_ofpp(path_to_u)
+    # read_internal_field(path_to_boundary)
+
+    # u_field = ParsedParameterFile(path_to_u).content
+    # print("u_field:", u_field)
     # u_field['internalField'].boundaryField
 
 

@@ -1,8 +1,6 @@
 # Purpose: Utility Class to read OpenFOAM data that is later used for server-client communication architecture
 # currently only the abstraction, no implementation
-import os
-
-
+import Ofpp
 
 class FoamReader:
     root_path = os.path

@@ -1,4 +1,13 @@
+# geometry directory instructions
+
 Directory to house tri-surfaces
 
-The Allrun script copies the surface from the $FOAM_TUTORIALS/resources/geometry
-directory
+## what is this directory for?
+The snappyHexMeshDict command will read the combined.stl file from this folder and create the combined.eMesh file
+
+## New mesh
+To replace with new mesh, rename the new file to combined.stl and replace the old combined.stl file to other name
+
+## How to run
+nothing to run here
+the upper dir Allrun script will run the snappyHexMesh command

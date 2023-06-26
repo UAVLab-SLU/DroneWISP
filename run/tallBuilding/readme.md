@@ -1,7 +1,15 @@
-# Block environment
+# Tall Building Environment constant wind simulation
 
 ## Description
-this example is used to test openFoam in the block environment provided by AirSim
+This is a simulation of the constant wind speed around multiple tall buildings.
+derived from the blockEnv case, with different environment mesh.
+
+## change wind speed
+change the wind speed in the file of 0/include/
+```cpp
+flowVelocity         (10 0 0);
+```
+above condition represents the wind speed of 10m/s towards +x direction
 
 ## How to use
 ### run:
