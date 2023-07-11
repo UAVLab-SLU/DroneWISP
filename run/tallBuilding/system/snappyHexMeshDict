@@ -78,7 +78,7 @@ castellatedMeshControls
     // Number of buffer layers between different levels.
     // 1 means normal 2:1 refinement restriction, larger means slower
     // refinement.
-    nCellsBetweenLevels 3;
+    nCellsBetweenLevels 2;
 
 
 
@@ -91,7 +91,7 @@ castellatedMeshControls
     (
         {
             file "combined.eMesh";
-            level 3;
+            level 4;
         }
     );
 
@@ -111,7 +111,7 @@ castellatedMeshControls
         combined
         {
             // Surface-wise min and max refinement level
-            level (2 3);
+            level (3 4);
 
             // Optional specification of patch type (default is wall). No
             // constraint types (cyclic, symmetry) etc. are allowed.
@@ -145,7 +145,7 @@ castellatedMeshControls
         refinementBox
         {
             mode    inside;
-            level   3;
+            level   4;
         }
     }
 
