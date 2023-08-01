@@ -24,8 +24,7 @@ sudo apt-get install openfoam10
 
 sudo apt-get install --only-upgrade openfoam10
 ```
-### install openfoam on windows
-TODO
+
 
 
 ## Directory Structure
