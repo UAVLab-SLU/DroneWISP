@@ -8,47 +8,58 @@
 FoamFile
 {
     format      ascii;
-    class       volVectorField;
-    location    "0";
-    object      U;
+    class       volScalarField;
+    object      k;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #include        "include/initialConditions"
 
-dimensions      [0 1 -1 0 0 0 0];
+dimensions      [0 2 -2 0 0 0 0];
 
-internalField   uniform $flowVelocity;
+internalField   uniform $turbulentKE;
 
 boundaryField
 {
     //- Set patchGroups for constraint patches
     #includeEtc "caseDicts/setConstraintTypes"
 
+    //- Define inlet conditions
     inlet
     {
-        type            turbulentInlet;
-        referenceField  uniform (10 0 0);
-        fluctuationScale (0.5 0.5 0.5);
-        value           uniform (10 0 0);
+        type            fixedValue;
+        value           uniform 2e-05;
+    }
+
+    front
+    {
+        type            fixedValue;
+        value           uniform 2e-05;
+    }
+
+    back
+    {
+        type            fixedValue;
+        value           uniform 2e-05;
     }
 
     outlet
     {
         type            inletOutlet;
-        inletValue      uniform (0 0 0);
+        inletValue      $internalField;
         value           $internalField;
     }
 
     lowerWall
     {
-        type            fixedValue;
+        type            kqRWallFunction;
         value           $internalField;
     }
 
     combinedGroup
     {
-        type            noSlip;
+        type            kqRWallFunction;
+        value           $internalField;
     }
 
     #include "include/frontBackUpperPatches"

@@ -25,13 +25,7 @@ boundaryField
     //- Set patchGroups for constraint patches
     #includeEtc "caseDicts/setConstraintTypes"
 
-    inlet
-    {
-        type            turbulentInlet;
-        referenceField  uniform (10 0 0);
-        fluctuationScale (0.5 0.5 0.5);
-        value           uniform (10 0 0);
-    }
+    #include "include/fixedInlet"
 
     outlet
     {

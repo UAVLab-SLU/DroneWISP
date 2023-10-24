@@ -9,46 +9,19 @@ FoamFile
 {
     format      ascii;
     class       dictionary;
-    object      controlDict;
+    object      momentumTransport;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     simpleFoam;
+simulationType RAS;
 
-startFrom       startTime;
-
-startTime       0;
-
-stopAt          endTime;
-
-endTime         30;
-
-deltaT          1;
-
-writeControl    timeStep;
-
-writeInterval   10;
-
-purgeWrite      0;
-
-writeFormat     ascii;
-
-writePrecision  6;
-
-writeCompression off;
-
-timeFormat      general;
-
-timePrecision   6;
-
-runTimeModifiable true;
-
-functions
+RAS
 {
-    #include "streamlines"
-    #include "cuttingPlane"
-    #include "forceCoeffs"
-}
+    model               kOmegaSST;
 
+    turbulence          on;
+
+    printCoeffs         on;
+}
 
 // ************************************************************************* //

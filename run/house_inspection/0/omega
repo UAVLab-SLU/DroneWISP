@@ -8,17 +8,16 @@
 FoamFile
 {
     format      ascii;
-    class       volVectorField;
-    location    "0";
-    object      U;
+    class       volScalarField;
+    object      omega;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #include        "include/initialConditions"
 
-dimensions      [0 1 -1 0 0 0 0];
+dimensions      [0 0 -1 0 0 0 0];
 
-internalField   uniform $flowVelocity;
+internalField   uniform $turbulentOmega;
 
 boundaryField
 {
@@ -27,28 +26,39 @@ boundaryField
 
     inlet
     {
-        type            turbulentInlet;
-        referenceField  uniform (10 0 0);
-        fluctuationScale (0.5 0.5 0.5);
-        value           uniform (10 0 0);
+        type            fixedValue;
+        value           uniform 2e-05;
+    }
+
+    front
+    {
+        type            fixedValue;
+        value           uniform 2e-05;
+    }
+
+    back
+    {
+        type            fixedValue;
+        value           uniform 2e-05;
     }
 
     outlet
     {
         type            inletOutlet;
-        inletValue      uniform (0 0 0);
+        inletValue      $internalField;
         value           $internalField;
     }
 
     lowerWall
     {
-        type            fixedValue;
+        type            omegaWallFunction;
         value           $internalField;
     }
 
     combinedGroup
     {
-        type            noSlip;
+        type            omegaWallFunction;
+        value           $internalField;
     }
 
     #include "include/frontBackUpperPatches"

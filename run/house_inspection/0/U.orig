@@ -33,6 +33,21 @@ boundaryField
         value           uniform (10 0 0);
     }
 
+    back
+    {
+        type            turbulentInlet;
+        referenceField  uniform (0 -10 0);
+        fluctuationScale (0.5 0.5 0.5);
+        value           uniform (0 -10 0);
+    }
+
+
+    front
+    {
+       type            fixedValue;
+       value           $internalField;
+    }
+
     outlet
     {
         type            inletOutlet;
