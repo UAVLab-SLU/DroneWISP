@@ -36,6 +36,7 @@ sudo apt-get install openfoam10
 
 sudo apt-get install --only-upgrade openfoam10
 ```
+
 next add the following line to the end of file `.bashrc`
 ```text
 source /opt/openfoam10/etc/bashrc
@@ -45,6 +46,7 @@ source the new bashrc file
 ```bash
 source ~/.bashrc
 ```
+
 
 ### install openfoam on windows
 NOT SUPPORTED
