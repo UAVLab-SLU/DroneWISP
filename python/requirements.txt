@@ -1,4 +1,7 @@
 matplotlib
 plotly
 PyFoam
-openfoamparser
+flask
+flask_cors
+numpy_stl
+requests
