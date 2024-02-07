@@ -25,6 +25,22 @@ Description:    Ubuntu 22.04.1 LTS
 Release:        22.04
 Codename:       jammy
 
+After installing WSL, open the terminal and
+run setup.sh
+```bash
+sudo bash setup.sh
+```
+
+Verify the installation by running the following command
+```bash
+foamVersion
+```
+Should return
+```text
+OpenFOAM 10
+```
+
+If that didn't work, follow the following steps to install OpenFoam 10 on WSL manually
 ```bash
 sudo sh -c "wget -O - [http://dl.openfoam.org/gpg.key](http://dl.openfoam.org/gpg.key) | apt-key add -"
 
@@ -69,15 +85,24 @@ cd run
 
 detailed description of each example is in the readme.md file in each directory
 
+In general, run the following command to run the simulation
+```bash
+cd run
+cd {example directory}
+bash ./Allrun
+```
+
 ## Known Issues
 
 ### Parallel computing issue
-If your CPU has less than 6 cores, you need to change the `runParallel` to `runApplication` in the `Allrun` file in each example directory, otherwise the simulation may not run, or change the core number your available cores in the `decomposeParDict` file in the `system` folder in each example directory by changing `numberOfSubdomains  6` to your available cores.
+If your CPU has less than 6 cores, you need to change the `runParallel` to `runApplication` in the `Allrun` file in each example directory, otherwise the simulation may not run. 
+
+Or change your available cores in the `decomposeParDict` file in the `system` folder in each example directory by changing `numberOfSubdomains  6` to your available cores.
 
 ### Storage issue
 https://github.com/microsoft/WSL/issues/4699
 
-Since we are using WSL, the storage is limited to the 100GB, and once allocated, it cannot be freed.
+If you are using WSL, the storage is limited to the 100GB, and once allocated, it cannot be freed.
 to free up the storage after simulating large cases, we need to delete the old cases to free up the storage for windows.
 
 First locate the WSL image in the windows file system
