@@ -153,9 +153,12 @@ class FoamCSVReader:
         df = df[(df[df.columns[3]] != 0) & (df[df.columns[4]] != 0) & (df[df.columns[5]] != 0)]
 
         # cast columns 1, 2, 3 to nearest integer using manhattan distance
-        df[df.columns[0]] = df[df.columns[0]].apply(self.__approximate_integer)
-        df[df.columns[1]] = df[df.columns[1]].apply(self.__approximate_integer)
-        df[df.columns[2]] = df[df.columns[2]].apply(self.__approximate_integer)
+        df.loc[:, df.columns[0]] = df[df.columns[0]].apply(self.__approximate_integer)
+        df.loc[:, df.columns[1]] = df[df.columns[1]].apply(self.__approximate_integer)
+        df.loc[:, df.columns[2]] = df[df.columns[2]].apply(self.__approximate_integer)
+        # df[df.columns[0]] = df[df.columns[0]].apply(self.__approximate_integer)
+        # df[df.columns[1]] = df[df.columns[1]].apply(self.__approximate_integer)
+        # df[df.columns[2]] = df[df.columns[2]].apply(self.__approximate_integer)
 
         # remove all rows with duplicate values in columns 1, 2, 3
         df = df.drop_duplicates(subset=[df.columns[0], df.columns[1], df.columns[2]], keep='first')

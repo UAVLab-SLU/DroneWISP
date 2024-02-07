@@ -3,7 +3,7 @@ import os
 import time
 import matplotlib.pyplot as plt
 import numpy as np
-# import open3d
+import open3d as o3d
 from shapely.geometry import Point, Polygon
 from stl import mesh
 from mpl_toolkits import mplot3d
@@ -20,23 +20,38 @@ class StlMeshUtils:
         Binary array: contains 0s and 1s indicating if the cell is inside the mesh
         :param stl_file_name: stl file name
         """
-        self.mesh = mesh.Mesh.from_file(stl_file_name)
+        self.mesh = o3d.io.read_triangle_mesh(stl_file_name)
 
-        self.mesh_unique_points = np.around(
-            np.unique(self.mesh.vectors.reshape(
-                [int(self.mesh.vectors.size / 3), 3]),
-                axis=0),
-            2)
-        print("unique points count: " + str(self.mesh_unique_points.size))
+        # self.mesh_unique_points = np.around(
+        #     np.unique(self.mesh.vectors.reshape(
+        #         [int(self.mesh.vectors.size / 3), 3]),
+        #         axis=0),
+        #     2)
+
+        self.mesh_point_cloud = self.mesh.sample_points_poisson_disk(62500)
+
+        self.mesh_point_cloud_array = np.asarray(self.mesh_point_cloud.points)
+
+        # int list of unique points
+        self.mesh_unique_points = np.int32(
+            np.unique(self.mesh_point_cloud_array.reshape(
+                [int(self.mesh_point_cloud_array.size / 3), 3]), axis=0)
+        )
+        # print("unique points count: " + str(self.mesh_unique_points.size))
+        # print("unique point head", self.mesh_unique_points[0:10])
+
+        # visualize point cloud
+        # o3d.visualization.draw_geometries([self.mesh_point_cloud])
+
+        # print("unique points count: " + str(self.mesh_unique_points.size))
 
         # extracts unique 3D points from the mesh, no duplicate points, rounded to two decimal places
         # there is loss of precision here, but ok for large meshes
         # drawback: for really small meshes, loss is significant
 
         # self.polygon = Polygon(self.mesh_unique_points)  # used to determine if a point is inside the mesh
-        self.binary_array = self.__unique_points_to_binary_array()
-        print("true count: " + str(np.count_nonzero(self.binary_array)))
-
+        # self.binary_array = self.__unique_points_to_binary_array(x_len=200, y_len=200, z_len=50)
+        # print("true count: " + str(np.count_nonzero(self.binary_array)))
 
     def get_mesh_min(self):
         return self.mesh.min_
@@ -114,6 +129,56 @@ class StlMeshUtils:
         axes.set_zlabel('Z')
 
         pyplot.show()
+        pyplot.close()
+
+    def plot_binary_array(self, array=None):
+        """
+        plot the binary array, only 1s are plotted
+        :return:
+        """
+        if array is None:
+            array = self.binary_array
+
+        figure = pyplot.figure()
+        axes = figure.add_subplot(projection='3d')
+        # axes.voxels(self.binary_array, edgecolor='k')
+        x = []
+        y = []
+        z = []
+        for i in range(array.shape[0]):
+            for j in range(array.shape[1]):
+                for k in range(array.shape[2]):
+                    if array[i][j][k]:
+                        x.append(i)
+                        y.append(j)
+                        z.append(k)
+
+        axes.scatter(x, y, z, marker='.', s=1)
+        axes.view_init(45, 0)
+        axes.set_xlabel('X')
+        axes.set_ylabel('Y')
+        axes.set_zlabel('Z')
+
+        pyplot.show()
+
+    def plot_unique_points(self):
+        points = self.mesh_unique_points
+        x = points[:, 0]
+        y = points[:, 1]
+        z = points[:, 2]
+        figure = pyplot.figure()
+        axes = figure.add_subplot(projection='3d')
+        # use small dots to plot the vertices
+        axes.scatter(x, y, z, marker='.', s=1)
+        # 1:1:1 aspect ratio
+        axes.set_aspect('equal')
+        # self.plot_interactive(x, y, z)
+        axes.set_xlabel('X')
+        axes.set_ylabel('Y')
+        axes.set_zlabel('Z')
+
+        axes.view_init(45, 0)
+        pyplot.show()
 
     def save_mesh(self, save_file_name):
         self.mesh.save(save_file_name)
@@ -149,8 +214,6 @@ class StlMeshUtils:
         fig.write_html(file_name)
         plt.close()
 
-
-
     def __unique_points_to_binary_array(self, x_len=500, y_len=500, z_len=25):
         """
         :param resolution: resolution of the binary array, number of cells in each dimension
@@ -158,7 +221,14 @@ class StlMeshUtils:
         :return:
         """
         count = 0
-        bin_array = np.zeros((x_len*2+1, y_len*2+1, z_len*2+1), dtype=bool)
+        x_min = -x_len / 2
+        x_max = x_len / 2
+        y_min = -y_len / 2
+        y_max = y_len / 2
+        z_min = 0
+        z_max = z_len
+
+        bin_array = np.zeros((x_len, y_len, z_len), dtype=bool)
         for point in self.mesh_unique_points:
             count += 1
             x = point[0]
@@ -167,7 +237,17 @@ class StlMeshUtils:
             if x < x_len and y < y_len and z < z_len:
                 bin_array[int(x), int(y), int(z)] = True
 
+        print("count: " + str(count))
         return bin_array
+
+    def __mesh_to_binary_array(self, x_len=500, y_len=500, z_len=25):
+        """
+        use polygon to determine if a cell is inside the mesh
+        :param x_len:
+        :param y_len:
+        :param z_len:
+        :return:
+        """
 
     def stl_to_point_cloud(self):
         pass
@@ -198,6 +278,53 @@ class StlMeshUtils:
         bar = "█" * filledLength + '-' * (100 - filledLength)
         print(f'\r{""} |{bar}| {percent}% {""}', end="\r")
 
+    def partition(self):
+        # Define block size
+        block_size = (50, 50)
+
+        blocks = []
+
+        x_start, y_start = -500, -500
+
+        while x_start < 500 and y_start < 500:
+            x_end = min(x_start + block_size[0], 500)
+            y_end = min(y_start + block_size[1], 500)
+
+            block_points = self.get_points(x_start, x_end, y_start, y_end)
+            adjusted_block_points = self.adjust_points(block_points, x_start, y_start)
+            blocks.append(adjusted_block_points)
+
+            x_start += block_size[0]
+            if x_start >= 500:
+                x_start = -500
+                y_start += block_size[1]
+
+        return blocks
+
+    def get_points(self, x_min, x_max, y_min, y_max):
+        block_points = []
+        for point in self.mesh_unique_points:
+            x, y, z = point
+            if x_min <= x < x_max and y_min <= y < y_max:
+                block_points.append(point)
+        return block_points
+
+    def adjust_points(self, block_points, x_start, y_start):
+        adjusted_block_points = []
+        for x, y, z in block_points:
+            adjusted_point = [x - x_start, y - y_start, z]
+            adjusted_block_points.append(adjusted_point)
+        return adjusted_block_points
+
+    @staticmethod
+    def to_binary_mask(block):
+        binary_mask = np.zeros((50, 50, 25), dtype=int)
+        for point in block:
+            x, y, z = point
+            if 0 <= x < 50 and 0 <= y < 50 and 0 <= z < 25:
+                binary_mask[x][y][z] = 1
+        return binary_mask
+
 
 if __name__ == "__main__":
     # for file in os.listdir("../pinn/training_mesh/buildings"):
@@ -211,7 +338,17 @@ if __name__ == "__main__":
 
     stl_mesh_utils = StlMeshUtils("../stl/Chicago_+500x-500.stl")  # chicago dimensions: -2014 2073 -1710 1706 0 441
 
-    stl_mesh_utils.save_binary_array("chicago_binary_array.npy")
+    # stl_mesh_utils.plot_unique_points()
+
+    blocks = stl_mesh_utils.partition()
+    print(len(blocks))
+    print(blocks[0])
+    # stl_mesh_utils.plot_interactive(blocks[0][:, 0], blocks[0][:, 1], blocks[0][:, 2])
+    for block in blocks:
+        binary_mask = stl_mesh_utils.to_binary_mask(block)
+        stl_mesh_utils.plot_binary_array(binary_mask)
+
+    # stl_mesh_utils.save_binary_array("chicago_binary_array200.npy")
 
     # stl_mesh_utils.save_mesh("small.stl")
 
