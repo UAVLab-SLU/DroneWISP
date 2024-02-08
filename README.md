@@ -92,6 +92,56 @@ cd {example directory}
 bash ./Allrun
 ```
 
+## How to use ParaView
+
+### Visualizing the results
+To visualize the results of the simulation, you can use ParaView.
+```bash
+cd run
+cd {example directory}
+# Assuming you have already run the simulation
+paraFoam
+```
+
+since all `Allrun` scripts creates a empty `results.foam` file, when you run `paraFoam` under a case directory, it will open the case in ParaView. 
+But the results will not be visible, you need to change the `results.foam` to display the U, p, and other fields.
+
+![[img.png](readme_image/img.png)]
+
+click on this bar and select the fields you want to display. U in this case.
+
+now it will display the velocity field from top-down view, to see the inside of the geometry, you can use the clip filter.
+
+![img_1.png](readme_image/img_1.png)
+
+to view the result at a different time, you can use the time slider at the top of the window.
+
+![img_2.png](readme_image/img_2.png)
+
+The resulting visualization looks like this
+![img_3.png](readme_image/img_3.png)
+
+### Saving the results
+You can save each wind velocity field as a .csv file by using paraView, or use openFoam's built-in command `postProcess -func writeCellCentres` to postprocess the results by export each cell's wind velocity to a text file. the index will bijectionally map to the `point` file in each time step folder.
+
+Or, alternatively, you can use the paraView:
+
+![img_4.png](readme_image/img_4.png)
+
+![img_5.png](readme_image/img_5.png)
+
+This will save all the wind velocity field at each time step as a .csv file in the `postProcessing` folder in the case directory.
+
+
+
+
+
+
+
+
+
+
+
 ## Known Issues
 
 ### Parallel computing issue
@@ -120,3 +170,15 @@ optimize-vhd -Path {path to ext4.vhdx} -Mode full
 if you cannot open paraView using the command `paraFoam`
 sometime it because unusual folder name in the case folder.
 delete any that is not the default folder name, and try again.
+
+
+### Allrun and Allclean cannot be executed
+if you see
+```text
+./Allclean: line 3: $'\r': command not found
+```
+It is because the file is not in the correct format, change the file line separator to `LF` using any text editor.
+
+**IMPORTANT:**
+if you already ran the `Allrun` script in `CRLF` format, there will be a `results.foam` file with `LF` at the end of the file name, and it will cause OpenFoam to crash. 
+Just remove it and run the `Allrun` script again in `LF` format.
