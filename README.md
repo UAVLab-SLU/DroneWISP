@@ -134,15 +134,7 @@ Or, alternatively, you can use the paraView:
 
 ![img_5.png](readme_image/img_5.png)
 
-This will save all the wind velocity field at each time step as a .csv file in the `postProcessing` folder in the case directory.
-
-
-
-
-
-
-
-
+This will save all the wind velocity field and cell coordinate  at each time step as a .csv file in the `postProcessing` folder in the case directory.
 
 
 
