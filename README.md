@@ -104,7 +104,7 @@ paraFoam
 ```
 
 since all `Allrun` scripts creates a empty `results.foam` file, when you run `paraFoam` under a case directory, it will open the case in ParaView. 
-But the results will not be visible, you need to change the `results.foam` to display the U, p, and other fields.
+But the results will not be visible, you need to change the view option to display the U, p, and other fields.
 
 ![img.png](readme_image/img.png)
 
