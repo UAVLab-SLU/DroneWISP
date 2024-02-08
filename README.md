@@ -122,7 +122,11 @@ The resulting visualization looks like this
 ![img_3.png](readme_image/img_3.png)
 
 ### Saving the results
-You can save each wind velocity field as a .csv file by using paraView, or use openFoam's built-in command `postProcess -func writeCellCentres` to postprocess the results by export each cell's wind velocity to a text file. the index will bijectionally map to the `point` file in each time step folder.
+You can save each wind velocity field as a .csv file by using paraView, or use openFoam's built-in command 
+```bash
+postProcess -func writeCellCentres
+``` 
+to postprocess the results by export each cell's center to a `C` file. the index of `C` will bijectionally map to the values in the `U` file in each time step folder.
 
 Or, alternatively, you can use the paraView:
 
