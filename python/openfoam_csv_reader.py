@@ -31,7 +31,7 @@ class FoamCSVReader:
         print("read csv to memory time: " + str(time.time() - start_read))
         return df
 
-    def validate_data(self):
+    def validate_data_weak(self):
         """
         Check if there are any duplicate rows or skipped rows
         super expensive, only use for debugging
@@ -202,14 +202,28 @@ class FoamCSVReader:
     def save_df_to_csv(self, filename):
         self.df.to_csv(self.foam_data_root + os.sep + filename, index=False)
 
-    def preprocess_and_replace(self):
+    def strong_preprocess_and_replace(self):
         """
+        strong: no empty points, all points are populated
+        for training the DNN
         Preprocess the current csv file and replace the current csv file with the preprocessed one
         :return:
         """
         self.preprocess_strong()
         self.validate_data_strong()
         self.save_df_to_csv(self.csv_filename)
+
+    def weak_preprocess_and_replace(self):
+        """
+        weak: empty points are removed, zeros are removed
+        for wind simulation.
+        Preprocess the current csv file and replace the current csv file with the preprocessed one
+        :return:
+        """
+        self.preprocess_weak()
+        self.validate_data_weak()
+        self.save_df_to_csv(self.csv_filename)
+
 
     def populate_missing_points_in_sorted_df_with_closest(self):
         """

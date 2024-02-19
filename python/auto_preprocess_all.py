@@ -6,6 +6,7 @@ from openfoam_csv_reader import FoamCSVReader
 foam_data_root = "openFoamCase"
 init_filename = "10ms_0.csv"
 init_file_path = os.path.join(foam_data_root, init_filename)
+use_strong_preprocessing = True
 
 
 def preprocess_all():
@@ -16,10 +17,16 @@ def preprocess_all():
     start = time.time()
     # preprocess the first file
     foam_reader = FoamCSVReader(foam_data_root, init_filename)
-    foam_reader.preprocess_and_replace()
+    if use_strong_preprocessing:
+        foam_reader.strong_preprocess_and_replace()
+    else:
+        foam_reader.weak_preprocess_and_replace()
     file_count = 1
     while foam_reader.load_next_df() is not None:
-        foam_reader.preprocess_and_replace()
+        if use_strong_preprocessing:
+            foam_reader.strong_preprocess_and_replace()
+        else:
+            foam_reader.weak_preprocess_and_replace()
         file_count += 1
         print("Preprocessed: " + foam_reader.csv_filename)
 

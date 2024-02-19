@@ -318,6 +318,14 @@ class StlMeshUtils:
         # calculate the number of blocks
         total_blocks = (x_max - x_min) // block_size_x * (y_max - y_min) // block_size_y
 
+
+        # filter the velocity data
+        mask = (self.velocity[:, 0] >= x_min) & (self.velocity[:, 0] < x_max) & \
+               (self.velocity[:, 1] >= y_min) & (self.velocity[:, 1] < y_max) & \
+               (self.velocity[:, 2] >= min_z) & (self.velocity[:, 2] < max_z)
+
+        self.velocity = self.velocity[mask]
+
         # check even division
         if (x_max - x_min) % block_size_x != 0 or (y_max - y_min) % block_size_y != 0:
             print("partition error: block size does not divide evenly")
@@ -331,11 +339,11 @@ class StlMeshUtils:
 
 if __name__ == "__main__":
     stl_file = "../stl/Chicago_+500x-500.stl"
-    vl_file = "../csv/10ms_49.csv"
+    vl_file = "../openFoamCase/10ms_2.csv"
 
     stl_mesh_utils = StlMeshUtils()  # chicago dimensions: -2014 2073 -1710 1706 0 441
-    stl_mesh_utils.load_convert_mesh("../stl/Chicago_+500x-500.stl")
-    stl_mesh_utils.load_velocity("../csv/train/100/10ms_2.csv")
+    stl_mesh_utils.load_convert_mesh(stl_file)
+    stl_mesh_utils.load_velocity(vl_file)
 
     blocks = stl_mesh_utils.partition_mesh_block(50, 50, -100, 100, -100, 100)
     print("block count: ", len(blocks))

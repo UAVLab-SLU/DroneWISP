@@ -55,13 +55,12 @@ class GeneratorPINN(nn.Module):
         u_b = torch.from_numpy(ub).float().to(device)
         l_b = torch.from_numpy(lb).float().to(device)
 
-        print(x.shape) # [1001, 1001, 51]
-        print(l_b.shape) # [2]
-        print(u_b.shape) # [2]
+        print(x.shape)  # [1001, 1001, 51]
+        print(l_b.shape)  # [2]
+        print(u_b.shape)  # [2]
 
         # preprocessing input
         x = (x - l_b) / (u_b - l_b)  # normalize input
-
 
         # convert to float
         a = x.float()
@@ -74,7 +73,6 @@ class GeneratorPINN(nn.Module):
         a = self.linears[-1](a)
 
         return a
-
 
     def loss_BC(self, x, y):
         loss_u = self.loss_fn(self.forward(x), y)
@@ -155,10 +153,8 @@ if __name__ == "__main__":
     x = torch.from_numpy(train_input).float().to(device)
     y = torch.from_numpy(train_true).float().to(device)
 
-    print(x.shape) # 50*50*25
-    print(y.shape) # 50*50*25
-
-
+    print(x.shape)  # 50*50*25
+    print(y.shape)  # 50*50*25
 
     x_to_train_f = torch.from_numpy(train_input).float().to(device)
 
