@@ -1,57 +1,64 @@
 import math
-import os
-import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import open3d as o3d
-from shapely.geometry import Point, Polygon
-from stl import mesh
-from mpl_toolkits import mplot3d
-from matplotlib import pyplot
 import plotly.express as px
+from matplotlib import pyplot
+from mpl_toolkits import mplot3d
 
 
 class StlMeshUtils:
 
-    def __init__(self, stl_file_name):
+    def __init__(self):
+        self.binary_array = None
+        self.mesh = None
+        self.mesh_point_cloud = None  # point cloud of the mesh, type: open3d.geometry.PointCloud
+        self.mesh_point_cloud_array = None  # point cloud of the mesh, type: numpy array
+        self.mesh_unique_points = None  # unique points in the mesh, type: numpy array, int32
+        self.velocity = None  # velocity data, type: numpy array
+
+        self.mesh_binary_mask_blocks = None  # list of binary mask blocks
+        self.velocity_blocks = None  # list of velocity blocks
+
+    def load_convert_mesh(self, stl_file_name):
         """
-        load stl file and preprocess it into a unique point array, and a binary array
-        Unique point array: contains all unique points in the mesh, no duplicate points
-        Binary array: contains 0s and 1s indicating if the cell is inside the mesh
-        :param stl_file_name: stl file name
+        Load the stl file
+        :param stl_file_name:
+        :return:
         """
-        self.mesh = o3d.io.read_triangle_mesh(stl_file_name)
+        if stl_file_name is None:
+            print("stl file name is None")
+            return
+        try:
+            self.mesh = o3d.io.read_triangle_mesh(stl_file_name)
+            self.mesh_point_cloud = self.mesh.sample_points_poisson_disk(62500)
+            self.mesh_point_cloud_array = np.asarray(self.mesh_point_cloud.points)
+            # int list of unique points
+            self.mesh_unique_points = np.int32(
+                np.unique(self.mesh_point_cloud_array.reshape(
+                    [int(self.mesh_point_cloud_array.size / 3), 3]), axis=0)
+            )
+        except:
+            print("Error loading mesh")
 
-        # self.mesh_unique_points = np.around(
-        #     np.unique(self.mesh.vectors.reshape(
-        #         [int(self.mesh.vectors.size / 3), 3]),
-        #         axis=0),
-        #     2)
-
-        self.mesh_point_cloud = self.mesh.sample_points_poisson_disk(62500)
-
-        self.mesh_point_cloud_array = np.asarray(self.mesh_point_cloud.points)
-
-        # int list of unique points
-        self.mesh_unique_points = np.int32(
-            np.unique(self.mesh_point_cloud_array.reshape(
-                [int(self.mesh_point_cloud_array.size / 3), 3]), axis=0)
-        )
-        # print("unique points count: " + str(self.mesh_unique_points.size))
-        # print("unique point head", self.mesh_unique_points[0:10])
-
-        # visualize point cloud
-        # o3d.visualization.draw_geometries([self.mesh_point_cloud])
-
-        # print("unique points count: " + str(self.mesh_unique_points.size))
-
-        # extracts unique 3D points from the mesh, no duplicate points, rounded to two decimal places
-        # there is loss of precision here, but ok for large meshes
-        # drawback: for really small meshes, loss is significant
-
-        # self.polygon = Polygon(self.mesh_unique_points)  # used to determine if a point is inside the mesh
-        # self.binary_array = self.__unique_points_to_binary_array(x_len=200, y_len=200, z_len=50)
-        # print("true count: " + str(np.count_nonzero(self.binary_array)))
+    def load_velocity(self, velocity_file_name):
+        """
+        Load the velocity file,
+        csv file format: x, y, z, u, v, w
+        first row is the header, so it is skipped
+        :param velocity_file_name:
+        :return:
+        """
+        if velocity_file_name is None:
+            print("velocity file name is None")
+            return
+        try:
+            # csv file
+            if velocity_file_name.endswith(".csv"):
+                self.velocity = np.genfromtxt(velocity_file_name, delimiter=',')[1:]
+        except:
+            print("Error loading velocity file")
 
     def get_mesh_min(self):
         return self.mesh.min_
@@ -81,7 +88,7 @@ class StlMeshUtils:
         axes.add_collection3d(mplot3d.art3d.Poly3DCollection(self.mesh.vectors))
         scale = self.mesh.points.flatten()
         axes.auto_scale_xyz(scale, scale, scale)
-        # top down view
+        # top-down view
         axes.view_init(45, 0)
 
         axes.set_xlabel('X')
@@ -183,10 +190,6 @@ class StlMeshUtils:
     def save_mesh(self, save_file_name):
         self.mesh.save(save_file_name)
 
-    def add_mesh(self, stl_file_name, origin):
-        mesh_to_add = mesh.Mesh.from_file(stl_file_name)
-        self.mesh = mesh.Mesh(np.concatenate([self.mesh.data, mesh_to_add.data]))
-
     def __is_cell_inside_mesh(self, x, y, z):
         """
         Check if the cell is inside the mesh
@@ -197,7 +200,8 @@ class StlMeshUtils:
         """
         pass
 
-    def plot_interactive(self, x, y, z):
+    @staticmethod
+    def plot_interactive(x, y, z):
         """
         plot interactive 3d plot
         :return:
@@ -213,32 +217,6 @@ class StlMeshUtils:
         file_name = 'plot.html'
         fig.write_html(file_name)
         plt.close()
-
-    def __unique_points_to_binary_array(self, x_len=500, y_len=500, z_len=25):
-        """
-        :param resolution: resolution of the binary array, number of cells in each dimension
-        Convert unique points to numpy array containing 0s and 1s indicating if the cell is inside the mesh
-        :return:
-        """
-        count = 0
-        x_min = -x_len / 2
-        x_max = x_len / 2
-        y_min = -y_len / 2
-        y_max = y_len / 2
-        z_min = 0
-        z_max = z_len
-
-        bin_array = np.zeros((x_len, y_len, z_len), dtype=bool)
-        for point in self.mesh_unique_points:
-            count += 1
-            x = point[0]
-            y = point[1]
-            z = point[2]
-            if x < x_len and y < y_len and z < z_len:
-                bin_array[int(x), int(y), int(z)] = True
-
-        print("count: " + str(count))
-        return bin_array
 
     def __mesh_to_binary_array(self, x_len=500, y_len=500, z_len=25):
         """
@@ -265,43 +243,48 @@ class StlMeshUtils:
         """
         return self.binary_array[x_min:x_max, y_min:y_max, z_min:z_max]
 
-    def save_binary_array(self, file_name):
-        np.save(file_name, self.binary_array)
+    def save_binary_array(self, file_name, array=None):
+        np.save(file_name, array)
 
     def load_binary_array(self, file_name):
         # not going to use this, just here for reference
         self.binary_array = np.load(file_name)
 
-    def printProgressBar(self, iteration, total):
-        percent = ("{0:." + str(1) + "f}").format(100 * (iteration / float(total)))
-        filledLength = int(100 * iteration // total)
-        bar = "█" * filledLength + '-' * (100 - filledLength)
-        print(f'\r{""} |{bar}| {percent}% {""}', end="\r")
+    def partition_mesh_block(self, block_size_x=50, block_size_y=50, x_min=-500, x_max=500, y_min=-500, y_max=500):
+        """
+        Partition the mesh into blocks, order: x from min to max, then y from min to max
+        :return: list of blocks
+        """
 
-    def partition(self):
-        # Define block size
-        block_size = (50, 50)
+        # check even division
+        if (x_max - x_min) % block_size_x != 0 or (y_max - y_min) % block_size_y != 0:
+            print("partition error: block size does not divide evenly")
+            print("trying to divide: ", x_max - x_min, y_max - y_min, "by", block_size_x, block_size_y)
 
         blocks = []
+        x_start, y_start = x_min, y_min
+        while x_start < x_max and y_start < y_max:
+            x_end = min(x_start + block_size_x, x_max)
+            y_end = min(y_start + block_size_y, y_max)
 
-        x_start, y_start = -500, -500
-
-        while x_start < 500 and y_start < 500:
-            x_end = min(x_start + block_size[0], 500)
-            y_end = min(y_start + block_size[1], 500)
-
-            block_points = self.get_points(x_start, x_end, y_start, y_end)
+            block_points = self.get_mesh_points(x_start, x_end, y_start, y_end)
             adjusted_block_points = self.adjust_points(block_points, x_start, y_start)
             blocks.append(adjusted_block_points)
 
-            x_start += block_size[0]
-            if x_start >= 500:
-                x_start = -500
-                y_start += block_size[1]
+            x_start += block_size_x
+            if x_start >= x_max:
+                x_start = x_min
+                y_start += block_size_y
+
+        # check block count
+        expected_count = ((x_max - x_min) // block_size_x) * ((y_max - y_min) // block_size_y)
+        if len(blocks) != expected_count:
+            print("Warning: block count does not match expected count")
+            print("expected: ", expected_count, "actual: ", len(blocks))
 
         return blocks
 
-    def get_points(self, x_min, x_max, y_min, y_max):
+    def get_mesh_points(self, x_min, x_max, y_min, y_max):
         block_points = []
         for point in self.mesh_unique_points:
             x, y, z = point
@@ -309,7 +292,8 @@ class StlMeshUtils:
                 block_points.append(point)
         return block_points
 
-    def adjust_points(self, block_points, x_start, y_start):
+    @staticmethod
+    def adjust_points(block_points, x_start, y_start):
         adjusted_block_points = []
         for x, y, z in block_points:
             adjusted_point = [x - x_start, y - y_start, z]
@@ -325,30 +309,54 @@ class StlMeshUtils:
                 binary_mask[x][y][z] = 1
         return binary_mask
 
+    def partition_velocity_block(self, block_size_x=50, block_size_y=50, x_min=-500, x_max=500, y_min=-500, y_max=500,
+                                 min_z=0, max_z=25):
+        """
+        Partition the velocity data into blocks
+        :return: list of blocks
+        """
+        # calculate the number of blocks
+        total_blocks = (x_max - x_min) // block_size_x * (y_max - y_min) // block_size_y
+
+        # check even division
+        if (x_max - x_min) % block_size_x != 0 or (y_max - y_min) % block_size_y != 0:
+            print("partition error: block size does not divide evenly")
+            print("trying to divide: ", x_max - x_min, y_max - y_min, "by", block_size_x, block_size_y)
+
+        # split the velocity data into exactly the same number of blocks as the mesh
+        blocks = np.array_split(self.velocity, total_blocks)
+
+        return blocks
+
 
 if __name__ == "__main__":
-    # for file in os.listdir("../pinn/training_mesh/buildings"):
-    #     if file.endswith(".stl"):
-    #         print(file)
-    #         stl_mesh_utils = StlMeshUtils("../pinn/training_mesh/buildings/" + file)
+    stl_file = "../stl/Chicago_+500x-500.stl"
+    vl_file = "../csv/10ms_49.csv"
+
+    stl_mesh_utils = StlMeshUtils()  # chicago dimensions: -2014 2073 -1710 1706 0 441
+    stl_mesh_utils.load_convert_mesh("../stl/Chicago_+500x-500.stl")
+    stl_mesh_utils.load_velocity("../csv/train/100/10ms_2.csv")
+
+    blocks = stl_mesh_utils.partition_mesh_block(50, 50, -100, 100, -100, 100)
+    print("block count: ", len(blocks))
+
+    #print(blocks[0])
     #
-    #         stl_mesh_utils.scale_mesh(0.01)
-    #         stl_mesh_utils.plot_mesh()
-    #         stl_mesh_utils.plot_array()
-
-    stl_mesh_utils = StlMeshUtils("../stl/Chicago_+500x-500.stl")  # chicago dimensions: -2014 2073 -1710 1706 0 441
-
-    # stl_mesh_utils.plot_unique_points()
-
-    blocks = stl_mesh_utils.partition()
-    print(len(blocks))
-    print(blocks[0])
-    # stl_mesh_utils.plot_interactive(blocks[0][:, 0], blocks[0][:, 1], blocks[0][:, 2])
-    for block in blocks:
+    for i, block in enumerate(blocks):
         binary_mask = stl_mesh_utils.to_binary_mask(block)
-        stl_mesh_utils.plot_binary_array(binary_mask)
+        stl_mesh_utils.save_binary_array("binary_mask_" + str(i) + ".npy", binary_mask)
 
-    # stl_mesh_utils.save_binary_array("chicago_binary_array200.npy")
+
+    vel_blocks = stl_mesh_utils.partition_velocity_block(50, 50, -100, 100, -100, 100)
+    print("vel block count: ", len(vel_blocks))
+
+    for i, block in enumerate(vel_blocks):
+        np.save("velocity_" + str(i) + ".npy", block)
+    # stl_mesh_utils.plot_mesh()
+    # stl_mesh_utils.plot_stl_vertex()
+
+
+
 
     # stl_mesh_utils.save_mesh("small.stl")
 

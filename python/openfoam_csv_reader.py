@@ -23,7 +23,7 @@ class FoamCSVReader:
         self.foam_data_root = os.path.abspath(path)
         self.csv_filename = csv_filename
         self.df = self.read_csv(csv_filename)
-        #self.preprocess()
+        # self.preprocess()
 
     def read_csv(self, filename):
         start_read = time.time()
@@ -65,9 +65,6 @@ class FoamCSVReader:
             print("Total missing combinations: " + str(len(missing_combinations)))
         else:
             print("No missing combinations found.")
-
-
-
 
     def get_spacial_temporal_velocity(self, point):
         """
@@ -139,8 +136,9 @@ class FoamCSVReader:
         read_thread.start()
         return read_thread
 
-    def preprocess(self):
+    def preprocess_weak(self):
         """
+        For weak preprocessing, we remove all points with 0 velocity
         Preprocess current dataframe in memory
         1. remove all rows with 0 in columns 4, 5, 6. those are points inside the mesh
         2. cast columns 1, 2, 3 to nearest integer using manhattan distance
@@ -156,15 +154,38 @@ class FoamCSVReader:
         df.loc[:, df.columns[0]] = df[df.columns[0]].apply(self.__approximate_integer)
         df.loc[:, df.columns[1]] = df[df.columns[1]].apply(self.__approximate_integer)
         df.loc[:, df.columns[2]] = df[df.columns[2]].apply(self.__approximate_integer)
-        # df[df.columns[0]] = df[df.columns[0]].apply(self.__approximate_integer)
-        # df[df.columns[1]] = df[df.columns[1]].apply(self.__approximate_integer)
-        # df[df.columns[2]] = df[df.columns[2]].apply(self.__approximate_integer)
 
         # remove all rows with duplicate values in columns 1, 2, 3
         df = df.drop_duplicates(subset=[df.columns[0], df.columns[1], df.columns[2]], keep='first')
 
         # sort by columns 1, 2, 3
         self.df = df.sort_values(by=[df.columns[0], df.columns[1], df.columns[2]])
+
+    def preprocess_strong(self):
+        """
+        Preprocess, does not remove 0 velocity points
+        1. cast columns 1, 2, 3 to nearest integer using manhattan distance
+        2. remove all rows with duplicate values in columns 1, 2, 3
+        3. sort the dataframe by columns 1, 2, 3
+        4. populate missing points in the sorted dataframe by adding points with 0 velocity
+        :return:
+        """
+
+        df = self.df
+
+        # cast columns 1, 2, 3 to nearest integer using manhattan distance
+        df.loc[:, df.columns[0]] = df[df.columns[0]].apply(self.__approximate_integer)
+        df.loc[:, df.columns[1]] = df[df.columns[1]].apply(self.__approximate_integer)
+        df.loc[:, df.columns[2]] = df[df.columns[2]].apply(self.__approximate_integer)
+
+        # remove all rows with duplicate values in columns 1, 2, 3
+        df = df.drop_duplicates(subset=[df.columns[0], df.columns[1], df.columns[2]], keep='first')
+
+        # sort by columns 1, 2, 3
+        self.df = df.sort_values(by=[df.columns[0], df.columns[1], df.columns[2]])
+
+        # populate missing points in the sorted dataframe
+        self.populate_missing_points_in_sorted_df_with_zero()
 
     @staticmethod
     def __approximate_integer(x):
@@ -186,10 +207,11 @@ class FoamCSVReader:
         Preprocess the current csv file and replace the current csv file with the preprocessed one
         :return:
         """
-        self.preprocess()
+        self.preprocess_strong()
+        self.validate_data_strong()
         self.save_df_to_csv(self.csv_filename)
 
-    def populate_missing_points_in_sorted_df(self):
+    def populate_missing_points_in_sorted_df_with_closest(self):
         """
         Populate missing points in the sorted dataframe
         Since all points are sorted, we can just iterate through the list, and check if the next point is missing
@@ -197,19 +219,35 @@ class FoamCSVReader:
         we can find that by evaluating x first, then y, then z, since the dataframe is sorted by x, then y, then z
         """
         df = self.df
-        for i in range(1, len(df)-1):
+        for i in range(1, len(df) - 1):
             point = df.iloc[i]
             velocity = [point[df.columns[3]], point[df.columns[4]], point[df.columns[5]]]
             next_point = df.iloc[i + 1]
-            diff = [next_point[df.columns[0]] - point[df.columns[0]], next_point[df.columns[1]] - point[df.columns[1]], next_point[df.columns[2]] - point[df.columns[2]]]
+            diff = [next_point[df.columns[0]] - point[df.columns[0]], next_point[df.columns[1]] - point[df.columns[1]],
+                    next_point[df.columns[2]] - point[df.columns[2]]]
             if diff[0] > 1 or diff[1] > 1 or diff[2] > 1:
-                df.loc[len(df)] = [point[df.columns[0]] + 1, point[df.columns[1]] + 1, point[df.columns[2]] + 1, velocity[0], velocity[1], velocity[2]]
-                print("Populated missing point at: " + str(point[df.columns[0]] + 1) + ", " + str(point[df.columns[1]] + 1) + ", " + str(point[df.columns[2]] + 1))
+                df.loc[len(df)] = [point[df.columns[0]] + 1, point[df.columns[1]] + 1, point[df.columns[2]] + 1,
+                                   velocity[0], velocity[1], velocity[2]]
+                print("Populated missing point at: " + str(point[df.columns[0]] + 1) + ", " + str(
+                    point[df.columns[1]] + 1) + ", " + str(point[df.columns[2]] + 1))
         self.df = df.sort_values(by=[df.columns[0], df.columns[1], df.columns[2]])
 
+    def populate_missing_points_in_sorted_df_with_zero(self):
+        df = self.df
+        df.set_index(["Points:0", "Points:1", "Points:2"], inplace=True)
+        # Create a MultiIndex with all possible combinations of points
+        index = pd.MultiIndex.from_product(df.index.levels, names=df.index.names)
 
+        # Reindex the DataFrame to fill in missing points with zeros
+        df = df.reindex(index, fill_value=0)
 
+        # Reset the index to make it a column again
+        df.reset_index(inplace=True)
+        self.df = df
 
-
-
-
+    def validate_data_strong(self):
+        # check if all points are populated
+        total_points = self.df.shape[0]
+        print("Total points in csv: " + str(total_points))
+        expected_total = 201 * 201 * 51
+        print("Expected total points: " + str(expected_total))

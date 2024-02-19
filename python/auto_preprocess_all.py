@@ -4,7 +4,7 @@ import time
 from openfoam_csv_reader import FoamCSVReader
 
 foam_data_root = "openFoamCase"
-init_filename = "200_0.csv"
+init_filename = "10ms_0.csv"
 init_file_path = os.path.join(foam_data_root, init_filename)
 
 

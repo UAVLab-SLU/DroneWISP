@@ -6,8 +6,8 @@ then
     echo "OpenFOAM is not installed."
     echo "intalling OpenFOAM..."
     sudo apt-get update
-    sudo sh -c "wget -O - [http://dl.openfoam.org/gpg.key](http://dl.openfoam.org/gpg.key) | apt-key add -"
-    sudo add-apt-repository [http://dl.openfoam.org/ubuntu](http://dl.openfoam.org/ubuntu)
+    sudo sh -c "wget -O - http://dl.openfoam.org/gpg.key | apt-key add -"
+    sudo add-apt-repository http://dl.openfoam.org/ubuntu
     sudo apt-get update
     sudo apt-get install openfoam10
     sudo apt-get install --only-upgrade openfoam10
