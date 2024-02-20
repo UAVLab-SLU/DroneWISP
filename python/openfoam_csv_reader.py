@@ -224,7 +224,6 @@ class FoamCSVReader:
         self.validate_data_weak()
         self.save_df_to_csv(self.csv_filename)
 
-
     def populate_missing_points_in_sorted_df_with_closest(self):
         """
         Populate missing points in the sorted dataframe
@@ -263,5 +262,13 @@ class FoamCSVReader:
         # check if all points are populated
         total_points = self.df.shape[0]
         print("Total points in csv: " + str(total_points))
-        expected_total = 201 * 201 * 51
-        print("Expected total points: " + str(expected_total))
+        x_range = self.df['Points:0'].unique()
+        y_range = self.df['Points:1'].unique()
+        z_range = self.df['Points:2'].unique()
+        expected_total = len(x_range) * len(y_range) * len(z_range)
+        if expected_total != total_points:
+            print("Warning: not all points are populated, Don't use this csv for training.")
+            print("Expected total points: " + str(expected_total))
+            print("Actual total points: " + str(total_points))
+        else:
+            print("All points are populated.")

@@ -267,6 +267,9 @@ class StlMeshUtils:
             x_end = min(x_start + block_size_x, x_max)
             y_end = min(y_start + block_size_y, y_max)
 
+            # check block location
+            print("current block is formed by: (", x_start, y_start, "), (", x_end, y_end, ")")
+
             block_points = self.get_mesh_points(x_start, x_end, y_start, y_end)
             adjusted_block_points = self.adjust_points(block_points, x_start, y_start)
             blocks.append(adjusted_block_points)
@@ -285,6 +288,14 @@ class StlMeshUtils:
         return blocks
 
     def get_mesh_points(self, x_min, x_max, y_min, y_max):
+        """
+        Get the mesh points within the given range
+        :param x_min:
+        :param x_max:
+        :param y_min:
+        :param y_max:
+        :return:
+        """
         block_points = []
         for point in self.mesh_unique_points:
             x, y, z = point
@@ -294,6 +305,13 @@ class StlMeshUtils:
 
     @staticmethod
     def adjust_points(block_points, x_start, y_start):
+        """
+        Adjust the points to start from 0, 0
+        :param block_points:
+        :param x_start:
+        :param y_start:
+        :return:
+        """
         adjusted_block_points = []
         for x, y, z in block_points:
             adjusted_point = [x - x_start, y - y_start, z]
@@ -315,9 +333,12 @@ class StlMeshUtils:
         Partition the velocity data into blocks
         :return: list of blocks
         """
+
+
+
+
         # calculate the number of blocks
         total_blocks = (x_max - x_min) // block_size_x * (y_max - y_min) // block_size_y
-
 
         # filter the velocity data
         mask = (self.velocity[:, 0] >= x_min) & (self.velocity[:, 0] < x_max) & \
@@ -325,6 +346,15 @@ class StlMeshUtils:
                (self.velocity[:, 2] >= min_z) & (self.velocity[:, 2] < max_z)
 
         self.velocity = self.velocity[mask]
+
+        # size check
+        expected_count = (x_max - x_min) * (y_max - y_min) * (max_z - min_z)
+        if len(self.velocity) != expected_count:
+            print("Warning: velocity data count does not match expected count")
+            print("expected: ", expected_count, "actual: ", len(self.velocity))
+
+        # remove the x, y, z columns
+        self.velocity = self.velocity[:, 3:]
 
         # check even division
         if (x_max - x_min) % block_size_x != 0 or (y_max - y_min) % block_size_y != 0:
@@ -334,41 +364,40 @@ class StlMeshUtils:
         # split the velocity data into exactly the same number of blocks as the mesh
         blocks = np.array_split(self.velocity, total_blocks)
 
+        # quick check on start and end of each block
+        for i in range(len(blocks)):
+            print("vel block", i, "start:", blocks[i][0], "end:", blocks[i][-1])
+
         return blocks
 
 
 if __name__ == "__main__":
-    stl_file = "../stl/Chicago_+500x-500.stl"
+    stl_file = "../stl/chicago100shrunk.stl"
     vl_file = "../openFoamCase/10ms_2.csv"
 
     stl_mesh_utils = StlMeshUtils()  # chicago dimensions: -2014 2073 -1710 1706 0 441
     stl_mesh_utils.load_convert_mesh(stl_file)
-    stl_mesh_utils.load_velocity(vl_file)
 
-    blocks = stl_mesh_utils.partition_mesh_block(50, 50, -100, 100, -100, 100)
+    block_size_x = 50
+    block_size_y = 50
+    x_min = -100
+    x_max = 100
+    y_min = -100
+    y_max = 100
+
+    blocks = stl_mesh_utils.partition_mesh_block(block_size_x, block_size_y, x_min, x_max, y_min, y_max)
     print("block count: ", len(blocks))
 
-    #print(blocks[0])
-    #
     for i, block in enumerate(blocks):
         binary_mask = stl_mesh_utils.to_binary_mask(block)
         stl_mesh_utils.save_binary_array("binary_mask_" + str(i) + ".npy", binary_mask)
 
 
-    vel_blocks = stl_mesh_utils.partition_velocity_block(50, 50, -100, 100, -100, 100)
+
+
+    stl_mesh_utils.load_velocity(vl_file)
+    vel_blocks = stl_mesh_utils.partition_velocity_block(block_size_x, block_size_y, x_min, x_max, y_min, y_max)
     print("vel block count: ", len(vel_blocks))
 
     for i, block in enumerate(vel_blocks):
         np.save("velocity_" + str(i) + ".npy", block)
-    # stl_mesh_utils.plot_mesh()
-    # stl_mesh_utils.plot_stl_vertex()
-
-
-
-
-    # stl_mesh_utils.save_mesh("small.stl")
-
-    # stl_mesh_utils.scale_mesh(0.1)
-    # print(stl_mesh_utils.get_mesh_x_bound())
-    # print(stl_mesh_utils.get_mesh_y_bound())
-    # print(stl_mesh_utils.get_mesh_z_bound())
