@@ -106,3 +106,8 @@ class DnnGenNet(nn.Module):
         x = self.up4(x, x1)
         logits = self.outc(x)
         return logits
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+net = DnnGenNet(n_channels=1, n_classes=3, bilinear=False)
+print(f'The number of parameters in DnnGenNet is {count_parameters(net)}')
