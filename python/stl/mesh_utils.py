@@ -1,6 +1,7 @@
 import math
 
 import matplotlib.pyplot as plt
+import pyvista as pv
 import numpy as np
 import open3d as o3d
 import plotly.express as px
@@ -10,9 +11,11 @@ from mpl_toolkits import mplot3d
 
 class StlMeshUtils:
 
-    def __init__(self):
+    def __init__(self, debug_mode=False):
+        self.debug_mode = debug_mode
         self.binary_array = None
         self.mesh = None
+        self.pv_mesh = None
         self.mesh_point_cloud = None  # point cloud of the mesh, type: open3d.geometry.PointCloud
         self.mesh_point_cloud_array = None  # point cloud of the mesh, type: numpy array
         self.mesh_unique_points = None  # unique points in the mesh, type: numpy array, int32
@@ -39,6 +42,20 @@ class StlMeshUtils:
                 np.unique(self.mesh_point_cloud_array.reshape(
                     [int(self.mesh_point_cloud_array.size / 3), 3]), axis=0)
             )
+        except:
+            print("Error loading mesh")
+
+    def pv_load_convert_mesh(self, stl_file_name):
+        """
+        Load the stl file using pyvista
+        :param stl_file_name:
+        :return:
+        """
+        if stl_file_name is None:
+            print("stl file name is None")
+            return
+        try:
+            self.pv_mesh = pv.STLReader(stl_file_name).read()
         except:
             print("Error loading mesh")
 
@@ -161,7 +178,7 @@ class StlMeshUtils:
                         z.append(k)
 
         axes.scatter(x, y, z, marker='.', s=1)
-        axes.view_init(45, 0)
+        axes.view_init(45, 45)
         axes.set_xlabel('X')
         axes.set_ylabel('Y')
         axes.set_zlabel('Z')
@@ -287,6 +304,81 @@ class StlMeshUtils:
 
         return blocks
 
+    def pv_partition_binary_mesh_block(self, block_size_x=50, block_size_y=50, block_size_z=25, x_min=-100, x_max=100,
+                                       y_min=-100, y_max=100, z_max=100):
+        """
+        Partition the mesh into blocks, order: x from min to max, then y from min to max
+        :return: list of blocks
+        """
+
+        # check even division
+        if (x_max - x_min) % block_size_x != 0 or (y_max - y_min) % block_size_y != 0:
+            print("partition error: block size does not divide evenly")
+            print("trying to divide: ", x_max - x_min, y_max - y_min, "by", block_size_x, block_size_y)
+
+        blocks = []
+        x_start, y_start = x_min, y_min
+        while x_start < x_max and y_start < y_max:
+            x_end = min(x_start + block_size_x, x_max)
+            y_end = min(y_start + block_size_y, y_max)
+
+            # check block location
+            print("current block is formed by: (", x_start, y_start, "), (", x_end, y_end, ")")
+
+            binary_mask = self.pv_create_binary_mask(block_size_x, block_size_y, block_size_z, x_start, y_start)
+            if len(binary_mask) != block_size_x * block_size_y * block_size_z:
+                print("Warning: binary mask size does not match expected size")
+                print("expected: ", block_size_x * block_size_y * block_size_z, "actual: ", len(binary_mask))
+
+            # reshape to 3d
+            binary_mask = binary_mask.reshape((block_size_x, block_size_y, block_size_z))
+
+            # flip x and z axis, somehow pyvista has different axis order
+            binary_mask = np.swapaxes(binary_mask, 0, 2)
+
+            binary_mask = binary_mask.flatten().reshape((block_size_x, block_size_y, block_size_z))
+
+            if self.debug_mode:
+                self.plot_binary_array(binary_mask)
+
+            blocks.append(binary_mask)
+
+            x_start += block_size_x
+            if x_start >= x_max:
+                x_start = x_min
+                y_start += block_size_y
+
+        # check block count
+        expected_count = ((x_max - x_min) // block_size_x) * ((y_max - y_min) // block_size_y)
+        if len(blocks) != expected_count:
+            print("Warning: block count does not match expected count")
+            print("expected: ", expected_count, "actual: ", len(blocks))
+
+        return blocks
+
+    def pv_create_binary_mask(self, block_size_x, block_size_y, block_size_z, x_start, y_start):
+        grid = pv.ImageData()
+        grid.origin = (x_start, y_start, 0)
+        # Cell sizes
+        grid.spacing = (1, 1, 1)
+        # Number of cells in each direction
+        grid.dimensions = (block_size_x, block_size_y, block_size_z)
+        masked = self.mask_mesh_by_surface(grid, self.pv_mesh)
+        ids = np.argwhere(masked["point_mask"] == 1).ravel()
+        pts = grid.points[ids]
+        compute = lambda a, b: np.sqrt(np.sum((b - a) ** 2, axis=1))
+        dist = compute(pts, np.repeat([masked.bounds[1::2]], pts.shape[0], axis=0))
+        # Euclidean distance from each point in the mesh that is inside the surface
+        masked["cool_math"] = np.zeros(grid.n_points)  # Need to preallocate
+        masked["cool_math"][ids] = dist
+        distance_mask = masked["cool_math"]
+        masked["binary_mask"] = np.zeros(masked.n_points, dtype=bool)
+        masked["binary_mask"][distance_mask > 1] = 0
+        masked["binary_mask"][distance_mask <= 1] = 1
+        binary_mask = masked["binary_mask"]
+
+        return binary_mask
+
     def get_mesh_points(self, x_min, x_max, y_min, y_max):
         """
         Get the mesh points within the given range
@@ -331,21 +423,10 @@ class StlMeshUtils:
                                  min_z=0, max_z=25):
         """
         Partition the velocity data into blocks
+        just split the data into exactly the same number of blocks as the mesh
+        assumes the velocity data is already preprocessed and contains exactly the same number of points as the mesh
         :return: list of blocks
         """
-
-
-
-
-        # calculate the number of blocks
-        total_blocks = (x_max - x_min) // block_size_x * (y_max - y_min) // block_size_y
-
-        # filter the velocity data
-        mask = (self.velocity[:, 0] >= x_min) & (self.velocity[:, 0] < x_max) & \
-               (self.velocity[:, 1] >= y_min) & (self.velocity[:, 1] < y_max) & \
-               (self.velocity[:, 2] >= min_z) & (self.velocity[:, 2] < max_z)
-
-        self.velocity = self.velocity[mask]
 
         # size check
         expected_count = (x_max - x_min) * (y_max - y_min) * (max_z - min_z)
@@ -353,22 +434,72 @@ class StlMeshUtils:
             print("Warning: velocity data count does not match expected count")
             print("expected: ", expected_count, "actual: ", len(self.velocity))
 
-        # remove the x, y, z columns
-        self.velocity = self.velocity[:, 3:]
-
         # check even division
         if (x_max - x_min) % block_size_x != 0 or (y_max - y_min) % block_size_y != 0:
             print("partition error: block size does not divide evenly")
             print("trying to divide: ", x_max - x_min, y_max - y_min, "by", block_size_x, block_size_y)
+            # just throw an error for now
+            raise ValueError("block size does not divide evenly")
 
-        # split the velocity data into exactly the same number of blocks as the mesh
-        blocks = np.array_split(self.velocity, total_blocks)
+        # calculate the number of blocks
+        total_blocks = (x_max - x_min) // block_size_x * (y_max - y_min) // block_size_y
 
-        # quick check on start and end of each block
+        # filter by range
+        mask = (self.velocity[:, 0] >= x_min) & (self.velocity[:, 0] < x_max) & \
+               (self.velocity[:, 1] >= y_min) & (self.velocity[:, 1] < y_max) & \
+               (self.velocity[:, 2] >= min_z) & (self.velocity[:, 2] < max_z)
+        self.velocity = self.velocity[mask]
+
+        blocks = []
+
+        # split the data into blocks
+        for cur_x in range(x_min, x_max, block_size_x):
+            for cur_y in range(y_min, y_max, block_size_y):
+                cur_block = self.velocity[
+                    (self.velocity[:, 0] >= cur_x) & (self.velocity[:, 0] < cur_x + block_size_x) & \
+                    (self.velocity[:, 1] >= cur_y) & (self.velocity[:, 1] < cur_y + block_size_y) & \
+                    (self.velocity[:, 2] >= min_z) & (self.velocity[:, 2] < max_z)
+                    ]
+                print("cur block formed by: (", cur_x, cur_y, "), (", cur_x + block_size_x, cur_y + block_size_y, ")")
+                blocks.append(cur_block)
+
+        # remove the x, y, z columns
         for i in range(len(blocks)):
-            print("vel block", i, "start:", blocks[i][0], "end:", blocks[i][-1])
+            blocks[i] = blocks[i][:, 3:]
+
+        # check shape
+        for block in blocks:
+            if block.shape != (block_size_x * block_size_y * (max_z - min_z), 3):
+                print("Warning: velocity block shape does not match expected shape")
+                print("expected: ", block_size_x * block_size_y * (max_z - min_z), "actual: ", block.shape)
 
         return blocks
+
+    @staticmethod
+    def mask_mesh_by_surface(grid_image_data, mesh_surface):
+        grid = grid_image_data.copy()
+
+        # Assign unique identifiers to each point and cell in the mesh
+        grid["point_ids"] = np.arange(grid.n_points)
+        grid["cell_ids"] = np.arange(grid.n_cells)
+
+        # Clip the mesh by the surface from both sides (inside and outside of the surface)
+        inside_surface = grid.clip_surface(mesh_surface, invert=False, compute_distance=True)
+        outside_surface = grid.clip_surface(mesh_surface, invert=True, compute_distance=True)
+
+        # Create a mask for the cells in the mesh
+        grid["cell_mask"] = np.zeros(grid.n_cells, dtype=int)
+        grid["cell_mask"][inside_surface["cell_ids"]] = 1  # Cells inside the surface
+        grid["cell_mask"][outside_surface["cell_ids"]] = 2  # Cells outside the surface
+
+        # Use the implicit distance to create a mask for the points in the mesh
+        inside_point_ids = np.argwhere(grid["implicit_distance"] >= 0)
+        outside_point_ids = np.argwhere(grid["implicit_distance"] < 0)
+        grid["point_mask"] = np.zeros(grid.n_points, dtype=int)
+        grid["point_mask"][inside_point_ids] = 1  # Points inside the surface
+        grid["point_mask"][outside_point_ids] = 2  # Points outside the surface
+
+        return grid
 
 
 if __name__ == "__main__":
@@ -391,9 +522,6 @@ if __name__ == "__main__":
     for i, block in enumerate(blocks):
         binary_mask = stl_mesh_utils.to_binary_mask(block)
         stl_mesh_utils.save_binary_array("binary_mask_" + str(i) + ".npy", binary_mask)
-
-
-
 
     stl_mesh_utils.load_velocity(vl_file)
     vel_blocks = stl_mesh_utils.partition_velocity_block(block_size_x, block_size_y, x_min, x_max, y_min, y_max)
