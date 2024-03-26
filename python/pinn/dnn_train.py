@@ -73,13 +73,15 @@ if __name__ == "__main__":
     print('Using device:', device)
 
     # Load data
-    load_model = False
+    save_label = "correct align"
+    load_model = True
     train_model = True
     save_model = True
+    save_model_per_dataset = True
     epoch_per_run = 1000
     physics_loss_weight = 0.2
-    learning_rate = 0.01
-    saved_name = 'dnn_ep' + str(epoch_per_run) + '_lr' + str(learning_rate) + '_pl' + str(physics_loss_weight) + '.pth'
+    learning_rate = 0.1
+    saved_name = 'dnn_ep' + str(epoch_per_run) + '_lr' + str(learning_rate) + '_pl' + str(physics_loss_weight) + save_label + '.pth'
 
     training_file_dir = os.path.join('..', 'csv', 'train', '100')
 
@@ -93,6 +95,12 @@ if __name__ == "__main__":
 
     # Initialize the DNN
     net = DnnGenNet(n_channels=1, n_classes=3, bilinear=False)
+    # Define a loss function and optimizer
+    criterion = nn.MSELoss()
+    optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+    if load_model:
+        print('Loading model...')
+        net.load_state_dict(torch.load(saved_name))
 
     for mesh_file, vl_file in zip(mesh_files, vl_files):
         mesh = np.load(mesh_file)
@@ -106,24 +114,18 @@ if __name__ == "__main__":
         print('mesh_tensor:', mesh_tensor.shape)
         print('wind_velocity_tensor:', wind_velocity_tensor.shape)
 
-        # Define a loss function and optimizer
-        criterion = nn.MSELoss()
-        optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
-
-        if load_model:
-            print('Loading model...')
-            net.load_state_dict(torch.load(saved_name))
         if train_model:
             # Train the network
+            running_loss = 0.0
             for epoch in range(epoch_per_run):  # Loop over the dataset multiple times
-                running_loss = 0.0
+
                 # Zero the parameter gradients
                 optimizer.zero_grad()
 
                 # Forward + backward + optimize
                 outputs = net(mesh_tensor)  # Pass the mesh tensor directly
-                # print('outputs:', outputs.shape)
-                # print('wind_velocity_tensor:', wind_velocity_tensor.shape)
+                #print('outputs:', outputs.shape)
+                #print('wind_velocity_tensor:', wind_velocity_tensor.shape)
                 # outputs: torch.Size([1, 3, 50, 50, 25])
                 # wind_velocity_tensor: torch.Size([62500, 3])
                 # reshape wind_velocity_tensor to match the outputs
@@ -143,7 +145,10 @@ if __name__ == "__main__":
                     print('[%d] loss: %.3f' % (epoch + 1, running_loss / 100))
                     running_loss = 0.0
 
-            print('Finished Training')
+            print('Finished Training dataset:', mesh_file, 'and', vl_file)
+            if save_model and save_model_per_dataset:
+                print('Saving model...')
+                torch.save(net.state_dict(), saved_name)
     if save_model:
         print('Saving model...')
         torch.save(net.state_dict(), saved_name)

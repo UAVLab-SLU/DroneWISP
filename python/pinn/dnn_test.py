@@ -10,14 +10,15 @@ from mpl_toolkits.mplot3d import Axes3D
 
 if __name__ == "__main__":
 
+    model_name = "dnn_ep1000_lr0.1_pl0.2correct align.pth"
     sample_size = 2
     draw_step = 5
-    input_file = os.path.join('..', 'csv', 'train', '100', 'binary_mask', 'binary_mask_6.npy')
-    ground_truth_file = os.path.join('..', 'csv', 'train', '100', 'velocity', 'velocity_6.npy')
+    input_file = os.path.join('..', 'csv', 'train', '100', 'binary_mask', 'binary_mask_9.npy')
+    ground_truth_file = os.path.join('..', 'csv', 'train', '100', 'velocity', 'velocity_9.npy')
 
     net = DnnGenNet(n_channels=1, n_classes=3, bilinear=False)
     print('Loading model...')
-    net.load_state_dict(torch.load('dnn.pth'))
+    net.load_state_dict(torch.load(model_name))
 
     input_test_mesh = np.load(input_file)
     print("input shape:", input_test_mesh.shape)  # shape: (50, 50, 25)
@@ -41,10 +42,10 @@ if __name__ == "__main__":
                 w = ground_truth[x, y, z][2]
                 # color based on magnitude
                 wind_velocity = np.linalg.norm(ground_truth[x, y, z])
-                rgb_red = int(255 * (wind_velocity / 50))
+                rgb_red = int(255 * (wind_velocity / 15))
                 if rgb_red > 255:
                     rgb_red = 255
-                ax.quiver(x, y, z, u, v, w, length=0.5, color=(rgb_red / 255, 0, 0))
+                ax.scatter(x, y, z, color=(rgb_red / 255, 0, 0))
 
     ax.set_xlim(-50, 50)
     ax.set_ylim(-50, 50)
@@ -61,6 +62,12 @@ if __name__ == "__main__":
     print("output shape:", output.shape)  # shape: (50, 50, 25, 3)
     # print(output)
     # print(ground_truth)
+    # TODO: evaluation method not conclusive, ignore error where ground truth is 0
+    for i in range(50):
+        for j in range(50):
+            for k in range(25):
+                if np.linalg.norm(ground_truth[i, j, k]) == 0:
+                    output[i, j, k] = 0
     print("MSE:", np.mean((output - ground_truth) ** 2))
     print("MAE:", np.mean(np.abs(output - ground_truth)))
     print("RMSE:", np.sqrt(np.mean((output - ground_truth) ** 2)))
@@ -80,11 +87,31 @@ if __name__ == "__main__":
                 u = output[x, y, z][0]
                 v = output[x, y, z][1]
                 w = output[x, y, z][2]
+                u_gt = ground_truth[x, y, z][0]
+                v_gt = ground_truth[x, y, z][1]
+                w_gt = ground_truth[x, y, z][2]
+                mesh_bool = input_test_mesh[x, y, z]
                 wind_velocity = np.linalg.norm(output[x, y, z])
-                rgb_red = int(255 * (wind_velocity / 50))
+                wind_velocity_diff = abs(np.linalg.norm(output[x, y, z]) - np.linalg.norm(ground_truth[x, y, z]))
+                predicted_wind_velocity = np.linalg.norm(output[x, y, z])
+                # color based on magnitude difference
+                rgb_red = int(255 * (wind_velocity / 15))
                 if rgb_red > 255:
                     rgb_red = 255
-                ax.quiver(x, y, z, u, v, w, length=0.5, color=(rgb_red / 255, 0, 0))
+                diff_threshold = 2
+                diff_max = 10
+                # rgb_red, rgb_green, = 0, 0
+                # if wind_velocity_diff > diff_threshold:
+                #     rgb_red = int(255 * (min(wind_velocity_diff/diff_max, 1)))
+                #     rgb_green = int(255 * (1 - min(wind_velocity_diff/diff_max, 1)))
+                # else:
+                #     rgb_red = 0
+                #     rgb_green = 255
+
+                ax.scatter(x, y, z, color=(rgb_red / 255, 0, 0)
+                           , label="predicted wind velocity: " + str(predicted_wind_velocity))
+                # if mesh_bool:
+                #     ax.scatter(x, y, z, color='b', s=1)
     ax.set_xlim(-50, 50)
     ax.set_ylim(-50, 50)
     ax.set_zlim(0, 25)
