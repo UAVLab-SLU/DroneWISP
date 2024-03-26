@@ -8,3 +8,5 @@ requests
 pandas
 torch==2.1.2
 open3d
+pyvista
+msgpack-rpc-python
