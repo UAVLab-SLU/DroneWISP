@@ -1,15 +1,16 @@
 # This script is used to preprocess all the csv files in the folder
 import os
 import time
-from openfoam_csv_reader import FoamCSVReader
+from python.openfoam_csv_reader import FoamCSVReader
 
 foam_data_root = "openFoamCase"
 init_filename = "10ms_0.csv"
-init_file_path = os.path.join(foam_data_root, init_filename)
 use_strong_preprocessing = True
 
 
-def preprocess_all():
+def preprocess_all(foam_data_root=foam_data_root, init_filename=init_filename,
+                   use_strong_preprocessing=use_strong_preprocessing):
+    init_file_path = os.path.join(foam_data_root, init_filename)
     # verify that the first file exists
     if not os.path.exists(init_file_path):
         print("File does not exist")
