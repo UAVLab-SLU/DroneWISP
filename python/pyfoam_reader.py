@@ -181,6 +181,33 @@ class OpenFoamController:
         os.system("rm " + temp_filename)
 
 
+    def change_openfoam_inlet_face(self, wind_direction_string, wind_speed):
+        """
+        Task1:
+        Change the inlet face of the openfoam case to the given wind direction and speed
+        If the wind direction is only N, E, S, W, then only one face will be changed, change the corresponding face as inlet
+        If the wind direction is NE, SE, SW, NW, then two faces will be changed, change the corresponding faces as inlet
+        also there will be two initial velocity vectors, one for each face, see python/openFoamCase/0/include/initialConditions.
+
+        Task2:
+        Change the wind speed, the wind speed is the magnitude of the wind vector
+        how to change it? python/openFoamCase/0/include/initialConditions file
+
+
+        Tips: use PyFoam package to parse the files, the files that you are going to change are in
+        - python/openFoamCase/0/U.orig
+        - python/openFoamCase/0/include/initialConditions
+        - python/openFoamCase/system/blockMeshDict
+
+        :param wind_direction_string: The wind direction string, "N", "NE", "E", "SE", "S", "SW", "W", "NW"
+        :param wind_speed vector: The wind speed vector (x, y, z)
+        :return: None
+        """
+        # TODO: Seyun's task
+        pass
+
+
+
 if __name__ == "__main__":
     case_root = "openFoamCase"
     foam = OpenFoamController(case_root)
