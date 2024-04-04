@@ -201,7 +201,7 @@ class OpenFoamController:
             :param wind_speed vector: The wind speed vector (x, y, z)
             :return: None
             """
-            # TODO: Seyun's task
+            #
             class OpenFOAMCase:
                 def __init__(self, openfoam_case):
                     self.wind_speeds = None
