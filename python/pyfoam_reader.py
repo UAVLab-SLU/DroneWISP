@@ -204,25 +204,27 @@ class OpenFoamController:
             # TODO: Seyun's task
             class OpenFOAMCase:
                 def __init__(self, openfoam_case):
+                    self.wind_speeds = None
+                    self.wind_direction = None
                     self.openfoam_case = openfoam_case
 
-                def adjust_inlet_conditions(self, wind_direction, wind_speed):
+                def adjust_inlet_conditions(self, wind_direction, wind_speeds):
                     if wind_direction not in ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]:
                         raise ValueError(
                             "Invalid wind direction. Expected one of: N, NE, E, SE, S, SW, W, NW")
 
                     if wind_direction in ["NE", "SE", "SW", "NW"]:
-                        self.wind_speed = wind_speed / math.sqrt(2)
+                        self.wind_speeds = wind_speeds / math.sqrt(2)
 
                     U_file = ParsedParameterFile(self.openfoam_case + "/0/U")
                     inlet_faces = U_file.content['boundaryField']['inlet']
-                    wind_vector_str = f"uniform ({self.wind_speed} 0 0)"
+                    wind_vector_str = f"uniform ({self.wind_speeds} 0 0)"
                     inlet_faces['value'] = wind_vector_str
                     U_file.writeFile()
                     self.wind_direction = wind_direction
                     if wind_direction in ["NE", "SE", "SW", "NW"]:
                         # Adjust for diagonal wind direction
-                        self.wind_speed = wind_speed / math.sqrt(2)
+                        self.wind_speeds = wind_speeds / math.sqrt(2)
 
                     # Manipulate OpenFOAM files
                     U_file = ParsedParameterFile(self.openfoam_case + "/0/U")
@@ -234,8 +236,7 @@ class OpenFoamController:
 
                 def log_changes(self):
                     with open('log.txt', 'a') as f:
-                        f.write(f"Wind direction: {self.wind_direction}, Wind speed: {
-                                self.wind_speed}\n")
+                        f.write(f"Wind direction: {self.wind_direction}, Wind speed: {self.wind_speed}\n")
 
 
 if __name__ == "__main__":
