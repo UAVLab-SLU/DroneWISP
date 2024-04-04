@@ -2,8 +2,9 @@ import os
 import numpy as np
 import subprocess
 import PyFoam
-from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
+from PyFoam.runDictionary.ParsedParameterFile import ParsedParameterFile
 from stl.mesh_utils import StlMeshUtils
+import math
 
 
 class OpenFoamController:
@@ -16,7 +17,8 @@ class OpenFoamController:
         :param case_root: OpenFOAM case root
         """
         self.case_root = case_root
-        self.mesh_stl = StlMeshUtils(os.path.join(self.case_root, "constant", "geometry", "combined.stl"))
+        self.mesh_stl = StlMeshUtils(os.path.join(
+            self.case_root, "constant", "geometry", "combined.stl"))
 
     # async
 
@@ -126,8 +128,9 @@ class OpenFoamController:
         filename = os.path.join(self.case_root, "0", "U.orig")
 
         # TODO: this does not work
-        content = PyFoam.RunDictionary.ParsedParameterFile.ParsedParameterFile(filename)
-        #print(content)
+        content = PyFoam.RunDictionary.ParsedParameterFile.ParsedParameterFile(
+            filename)
+        # print(content)
         content["internalField"] = "uniform (" + str(velocity) + " 0 0)"
         content.writeFile()
 
@@ -157,14 +160,14 @@ class OpenFoamController:
         """
         return round(np.linalg.norm(wind_vector), 2)
 
-
     def replace_mesh(self, stl_file_name):
         """
         Replace mesh in OpenFOAM case
         :param stl_file_name: stl file name
         :return: None
         """
-        old_filename = os.path.join(self.case_root, "constant", "geometry", "combined.stl")
+        old_filename = os.path.join(
+            self.case_root, "constant", "geometry", "combined.stl")
         # make a temp copy at current folder
         temp_filename = os.path.join(os.getcwd(), "combined.stl")
         os.system("cp " + old_filename + " " + temp_filename)
@@ -179,6 +182,61 @@ class OpenFoamController:
 
         # clean temp file
         os.system("rm " + temp_filename)
+
+        def change_openfoam_inlet_face(self, wind_direction_string, wind_speed):
+            """
+            Task1:
+            Change the inlet face of the openfoam case to the given wind direction and speed
+            If the wind direction is only N, E, S, W, then only one face will be changed, change the corresponding face as inlet
+            If the wind direction is NE, SE, SW, NW, then two faces will be changed, change the corresponding faces as inlet
+            also there will be two initial velocity vectors, one for each face, see python/openFoamCase/0/include/initialConditions.
+            Task2:
+            Change the wind speed, the wind speed is the magnitude of the wind vector
+            how to change it? python/openFoamCase/0/include/initialConditions file
+            Tips: use PyFoam package to parse the files, the files that you are going to change are in
+            - python/openFoamCase/0/U.orig
+            - python/openFoamCase/0/include/initialConditions
+            - python/openFoamCase/system/blockMeshDict
+            :param wind_direction_string: The wind direction string, "N", "NE", "E", "SE", "S", "SW", "W", "NW"
+            :param wind_speed vector: The wind speed vector (x, y, z)
+            :return: None
+            """
+            #
+            class OpenFOAMCase:
+                def __init__(self, openfoam_case):
+                    self.wind_speeds = None
+                    self.wind_direction = None
+                    self.openfoam_case = openfoam_case
+
+                def adjust_inlet_conditions(self, wind_direction, wind_speeds):
+                    if wind_direction not in ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]:
+                        raise ValueError(
+                            "Invalid wind direction. Expected one of: N, NE, E, SE, S, SW, W, NW")
+
+                    if wind_direction in ["NE", "SE", "SW", "NW"]:
+                        self.wind_speeds = wind_speeds / math.sqrt(2)
+
+                    U_file = ParsedParameterFile(self.openfoam_case + "/0/U")
+                    inlet_faces = U_file.content['boundaryField']['inlet']
+                    wind_vector_str = f"uniform ({self.wind_speeds} 0 0)"
+                    inlet_faces['value'] = wind_vector_str
+                    U_file.writeFile()
+                    self.wind_direction = wind_direction
+                    if wind_direction in ["NE", "SE", "SW", "NW"]:
+                        # Adjust for diagonal wind direction
+                        self.wind_speeds = wind_speeds / math.sqrt(2)
+
+                    # Manipulate OpenFOAM files
+                    U_file = ParsedParameterFile(self.openfoam_case + "/0/U")
+                    inlet_faces = U_file.content['boundaryField']['inlet']
+                    inlet_faces['value'].setUniform(self.wind_speed)
+                    wind_vector_str = f"uniform ({self.wind_speed} 0 0)"
+                    inlet_faces['value'] = wind_vector_str
+                    U_file.writeFile()
+
+                def log_changes(self):
+                    with open('log.txt', 'a') as f:
+                        f.write(f"Wind direction: {self.wind_direction}, Wind speed: {self.wind_speed}\n")
 
 
     def change_openfoam_inlet_face(self, wind_direction_string, wind_speed):
@@ -212,7 +270,7 @@ if __name__ == "__main__":
     case_root = "openFoamCase"
     foam = OpenFoamController(case_root)
     foam.clean()
-    #foam.set_wind_velocity(9)
+    # foam.set_wind_velocity(9)
     # foam.run()
     print(foam.calculate_rotation((10, 5, 0)))
     print(foam.calculate_velocity((10, 5, 0)))
