@@ -1,0 +1,19 @@
+#!/bin/sh
+cd ${0%/*} || exit 1    # Run from this directory
+
+# Source tutorial run functions
+. /opt/openfoam10/etc/bashrc
+. /opt/openfoam10/bin/tools/RunFunctions
+
+runApplication surfaceFeatures
+runApplication blockMesh
+runApplication snappyHexMesh -overwrite
+runApplication patchSummary
+runApplication potentialFoam
+runApplication $(getApplication)
+
+postProcess -func writeCellCentres
+touch results.foam
+
+
+#------------------------------------------------------------------------------
