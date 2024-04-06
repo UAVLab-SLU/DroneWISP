@@ -60,11 +60,13 @@ SIMPLE
 {
     nNonOrthogonalCorrectors 0;
     consistent yes;
+
 }
 
 potentialFlow
 {
-    nNonOrthogonalCorrectors 10;
+    nNonOrthogonalCorrectors 0;
+
 }
 
 relaxationFactors

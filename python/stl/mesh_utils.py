@@ -501,6 +501,26 @@ class StlMeshUtils:
 
         return grid
 
+    @staticmethod
+    def clip_and_save_mesh(vertices, stl_file_path, output_stl_file_path):
+        """
+        Clips a section of the mesh defined by 8 vertices from an STL file and saves it to a new STL file.
+
+        Parameters:
+        - vertices: A list of 8 tuples, each representing a vertex (x, y, z) of the bounding box.
+        - stl_file_path: Path to the input STL file.
+        - output_stl_file_path: Path where the clipped mesh will be saved as an STL file.
+        """
+        # Load the STL file
+        mesh = pv.read(stl_file_path)
+        points = np.array(vertices, dtype=np.float64)
+        cells = np.array([8, 0, 1, 2, 3, 4, 5, 6, 7], dtype=np.int64)
+        cell_types = np.array([pv.CellType.HEXAHEDRON], dtype=np.uint8)
+        hexahedron = pv.UnstructuredGrid(cells, cell_types, points)
+        bbox = hexahedron.extract_surface()
+        clipped_mesh = mesh.clip_surface(bbox)
+        clipped_mesh.save(output_stl_file_path)
+
 
 if __name__ == "__main__":
     stl_file = "../stl/chicago100shrunk.stl"
