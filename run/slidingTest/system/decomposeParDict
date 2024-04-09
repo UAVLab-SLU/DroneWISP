@@ -9,40 +9,29 @@ FoamFile
 {
     format      ascii;
     class       dictionary;
-    object      controlDict;
+    object      decomposeParDict;
 }
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     simpleFoam;
+numberOfSubdomains  6;
 
-startFrom       startTime;
+decomposer      hierarchical;
+distributor     ptscotch;
+// distributor     zoltan;
+// libs            ("libzoltanDecomp.so");
 
-startTime       0;
+hierarchicalCoeffs
+{
+    n               (3 2 1);
+    order           xyz;
+}
 
-stopAt          endTime;
-
-endTime         51;
-
-deltaT          50;
-
-writeControl    timeStep;
-
-writeInterval   1;
-
-purgeWrite      0;
-
-writeFormat     ascii;
-
-writePrecision  6;
-
-writeCompression off;
-
-timeFormat      general;
-
-timePrecision   6;
-
-runTimeModifiable true;
-
+zoltanCoeffs
+{
+    lb_method       hypergraph;
+    lb_approach     partition;
+}
 
 
 // ************************************************************************* //

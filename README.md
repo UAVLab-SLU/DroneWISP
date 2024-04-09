@@ -15,8 +15,8 @@ This project uses OpenFoam to simulate realist wind conditions for a given geome
 
 
 ## Getting Started
-### install openfoam on windows linux subsystem
-install linux subsystem
+### install openfoam on WSL or Linux
+install linux subsystem, ignore if you are using linux natively
 ```commandline
 wsl --install
 ```
@@ -42,20 +42,20 @@ OpenFOAM 10
 
 If that didn't work, follow the following steps to install OpenFoam 10 on WSL manually
 ```bash
-sudo sh -c "wget -O - [http://dl.openfoam.org/gpg.key](http://dl.openfoam.org/gpg.key) | apt-key add -"
-
-sudo add-apt-repository [http://dl.openfoam.org/ubuntu](http://dl.openfoam.org/ubuntu)
-
+sudo sh -c "wget -O - http://dl.openfoam.org/gpg.key | apt-key add -"
+sudo add-apt-repository http://dl.openfoam.org/ubuntu
 sudo apt-get update
-
 sudo apt-get install openfoam10
-
 sudo apt-get install --only-upgrade openfoam10
 ```
 
 next add the following line to the end of file `.bashrc`
 ```text
 source /opt/openfoam10/etc/bashrc
+```
+or run the following command
+```bash
+echo "source /opt/openfoam10/etc/bashrc" >> ~/.bashrc
 ```
 
 source the new bashrc file
@@ -72,10 +72,11 @@ pip install -r requirements.txt
 ```
 
 
-
-
-### install openfoam on windows
+### install openfoam on windows natively
 NOT SUPPORTED
+
+### install openfoam on mac
+Only possible through docker, would not recommend since majority of code requires file system access and need frequent I/O operations.
 
 ## Directory Structure
 all OpenFOAM research scenarios are in the run directory
@@ -91,6 +92,21 @@ cd run
 cd {example directory}
 bash ./Allrun
 ```
+
+### Python entry points
+
+preprocess velocity csv: `auto_preprocess_all_for_sim.py`, `auto_preprocess_all_for_train.py`. for sim uses weak preprocessing, for train uses strong preprocessing.
+
+prepare training data: `pinn/prepare_training_dataset.py` 
+
+train the model: `pinn/dnn_train.py`
+
+test the model: `pinn/dnn_test.py`
+
+
+
+
+
 
 ## How to use ParaView
 
