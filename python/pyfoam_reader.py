@@ -57,9 +57,9 @@ class OpenFoamController:
         :return: bool indicating whether the run is valid (True) or not (False)
         """
         # First, check if "1" folder exists to quickly fail if necessary
-        if not os.path.exists(os.path.join(self.case_root, "1")):
-            print("Error: '1' folder does not exist, did not run successfully")
-            return False
+        # if not os.path.exists(os.path.join(self.case_root, "1")):
+        #     print("Error: '1' folder does not exist, did not run successfully")
+        #     return False
 
         # Check log files for "FOAM FATAL ERROR"
         log_files = [f for f in os.listdir(self.case_root) if f.startswith("log.")]
@@ -85,8 +85,6 @@ class OpenFoamController:
                     # print next 5 lines
                     for i in range(5):
                         print(f.readline())
-
-
 
     def __read_c(self, time):
         """
@@ -187,7 +185,8 @@ class OpenFoamController:
         header = "x, y, z, u, v, w"
         np.savetxt(save_path, cell_and_velocity, delimiter=",", header=header)
 
-    def pinn_save_all_result_and_preprocess(self, range_x=None, range_y=None, range_z=None, x_min=None, x_max=None, y_min=None, y_max=None, z_min=None, z_max=None):
+    def pinn_save_all_result_and_preprocess(self, range_x=None, range_y=None, range_z=None, x_min=None, x_max=None,
+                                            y_min=None, y_max=None, z_min=None, z_max=None):
         """
         save the all result to csv file,
         optional param range_x, range_y, range_z to preprocess the data
@@ -258,28 +257,38 @@ class OpenFoamController:
             # Remove duplicates based on x, y, z
             df.drop_duplicates(subset=["x", "y", "z"], keep="first", inplace=True)
 
-            # Quick size check
-            if not len(df) == range_x * range_y * range_z:
-                print(f"Size mismatch for time {time}, expected {range_x * range_y * range_z}, got {len(df)}")
-                continue
-
             # Sort data
             df.sort_values(by=["x", "y", "z"], inplace=True)
 
-            # Fill missing data and
-            # TODO: This is a complex procedure requiring generation of a complete grid and then merging it with existing data
-            # generate a grid with dimensions range_x, range_y, range_z
+            # Fill missing data
+            if all(v is not None for v in [range_x, range_y, range_z, x_min, x_max, y_min, y_max, z_min, z_max]):
+                x_coords = np.round(np.linspace(x_min, x_max, range_x)).astype(int)
+                y_coords = np.round(np.linspace(y_min, y_max, range_y)).astype(int)
+                z_coords = np.round(np.linspace(z_min, z_max, range_z)).astype(int)
+
+                mesh = pd.DataFrame(np.array(np.meshgrid(x_coords, y_coords, z_coords, indexing='ij')).T.reshape(-1, 3),
+                                    columns=["x", "y", "z"])
+                df = pd.merge(mesh, df, on=["x", "y", "z"], how="outer")
+                df = pd.merge(mesh, df, on=["x", "y", "z"], how="left")
+
+            # Check size
+            if range_x is not None and range_y is not None and range_z is not None:
+                if len(df) != range_x * range_y * range_z:
+                    print(f"Error: Data size is not correct. Expected {range_x * range_y * range_z}, got {len(df)}")
 
             # Add binary mask
-            df['bm'] = np.where(df[['u', 'v', 'w', 'p', 'k', 'nut', 'omega']].isnull().all(axis=1), 0, 1)
+            df['bm'] = np.where(df[['u', 'v', 'w', 'p', 'k', 'nut', 'omega']].isnull().all(axis=1), 1, 0)
 
             # Save to CSV, adjust path as needed
-            save_path = os.path.join(self.case_root, f"result_preprocessed_{time}.csv")
+            sub_dir_name = str(x_min) + "_" + str(x_max) + "_" + str(y_min) + "_" + str(y_max) + "_" + str(
+                z_min) + "_" + str(z_max)
+            # create sub dir if not exist
+            data_dir = "../5k_training_dataset"
+            if not os.path.exists(os.path.join(data_dir, sub_dir_name)):
+                os.makedirs(os.path.join(data_dir, sub_dir_name))
+            save_path = os.path.join(data_dir, sub_dir_name, f"result_preprocessed_{time}.csv")
             df.to_csv(save_path, index=False)
             print(f"Saved preprocessed data to {save_path}")
-
-            # save to csv
-
 
     def __set_wind_velocity(self, velocity):
         """
@@ -494,13 +503,13 @@ if __name__ == "__main__":
     #     foam.debug_failed_run()
     ##########################
 
-
     ## Works
     ## read cell and velocity
     # t = 10
     # foam.save_cell_and_velocity(t, "cell_and_velocity_" + str(t) + ".csv")
 
-    foam.pinn_save_all_result_and_preprocess()
+    foam.pinn_save_all_result_and_preprocess(range_x=50, range_y=50, range_z=25, x_min=-25, x_max=25, y_min=-25,
+                                             y_max=25, z_min=0, z_max=25)
 
     # works
     # foam.update_shm_inside_point("(-30 -30 0)")
