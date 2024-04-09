@@ -70,7 +70,7 @@ castellatedMeshControls
       level 2;
     }
   }
-  insidePoint (3.0001 3.0001 0.4300);
+  insidePoint (-9.4999 -25.4999 2.4300);
   allowFreeStandingZoneFaces yes;
 }
 
