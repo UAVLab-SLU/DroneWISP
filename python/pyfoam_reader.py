@@ -56,10 +56,12 @@ class OpenFoamController:
 
         :return: bool indicating whether the run is valid (True) or not (False)
         """
-        # First, check if "1" folder exists to quickly fail if necessary
-        # if not os.path.exists(os.path.join(self.case_root, "1")):
-        #     print("Error: '1' folder does not exist, did not run successfully")
-        #     return False
+        # First, check if any time > 0 folder exists to quickly fail if necessary
+        time_folders = [f for f in os.listdir(self.case_root) if
+                        f.isdigit() and os.path.isdir(os.path.join(self.case_root, f))]
+        if not any(int(folder) > 0 for folder in time_folders):
+            print("Error: No time folder > 0 exists.")
+            return False
 
         # Check log files for "FOAM FATAL ERROR"
         log_files = [f for f in os.listdir(self.case_root) if f.startswith("log.")]
@@ -262,9 +264,9 @@ class OpenFoamController:
 
             # Fill missing data
             if all(v is not None for v in [range_x, range_y, range_z, x_min, x_max, y_min, y_max, z_min, z_max]):
-                x_coords = np.round(np.linspace(x_min, x_max, range_x)).astype(int)
-                y_coords = np.round(np.linspace(y_min, y_max, range_y)).astype(int)
-                z_coords = np.round(np.linspace(z_min, z_max, range_z)).astype(int)
+                x_coords = np.linspace(x_min, x_max, range_x, dtype=int)
+                y_coords = np.linspace(y_min, y_max, range_y, dtype=int)
+                z_coords = np.linspace(z_min, z_max, range_z, dtype=int)
 
                 mesh = pd.DataFrame(np.array(np.meshgrid(x_coords, y_coords, z_coords, indexing='ij')).T.reshape(-1, 3),
                                     columns=["x", "y", "z"])
@@ -478,6 +480,26 @@ class OpenFoamController:
         else:
             print("Failed to read snappyHexMeshDict.")
 
+    def update_dimension(self, x_size, y_size, z_size):
+        """
+        Update dimension in blockMeshDict.
+        :param x_size:
+        :param y_size:
+        :param z_size:
+        :return:
+        """
+        block_mesh_dict = self.read_block_mesh_dict()
+        if block_mesh_dict is not None:
+
+            # go slightly larger than the size
+            x_size_larger = x_size + x_size//10 if x_size//10 > 0 else x_size + 1
+            y_size_larger = y_size + y_size//10 if y_size//10 > 0 else y_size + 1
+            z_size_larger = z_size + z_size//10 if z_size//10 > 0 else z_size + 1
+
+            block_mesh_dict["blocks"][2] = [x_size_larger, y_size_larger, z_size_larger]
+            block_mesh_dict.writeFile()
+        else:
+            print("Failed to read blockMeshDict.")
 
 if __name__ == "__main__":
     case_root = "openFoamCase"

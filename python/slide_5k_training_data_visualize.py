@@ -7,8 +7,8 @@ from mpl_toolkits.mplot3d import Axes3D
 
 def visualize_data_from_csv(csv_file_path):
     # Load the data
-    open_foam_case_root = "openFoamCase"
-    df = pd.read_csv(os.path.join(open_foam_case_root, csv_file_path))
+
+    df = pd.read_csv(csv_file_path)
 
     # Filter the data to include only rows where bm is 1
     filtered_df = df[df['bm'] == 0]
@@ -48,6 +48,7 @@ def visualize_data_from_csv(csv_file_path):
 
 
 # Assuming the CSV file is named 'result_preprocessed_time.csv' and located in the current directory
-time = 1
+time = 50
+open_foam_case_root = "../5k_training_dataset/-25_0_-100_-75_0_10"
 csv_file_path = 'result_preprocessed_' + str(time) + '.csv'
-visualize_data_from_csv(csv_file_path)
+visualize_data_from_csv(os.path.join(open_foam_case_root, csv_file_path))
