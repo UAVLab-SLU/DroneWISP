@@ -1,6 +1,8 @@
 import json
 
 from flask import Flask, request
+import threading
+import socket
 
 app = Flask(__name__)
 
@@ -56,6 +58,21 @@ def cfd_status():
     # TODO: return the current openfoam case status
 
 
+def udp_server():
+    # Create a UDP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    # Bind the socket to the port
+    server_address = ('', 3001)
+    sock.bind(server_address)
+    print("UDP server listening on port 3001")
+
+    while True:
+        data, address = sock.recvfrom(4096)
+        print("Hello")
+
 
 if __name__ == '__main__':
+    # Start the UDP server in a new thread
+    udp_thread = threading.Thread(target=udp_server)
+    udp_thread.start()
     app.run(host='0.0.0.0',port=5001)
