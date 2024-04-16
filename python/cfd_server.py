@@ -1,15 +1,16 @@
 import json
+import struct
 
 from flask import Flask, request
 import threading
 import socket
 import logging
 from flask_cors import CORS
-from python.cfd_manager import CFDManager
+from cfd_manager import CFDManager
 
 app = Flask(__name__)
 log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
+#log.setLevel(logging.ERROR)
 CORS(app)
 # hardcoded for now, use environment variables in production
 UE_ADDRESS = "192.168.1.181"
@@ -18,7 +19,7 @@ DRV_ADDRESS = "192.168.1.181"
 DRV_PORT = 5000
 MY_INBOUND_UDP_PORT = 3001
 
-manager = CFDManager()
+cfd_manager = CFDManager()
 ascii_art = """
      ______        ______  ____  
     |  _ \ \      / /  _ \/ ___| 
@@ -44,9 +45,21 @@ def wind():
     request_json = request.get_json()
     print("request_json:", request_json)
 
-    # TODO: read the wind data from the U file
+    # dummy coordinates
+    cartesian_coordinates = {
+        "x": 1,
+        "y": 2,
+        "z": 3
+    }
+
+    # TODO: read wind data from preprocessed df
     dummy_wind_data = json.dumps({"wind": [1, 2, 3]})
-    return dummy_wind_data
+    #return dummy_wind_data
+
+    wind_vector = cfd_manager.get_wind_vector_from_df(cartesian_coordinates)
+
+    return json.dumps({"wind": wind_vector, "cartesian_coordinates": cartesian_coordinates})
+
 
 
 @app.route('/lla', methods=['POST'])
@@ -71,11 +84,19 @@ def lla():
         "from_port": MY_INBOUND_UDP_PORT  # DRV will not send this, add it on our side
     }
 
+    # verify the request format
+    if not all(key in request_json for key in data.keys()):
+        return json.dumps({"status": "error", "message": "invalid request format"})
+    else:
+        data = request_json
+
     print("request_json:", request_json)
     json_data = json.dumps(data)
     # send the LLA data to the UE side UDP port
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.sendto(json_data.encode(), (UE_ADDRESS, UE_PORT))
+
+    return json.dumps({"status": "success"})
 
 
 @app.route('/openfoam', methods=['POST'])
@@ -89,18 +110,7 @@ def configure_openfoam_case():
     request_json = request.get_json()
     print("request_json:", request_json)
     # TODO: update the openfoam case with the wind data
-
-
-@app.route('/mesh', methods=['POST'])
-def setup_mesh_using_binary_mask():
-    """
-    Setup the mesh using the binary mask
-    :returns: success message, ready to run the simulation
-    """
-    # get binary mask from request
-    request_json = request.get_json()
-    print("request_json:", request_json)
-    # TODO: setup the mesh using the binary mask
+    cfd_manager.update_openfoam_case(request_json)
 
 
 @app.route('/cfd', methods=['GET'])
@@ -110,29 +120,24 @@ def cfd_status():
     :returns: status of the CFD simulation [running, completed, idle]
     """
     # TODO: return the current openfoam case status
-    state = manager.get_state()
+    state = cfd_manager.get_state()
     return json.dumps({"state": state})
 
-
-def udp_server():
-    # Create a UDP socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # Bind the socket to the port
-    server_address = ('', 3001)
-    sock.bind(server_address)
-    print("UDP server listening on port 3001")
-
-    while True:
-        data, address = sock.recvfrom(4096)
-        # TODO: geometry Binary mask from UE
-        # 1. check current state of CFD simulation
-        # 2. if idle, then convert the binary mask to stl and save to the openfoam case
-
-        print("Hello")
+@app.route('/bm', methods=['POST'])
+def binary_mask():
+    """
+    Receive the binary mask from the UE side
+    :returns: success message
+    """
+    # get binary mask from request
+    request_json = request.get_json()
+    if cfd_manager.replace_mesh_with_binary_mask(request_json):
+        return json.dumps({"status": "success"})
+    else:
+        print("Error replacing mesh with binary mask")
+        return json.dumps({"status": "error"})
 
 
 if __name__ == '__main__':
     # Start the UDP server in a new thread
-    udp_thread = threading.Thread(target=udp_server)
-    udp_thread.start()
     app.run(host='0.0.0.0', port=5001)

@@ -7,7 +7,7 @@ import open3d as o3d
 import plotly.express as px
 from matplotlib import pyplot
 from mpl_toolkits import mplot3d
-
+import trimesh
 
 class StlMeshUtils:
 
@@ -520,6 +520,29 @@ class StlMeshUtils:
         bbox = hexahedron.extract_surface()
         clipped_mesh = mesh.clip_surface(bbox)
         clipped_mesh.save(output_stl_file_path)
+
+
+    @staticmethod
+    def binary_mask_to_trimesh(point_list):
+        """
+        Convert a binary mask to an STL file by generating a cube for each '1'.
+        Then, export the combined mesh as an STL file.
+        :param binary_mask: a list of points where each point is a tuple (x, y, z) representing a '1' in the binary mask.
+        :return: TriMesh object representing the binary mask.
+        """
+
+        def create_cube_at_position(position, cube_size=1):
+            cube_mesh = trimesh.creation.box(extents=(cube_size, cube_size, cube_size))
+            cube_mesh.apply_translation(np.array(position) * cube_size)
+            return cube_mesh
+        cubes = []
+        for point in point_list:
+            cube = create_cube_at_position(point)
+            cubes.append(cube)
+        combined_mesh = trimesh.util.concatenate(cubes)
+        # Export the combined mesh as an STL file
+        # combined_mesh.export(output_filename)
+        return combined_mesh
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ import subprocess
 import PyFoam
 import pandas as pd
 from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
-from stl.mesh_utils import StlMeshUtils
+from python.stl.mesh_utils import StlMeshUtils
 
 
 class OpenFoamController:
@@ -17,7 +17,8 @@ class OpenFoamController:
         :param case_root: OpenFOAM case root
         """
         self.case_root = case_root
-        self.stl_path = os.path.join(self.case_root, "constant", "geometry", "combined.stl")
+        self.foam_stl_path = os.path.join("python", self.case_root, "constant", "geometry", "combined.stl")
+        self.mesh_utils = StlMeshUtils()
 
     # async
 
@@ -337,7 +338,7 @@ class OpenFoamController:
         """
         return round(np.linalg.norm(wind_vector), 2)
 
-    def replace_mesh(self, stl_file_name):
+    def replace_mesh_with_file(self, stl_file_name):
         """
         Replace mesh in OpenFOAM case
         :param stl_file_name: stl file name
@@ -358,6 +359,26 @@ class OpenFoamController:
 
         # clean temp file
         os.system("rm " + temp_filename)
+
+    def replace_mesh_with_binary_mask(self, binary_mask):
+        """
+        Replace mesh in OpenFOAM case with binary mask
+        :param list of tuple binary_mask: [(x, y, z), ...]
+        :return:
+        """
+        # convert json array to a list of tuples
+
+        trimesh_obj = self.mesh_utils.binary_mask_to_trimesh(binary_mask)
+        try:
+            trimesh_obj.export(self.foam_stl_path)
+            return True
+        except Exception as e:
+            print("Error: replace mesh with binary mask failed")
+            print(e)
+            return False
+
+
+
 
     def __read_k(self, time):
         """
