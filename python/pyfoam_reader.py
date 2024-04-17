@@ -121,6 +121,16 @@ class OpenFoamController:
         array = np.array(internal_field)
         return array
 
+    def read_u_orig(self):
+        """
+        Read velocity from OpenFOAM case
+        """
+        filename = os.path.join(self.case_root, "0", "U.orig")
+        if not os.path.exists(filename):
+            print("File do not exist: ", filename)
+            return None
+        return ParsedParameterFile(filename)
+
     def read_block_mesh_dict(self):
         """
         Read block mesh dictionary from OpenFOAM case.
@@ -312,32 +322,6 @@ class OpenFoamController:
         content["internalField"] = "uniform (" + str(velocity) + " 0 0)"
         content.writeFile()
 
-    def set_wind_vector(self, wind_vector):
-        """
-        Set wind vector in OpenFOAM case
-        :param wind_vector: tuple of wind vector (x, y, z)
-        :return: None
-        """
-
-    def calculate_rotation(self, wind_vector):
-        """
-        Calculate rotation in degrees clockwise from x-axis to make wind vector parallel to x-axis
-        :param wind_vector: tuple of wind vector (x, y, z)
-        :return: rotation in degrees
-        """
-        x, y, z = wind_vector
-        rotation = np.arctan2(y, x) * 180 / np.pi
-        return round(rotation, 2)
-
-    @staticmethod
-    def calculate_velocity(wind_vector):
-        """
-        Calculate velocity in x-axis
-        :param wind_vector: tuple of wind vector (x, y, z)
-        :return: combined velocity
-        """
-        return round(np.linalg.norm(wind_vector), 2)
-
     def replace_mesh_with_file(self, stl_file_name):
         """
         Replace mesh in OpenFOAM case
@@ -376,9 +360,6 @@ class OpenFoamController:
             print("Error: replace mesh with binary mask failed")
             print(e)
             return False
-
-
-
 
     def __read_k(self, time):
         """
@@ -513,18 +494,100 @@ class OpenFoamController:
         if block_mesh_dict is not None:
 
             # go slightly larger than the size
-            x_size_larger = x_size + x_size//10 if x_size//10 > 0 else x_size + 1
-            y_size_larger = y_size + y_size//10 if y_size//10 > 0 else y_size + 1
-            z_size_larger = z_size + z_size//10 if z_size//10 > 0 else z_size + 1
+            x_size_larger = x_size + x_size // 10 if x_size // 10 > 0 else x_size + 1
+            y_size_larger = y_size + y_size // 10 if y_size // 10 > 0 else y_size + 1
+            z_size_larger = z_size + z_size // 10 if z_size // 10 > 0 else z_size + 1
 
             block_mesh_dict["blocks"][2] = [x_size_larger, y_size_larger, z_size_larger]
             block_mesh_dict.writeFile()
         else:
             print("Failed to read blockMeshDict.")
 
+    def change_openfoam_inlet_face(self, wind_vector):
+        """
+        Change the inlet face in OpenFOAM case based on wind direction.
+        :param wind_vector: tuple, The wind speed vector (x, y, z)
+        :return: None
+        """
+
+        # read U file
+        u_file = os.path.join(self.case_root, "0", "U.orig")
+        u_content = ParsedParameterFile(u_file).content
+
+        # read blockMeshDict
+        block_mesh_dict_file = os.path.join(self.case_root, "system", "blockMeshDict")
+        block_mesh_dict_content = ParsedParameterFile(block_mesh_dict_file).content
+
+        # figure out the wind direction component
+        zero_count = wind_vector.count(0)
+        # case 1: one direction wind, two components are 0
+        if zero_count == 2:
+            # find the non-zero component
+            non_zero_index = wind_vector.index([i for i in wind_vector if i != 0][0])
+            # set the U file
+            u_content["boundaryField"]["inlet"]["value"] = f"uniform (0 0 0)"
+            u_content["boundaryField"]["inlet"]["value"][non_zero_index] = f"uniform {wind_vector[non_zero_index]}"
+            u_content.writeFile()
+
+            # set the blockMeshDict
+            block_mesh_dict_content["blocks"][0][non_zero_index] = f"simpleGrading (1 1 1)"
+            block_mesh_dict_content.writeFile()
+
+
+        # case 2: two direction wind, one component is 0
+        elif zero_count == 1:
+            pass
+
+        # case 3: three direction wind, no component is 0
+        else:
+            pass
+
+    def update_wind(self, x, y, z, wind_type="uniform", turb_percent=0):
+        """
+        Update the wind in OpenFOAM case by changing boundary face type, flow velocity, and turbulence properties.
+        :param x:
+        :param y:
+        :param z:
+        :param wind_type:
+        :param turb_percent:
+        :return:
+        """
+        # figure out the wind direction component
+        u_orig = self.read_u_orig()
+        zero_count = [x, y, z].count(0)
+        # case 1: one direction wind, two components are 0
+        if zero_count == 2:
+            # figure out the non-zero component
+            if x != 0:
+                # x direction wind
+                # is it positive or negative
+                if x > 0:
+                    # positive x direction wind
+                    u_orig.content["boundaryField"]["inlet"]["value"] = f"uniform ({x} 0 0)"
+                else:
+                    # negative x direction wind
+                    temp_inlet = u_orig.content["boundaryField"]["inlet"]
+                    temp_outlet = u_orig.content["boundaryField"]["outlet"]
+                    u_orig.content["boundaryField"]["inlet"] = temp_outlet
+                    u_orig.content["boundaryField"]["outlet"] = temp_inlet
+                    u_orig.content["boundaryField"]["outlet"]["value"] = f"uniform ({x} 0 0)"
+            elif y != 0:
+                pass
+                # TODO: y direction wind, need to fiddle with blockMeshDict
+
+        # TODO: case 2: two direction wind, one component is 0
+
+
+        # save
+        u_orig.writeFile()
+
+
 if __name__ == "__main__":
     case_root = "openFoamCase"
     foam = OpenFoamController(case_root)
+    u_orig = foam.read_u_orig()
+    print(u_orig)
+    foam.update_wind(10, 0, 0)
     ####################### This part can automate things
     # value_vertices = [(-100, -100, 0),
     #                   (100, -100, 0),
@@ -551,8 +614,8 @@ if __name__ == "__main__":
     # t = 10
     # foam.save_cell_and_velocity(t, "cell_and_velocity_" + str(t) + ".csv")
 
-    foam.pinn_save_all_result_and_preprocess(range_x=50, range_y=50, range_z=25, x_min=-25, x_max=25, y_min=-25,
-                                             y_max=25, z_min=0, z_max=25)
+    # foam.pinn_save_all_result_and_preprocess(range_x=50, range_y=50, range_z=25, x_min=-25, x_max=25, y_min=-25,
+    #                                          y_max=25, z_min=0, z_max=25)
 
     # works
     # foam.update_shm_inside_point("(-30 -30 0)")

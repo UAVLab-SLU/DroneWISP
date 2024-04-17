@@ -10,24 +10,24 @@ class FoamCSVReader:
     Read OpenFOAM csv data, exported using paraView, data does not need to be preprocessed
     """
 
-    def __init__(self, path, csv_filename):
+    def __init__(self, openfoam_root):
         """
         instantiate a FoamCSVReader, read the csv file using pandas and preprocess the data,
         preprocess includes:
         1. casting float coordinates to integers
         2. removing duplicate rows
         3. sorting by coordinates in descending order
-        :param path: str, path to the root directory of the OpenFOAM data
+        :param openfoam_root: str, path to the root directory of the OpenFOAM data
         :param csv_filename: str, name of the csv file
         """
-        self.foam_data_root = os.path.abspath(path)
-        self.csv_filename = csv_filename
-        self.df = self.read_csv(csv_filename)
+        self.openfoam_root = openfoam_root
+        # self.csv_filename = csv_filename
+        # self.df = self.read_csv(csv_filename)
         # self.preprocess()
 
     def read_csv(self, filename):
         start_read = time.time()
-        df = pd.read_csv(self.foam_data_root + os.sep + filename)
+        df = pd.read_csv(self.openfoam_root + os.sep + filename)
         print("read csv to memory time: " + str(time.time() - start_read))
         return df
 
@@ -125,7 +125,7 @@ class FoamCSVReader:
         next_number = number + 1
         next_filename = self.csv_filename[:underscore_index + 1] + str(next_number) + ".csv"
 
-        if not os.path.isfile(self.foam_data_root + os.sep + next_filename):
+        if not os.path.isfile(self.openfoam_root + os.sep + next_filename):
             # If the next file does not exist, do nothing
             print("CSV file for next time step does not exist.")
             return None
@@ -200,7 +200,7 @@ class FoamCSVReader:
             return int(x) + 1
 
     def save_df_to_csv(self, filename):
-        self.df.to_csv(self.foam_data_root + os.sep + filename, index=False)
+        self.df.to_csv(self.openfoam_root + os.sep + filename, index=False)
 
     def strong_preprocess_and_replace(self):
         """
