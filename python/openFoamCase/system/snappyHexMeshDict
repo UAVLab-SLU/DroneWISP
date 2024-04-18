@@ -21,8 +21,8 @@ geometry
   refinementBox
   {
     type searchableBox;
-    min (-1 -0.7 0);
-    max (8 0.7 2.5);
+    min (0 0 0);
+    max (1 1 1);
   }
 }
 
@@ -30,7 +30,7 @@ castellatedMeshControls
 {
   maxLocalCells 100000;
   maxGlobalCells 2000000;
-  minRefinementCells 10;
+  minRefinementCells 1;
   maxLoadUnbalance 0.1;
   nCellsBetweenLevels 2;
   features
@@ -38,7 +38,7 @@ castellatedMeshControls
 
       {
         file "combined.eMesh";
-        level 2;
+        level 1;
 
       }
     );
@@ -49,7 +49,7 @@ castellatedMeshControls
       level
         (
           1
-          2
+          1
         );
       patchInfo
       {
@@ -67,20 +67,20 @@ castellatedMeshControls
     refinementBox
     {
       mode inside;
-      level 2;
+      level 1;
     }
   }
-  insidePoint (-9.4999 -25.4999 2.4300);
-  allowFreeStandingZoneFaces yes;
+  insidePoint (0 0 19);
+  allowFreeStandingZoneFaces no;
 }
 
 snapControls
 {
-  nSmoothPatch 3;
+  nSmoothPatch 1;
   tolerance 2.0;
-  nSolveIter 30;
-  nRelaxIter 5; 	// Feature snapping
-  nFeatureSnapIter 10;
+  nSolveIter 2;
+  nRelaxIter 2; 	// Feature snapping
+  nFeatureSnapIter 2;
   implicitFeatureSnap no;
   explicitFeatureSnap yes;
   multiRegionFeatureSnap no;
@@ -110,7 +110,7 @@ addLayersControls
   maxThicknessToMedialRatio 0.3;
   minMedianAxisAngle 90;
   nBufferCellsNoExtrude 0;
-  nLayerIter 50;
+  nLayerIter 5;
 } 	// Generic mesh quality settings. At any undoable phase these determine// where to undo.
 
 meshQualityControls

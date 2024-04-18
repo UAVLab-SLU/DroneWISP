@@ -12,14 +12,14 @@ convertToMeters 1;
 
 vertices
   (
-    (-50 -50 -5)
-    (50 -50 -5)
-    (50 50 -5)
-    (-50 50 -5)
-    (-50 -50 20)
-    (50 -50 20)
-    (50 50 20)
-    (-50 50 20)
+    (-51 -51 -6)
+    (51 -51 -6)
+    (51 51 -6)
+    (-51 51 -6)
+    (-51 -51 21)
+    (51 -51 21)
+    (51 51 21)
+    (-51 51 21)
   );
 
 blocks
@@ -37,34 +37,28 @@ blocks
       7
     )
 
-(101 101 25)    simpleGrading
+(103 103 28)    simpleGrading
     (1 1 1)
   );
 
 boundary
   (
-    frontAndBack
-
+    front
     {
-      type patch;
-      faces
+        type wall;
+        faces
         (
-
-          (
-            3
-            7
-            6
-            2
-          )
-
-          (
-            1
-            5
-            4
-            0
-          )
+            (1 5 4 0)
         );
+    }
 
+    back
+    {
+        type wall;
+        faces
+        (
+            (3 7 6 2)
+        );
     }
     inlet
 

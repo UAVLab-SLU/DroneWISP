@@ -46,7 +46,22 @@ boundaryField
         value           $internalField;
     }
 
-    #include "include/frontBackUpperPatches"
+        upperWall
+    {
+        type            kqRWallFunction;
+        value           $internalField;
+    }
+
+    front
+    {
+        type            kqRWallFunction;
+        value           $internalField;
+    }
+    back
+    {
+        type            kqRWallFunction;
+        value           $internalField;
+    }
 }
 
 

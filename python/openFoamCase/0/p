@@ -45,7 +45,19 @@ boundaryField
         type            zeroGradient;
     }
 
-    #include "include/frontBackUpperPatches"
+    upperWall
+    {
+        type            zeroGradient;
+    }
+
+    front
+    {
+        type            zeroGradient;
+    }
+    back
+    {
+        type            zeroGradient;
+    }
 }
 
 // ************************************************************************* //

@@ -41,11 +41,25 @@ boundaryField
 
     combinedGroup
     {
-        type            omegaWallFunction;
-        value           $internalField;
+        type slip;
     }
 
-    #include "include/frontBackUpperPatches"
+    upperWall
+{
+    type            omegaWallFunction;
+        value           $internalField;
+}
+
+front
+{
+    type            omegaWallFunction;
+        value           $internalField;
+}
+back
+{
+    type            omegaWallFunction;
+        value           $internalField;
+}
 }
 
 
