@@ -354,7 +354,7 @@ class OpenFoamController:
 
         trimesh_obj = self.mesh_utils.binary_mask_to_trimesh(binary_mask)
         try:
-            trimesh_obj.export(self.foam_stl_path)
+            trimesh_obj.export(self.foam_stl_path, 'stl_ascii')
             return True
         except Exception as e:
             print("Error: replace mesh with binary mask failed")
@@ -545,14 +545,7 @@ class OpenFoamController:
     def update_wind(self, x, y, z, wind_type="uniform", turb_percent=0):
         """
         Update the wind in OpenFOAM case by changing boundary face type, flow velocity, and turbulence properties.
-        :param x:
-        :param y:
-        :param z:
-        :param wind_type:
-        :param turb_percent:
-        :return:
         """
-        # figure out the wind direction component
         u_orig = self.read_u_orig()
         zero_count = [x, y, z].count(0)
         # case 1: one direction wind, two components are 0
@@ -576,7 +569,11 @@ class OpenFoamController:
                 # TODO: y direction wind, need to fiddle with blockMeshDict
 
         # TODO: case 2: two direction wind, one component is 0
+        elif zero_count == 1:
+            pass
 
+        else:
+            print("Error: Invalid wind vector. Only one non-zero component is allowed.")
 
         # save
         u_orig.writeFile()

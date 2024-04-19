@@ -523,21 +523,24 @@ class StlMeshUtils:
 
 
     @staticmethod
-    def binary_mask_to_trimesh(point_list):
+    def binary_mask_to_trimesh(point_list, cube_size=1):
         """
         Convert a binary mask to an STL file by generating a cube for each '1'.
         Then, export the combined mesh as an STL file.
+        :param cube_size: the size of each cube in the binary mask.
         :param binary_mask: a list of points where each point is a tuple (x, y, z) representing a '1' in the binary mask.
         :return: TriMesh object representing the binary mask.
         """
 
-        def create_cube_at_position(position, cube_size=1):
+        def create_cube_at_position(position, cube_size):
             cube_mesh = trimesh.creation.box(extents=(cube_size, cube_size, cube_size))
             cube_mesh.apply_translation(np.array(position) * cube_size)
             return cube_mesh
         cubes = []
         for point in point_list:
-            cube = create_cube_at_position(point)
+            center_offset = (0.5 * cube_size, 0.5 * cube_size, 0.5 * cube_size)
+            point = np.array(point) + center_offset
+            cube = create_cube_at_position(point, cube_size)
             cubes.append(cube)
         combined_mesh = trimesh.util.concatenate(cubes)
         # Export the combined mesh as an STL file
