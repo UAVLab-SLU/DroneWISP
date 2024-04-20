@@ -1,0 +1,118 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  10
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 10-c4cf895ad8fa
+Exec   : snappyHexMesh -parallel -overwrite
+Date   : Apr 04 2024
+Time   : 16:18:01
+Host   : "DESKTOP-4RFGA5K"
+PID    : 269660
+I/O    : uncollated
+Case   : /home/uavlab/zhangbohan/RealisticWind/python/openFoamCase
+nProcs : 6
+Slaves : 
+5
+(
+"DESKTOP-4RFGA5K.269661"
+"DESKTOP-4RFGA5K.269662"
+"DESKTOP-4RFGA5K.269663"
+"DESKTOP-4RFGA5K.269664"
+"DESKTOP-4RFGA5K.269665"
+)
+
+Pstream initialised with:
+    floatTransfer      : 0
+    nProcsSimpleSum    : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+Read mesh in = 0.006184 s
+Reading "snappyHexMeshDict"
+
+
+Overall mesh bounding box  : (-100 -100 0) (100 100 25)
+Relative tolerance         : 1e-06
+Absolute matching distance : 0.000283945
+
+[3] 
+[3] 
+[3] --> FOAM FATAL ERROR: 
+[3] Cannot find triSurfaceMesh at "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/processor3/constant/geometry/combined.stl"
+[3] 
+[3]     From function static Foam::fileName Foam::triSurfaceMesh::checkFile(const Foam::regIOobject&, const Foam::dictionary&, bool)
+[3]     in file searchableSurfaces/triSurfaceMesh/triSurfaceMesh.C at line 104.
+[3] 
+FOAM parallel run exiting
+[3] 
+[4] 
+[4] 
+[4] --> FOAM FATAL ERROR: 
+[4] Cannot find triSurfaceMesh at "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/processor4/constant/geometry/combined.stl"
+[4] 
+[4]     From function static Foam::fileName Foam::triSurfaceMesh::checkFile(const Foam::regIOobject&, const Foam::dictionary&, bool)
+[4]     in file searchableSurfaces/triSurfaceMesh/triSurfaceMesh.C at line [0] 
+[0] 
+[0] --> FOAM FATAL ERROR: 
+[0] Cannot find triSurfaceMesh at "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/processor0/constant/geometry/combined.stl"
+[0] 
+[0]     From function static Foam::fileName Foam::triSurfaceMesh::checkFile(const Foam::regIOobject&, const Foam::dictionary&, bool)
+[0]     in file searchableSurfaces/triSurfaceMesh/triSurfaceMesh.C at line 104.
+[0] 
+FOAM parallel run exiting
+[0] 
+[1] 
+[1] 
+[1] --> FOAM FATAL ERROR: 
+[1] Cannot find triSurfaceMesh at "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/processor1/constant/geometry/combined.stl"
+[1] 
+[1]     From function static Foam::fileName Foam::triSurfaceMesh::checkFile(const Foam::regIOobject&, const Foam::dictionary&, bool)
+[1]     in file searchableSurfaces/triSurfaceMesh/triSurfaceMesh.C at line 104.
+[1] 
+FOAM parallel run exiting
+[1] 
+[2] 
+[2] 
+[2] --> FOAM FATAL ERROR: 
+[2] Cannot find triSurfaceMesh at "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/processor2/constant/geometry/combined.stl"
+[2] 
+[2]     From function static Foam::fileName Foam::triSurfaceMesh::checkFile(const Foam::regIOobject&, const Foam::dictionary&, bool)
+[2]     in file searchableSurfaces/triSurfaceMesh/triSurfaceMesh.C at line 104.
+[2] 
+FOAM parallel run exiting
+[2] 
+[5] 
+[5] 
+[5] --> FOAM FATAL ERROR: 
+[5] Cannot find triSurfaceMesh at "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/processor5/constant/geometry/combined.stl"
+[5] 
+[5]     From function static Foam::fileName Foam::triSurfaceMesh::checkFile(const Foam::regIOobject&, const Foam::dictionary&, bool)
+[5]     in file searchableSurfaces/triSurfaceMesh/triSurfaceMesh.C at line 104.
+[5] 
+FOAM parallel run exiting
+[5] 
+104.
+[4] 
+FOAM parallel run exiting
+[4] 
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 4 in communicator MPI COMMUNICATOR 3 SPLIT FROM 0
+with errorcode 1.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+[DESKTOP-4RFGA5K:269656] 5 more processes have sent help message help-mpi-api.txt / mpi-abort
+[DESKTOP-4RFGA5K:269656] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages

@@ -1,0 +1,101 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  10
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 10-c4cf895ad8fa
+Exec   : reconstructParMesh -constant
+Date   : Apr 04 2024
+Time   : 16:18:03
+Host   : "DESKTOP-4RFGA5K"
+PID    : 269748
+I/O    : uncollated
+Case   : /home/uavlab/zhangbohan/RealisticWind/python/openFoamCase
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Found 6 processor directories
+
+Reading database "openFoamCase/processor0"
+Reading database "openFoamCase/processor1"
+Reading database "openFoamCase/processor2"
+Reading database "openFoamCase/processor3"
+Reading database "openFoamCase/processor4"
+Reading database "openFoamCase/processor5"
+Time = 0s
+
+Merging mesh 0 with 1
+Merging mesh 2 with 3
+Merging mesh 4 with 5
+Merging mesh 0 with 2
+Merging mesh 0 with 4
+Reading mesh to add from "openFoamCase/processor0" for time = constant
+
+
+Reading mesh to add from "openFoamCase/processor1" for time = constant
+
+
+Reading mesh to add from "openFoamCase/processor2" for time = constant
+
+
+Reading mesh to add from "openFoamCase/processor3" for time = constant
+
+
+Reading mesh to add from "openFoamCase/processor4" for time = constant
+
+
+Reading mesh to add from "openFoamCase/processor5" for time = constant
+
+
+
+Writing merged mesh to "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/constant"
+
+Reconstructing the addressing from the processor meshes to the newly reconstructed mesh
+
+Reading processor 0 mesh from "openFoamCase/processor0"
+Writing pointProcAddressing to "openFoamCase/processor0/constant/polyMesh"
+Writing faceProcAddressing to "openFoamCase/processor0/constant/polyMesh"
+Writing cellProcAddressing to "openFoamCase/processor0/constant/polyMesh"
+
+Reading processor 1 mesh from "openFoamCase/processor1"
+Writing pointProcAddressing to "openFoamCase/processor1/constant/polyMesh"
+Writing faceProcAddressing to "openFoamCase/processor1/constant/polyMesh"
+Writing cellProcAddressing to "openFoamCase/processor1/constant/polyMesh"
+
+Reading processor 2 mesh from "openFoamCase/processor2"
+Writing pointProcAddressing to "openFoamCase/processor2/constant/polyMesh"
+Writing faceProcAddressing to "openFoamCase/processor2/constant/polyMesh"
+Writing cellProcAddressing to "openFoamCase/processor2/constant/polyMesh"
+
+Reading processor 3 mesh from "openFoamCase/processor3"
+Writing pointProcAddressing to "openFoamCase/processor3/constant/polyMesh"
+Writing faceProcAddressing to "openFoamCase/processor3/constant/polyMesh"
+Writing cellProcAddressing to "openFoamCase/processor3/constant/polyMesh"
+
+Reading processor 4 mesh from "openFoamCase/processor4"
+Writing pointProcAddressing to "openFoamCase/processor4/constant/polyMesh"
+Writing faceProcAddressing to "openFoamCase/processor4/constant/polyMesh"
+Writing cellProcAddressing to "openFoamCase/processor4/constant/polyMesh"
+
+Reading processor 5 mesh from "openFoamCase/processor5"
+Writing pointProcAddressing to "openFoamCase/processor5/constant/polyMesh"
+Writing faceProcAddressing to "openFoamCase/processor5/constant/polyMesh"
+Writing cellProcAddressing to "openFoamCase/processor5/constant/polyMesh"
+
+Time = 10s
+
+No mesh.
+
+Time = 20s
+
+No mesh.
+
+End.
+

@@ -2,9 +2,19 @@ import os
 import numpy as np
 import subprocess
 import PyFoam
-from PyFoam.runDictionary.ParsedParameterFile import ParsedParameterFile
-from stl.mesh_utils import StlMeshUtils
+from PyFoam.RunDictionary.SolutionFile import SolutionFile
 import math
+
+
+def calculate_rotation(wind_vector):
+    """
+    Calculate rotation in degrees clockwise from x-axis to make wind vector parallel to x-axis
+    :param wind_vector: tuple of wind vector (x, y, z)
+    :return: rotation in degrees
+    """
+    x, y, z = wind_vector
+    rotation = np.arctan2(y, x) * 180 / np.pi
+    return round(rotation, 2)
 
 
 class OpenFoamController:
@@ -141,16 +151,6 @@ class OpenFoamController:
         :return: None
         """
 
-    def calculate_rotation(self, wind_vector):
-        """
-        Calculate rotation in degrees clockwise from x-axis to make wind vector parallel to x-axis
-        :param wind_vector: tuple of wind vector (x, y, z)
-        :return: rotation in degrees
-        """
-        x, y, z = wind_vector
-        rotation = np.arctan2(y, x) * 180 / np.pi
-        return round(rotation, 2)
-
     @staticmethod
     def calculate_velocity(wind_vector):
         """
@@ -207,48 +207,134 @@ class OpenFoamController:
         """
         # TODO: Seyun's task
 
-        if wind_direction_string not in ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]:
-            raise ValueError(
-                "Invalid wind direction. Expected one of: N, NE, E, SE, S, SW, W, NW")
+    solve = SolutionFile("python/openFoamCase/system", "fvSolution")
+    match wind_direction_string:
+        case "N":
+            solve.replaceBoundary("lowerWall", wind_speed)
+        case "NE":
+            solve.replaceBoundary("lowerWall", wind_speed)
+            solve.replaceBoundary("inlet", wind_speed)
+        case "E":
+            solve.replaceBoundary("inlet", wind_speed)
+        case "SE":
+            solve.replaceBoundary("frontAndBack", wind_speed)
+            solve.replaceBoundary("inlet", wind_speed)
+        case "S":
+            solve.replaceBoundary("frontAndBack", wind_speed)
+        case "SW":
+            solve.replaceBoundary("frontAndBack", wind_speed)
+            solve.replaceBoundary("inlet", wind_speed)
+        case "W":
+            solve.replaceBoundary("outlet", wind_speed)
+        case "NW":
+            solve.replaceBoundary("lowerWall", wind_speed)
+            solve.replaceBoundary("inlet", wind_speed)
 
-        # read 0/include/initialConditions
+    # read 0/include/initialConditions
 
-        # change flowVelocity based on input direction, if N : (0, 10, 0), if E : (10, 0, 0)
-
-        # save the file
-
-        # part2: change inlet face
-        # read system/blockMeshDict
-
-        # change inlet face based on input direction
-
-        # hint: (3 7 6 2) is a face formed by vertices 3, 7, 6, 2, those are vertice indices in the vertices list in the same file
-
-        # move those (a b c d) to the correct definition of inlet face
-
-        # save the file
-
-        ## Example : assume I got "W" and 10 as input
+    # change flowVelocity based on input direction, if N : (0, 10, 0), if E : (10, 0, 0)
 
 
+if wind_direction_string == "N":
+    flowVelocity = [0, 10, 0]
+elif wind_direction_string == "NE":
+    flowVelocity = [10, 10, 0]
+elif wind_direction_string == "E":
+    flowVelocity = [10, 0, 0]
+elif wind_direction_string == "SE":
+    flowVelocity = [10, -10, 0]
+elif wind_direction_string == "S":
+    flowVelocity = [0, -10, 0]
+elif wind_direction_string == "SW":
+    flowVelocity = [-10, -10, 0]
+elif wind_direction_string == "W":
+    flowVelocity = [-10, 0, 0]
+elif wind_direction_string == "NW":
+    flowVelocity = [-10, 10, 0]
+else:
+    raise ValueError(
+        "Invalid wind direction. Expected one of: N, NE, E, SE, S, SW, W, NW")
 
-        # U_file = ParsedParameterFile(self.openfoam_case + "/0/U")
-        # inlet_faces = U_file.content['boundaryField']['inlet']
-        # wind_vector_str = f"uniform ({self.wind_speeds} 0 0)"
-        # inlet_faces['value'] = wind_vector_str
-        # U_file.writeFile()
-        # self.wind_direction = wind_direction_string
-        # if wind_direction_string in ["NE", "SE", "SW", "NW"]:
-        #     # Adjust for diagonal wind direction
-        #     self.wind_speeds = wind_speed / math.sqrt(2)
-        #
-        # # Manipulate OpenFOAM files
-        # U_file = ParsedParameterFile(self.openfoam_case + "/0/U")
-        # inlet_faces = U_file.content['boundaryField']['inlet']
-        # inlet_faces['value'].setUniform(self.wind_speed)
-        # wind_vector_str = f"uniform ({self.wind_speed} 0 0)"
-        # inlet_faces['value'] = wind_vector_str
-        # U_file.writeFile()
+    # save the file
+read_file.writeFile()
+
+# part2: change inlet face
+# read system/blockMeshDict
+blockMeshDict = ParsedParameterFile(self.case_root + "/system/blockMeshDict")
+vertices = blockMeshDict.content['vertices']
+blocks = blockMeshDict.content['blocks']
+boundary = blockMeshDict.content['boundary']
+print(boundary)
+
+# change inlet face based on input direction
+if wind_direction_string == "N":
+    inlet_face = boundary['lowerWall']
+    inlet_face['faces'] = "(3 7 6 2)"
+elif wind_direction_string == "NE":
+    inlet_face1 = boundary['lowerWall']
+    inlet_face1['faces'] = "(3 7 6 2)"
+    inlet_face2 = boundary['inlet']
+    inlet_face2['faces'] = "(7 8 4 6)"
+elif wind_direction_string == "E":
+    inlet_face = boundary['inlet']
+    inlet_face['faces'] = "(7 8 4 6)"
+elif wind_direction_string == "SE":
+    inlet_face1 = boundary['frontAndBack']
+    inlet_face1['faces'] = "(7 8 4 6)"
+    inlet_face2 = boundary['inlet']
+    inlet_face2['faces'] = "(8 5 1 4)"
+elif wind_direction_string == "S":
+    inlet_face = boundary['frontAndBack']
+    inlet_face['faces'] = "(8 5 1 4)"
+elif wind_direction_string == "SW":
+    inlet_face1 = boundary['frontAndBack']
+    inlet_face1['faces'] = "(8 5 1 4)"
+    inlet_face2 = boundary['outlet']
+    inlet_face2['faces'] = "(5 3 2 1)"
+elif wind_direction_string == "W":
+    inlet_face = boundary['outlet']
+    inlet_face['faces'] = "(5 3 2 1)"
+elif wind_direction_string == "NW":
+    inlet_face1 = boundary['lowerWall']
+    inlet_face1['faces'] = "(5 3 2 1)"
+    inlet_face2 = boundary['outlet']
+    inlet_face2['faces'] = "(3 7 6 2)"
+else:
+    raise ValueError(
+        "Invalid wind direction. Expected one of: N, NE, E, SE, S, SW, W, NW")
+
+# hint: (3 7 6 2) is a face formed by vertices 3, 7, 6, 2, those are vertice indices in the vertices list in the same file
+# hint: you need to find the correct vertices for the inlet face based on the input direction
+
+
+# move those (a b c d) to the correct definition of inlet face
+
+
+# save the file
+blockMeshDict.writeFile()
+
+## Example : assume I got "W" and 10 as input
+# wind_speed = 10
+# wind_direction_string = "W"
+
+
+# U_file = ParsedParameterFile(self.openfoam_case + "/0/U")
+# inlet_faces = U_file.content['boundaryField']['inlet']
+# wind_vector_str = f"uniform ({self.wind_speeds} 0 0)"
+# inlet_faces['value'] = wind_vector_str
+# U_file.writeFile()
+# self.wind_direction = wind_direction_string
+# if wind_direction_string in ["NE", "SE", "SW", "NW"]:
+#     # Adjust for diagonal wind direction
+#     self.wind_speeds = wind_speed / math.sqrt(2)
+#
+# # Manipulate OpenFOAM files
+# U_file = ParsedParameterFile(self.openfoam_case + "/0/U")
+# inlet_faces = U_file.content['boundaryField']['inlet']
+# inlet_faces['value'].setUniform(self.wind_speed)
+# wind_vector_str = f"uniform ({self.wind_speed} 0 0)"
+# inlet_faces['value'] = wind_vector_str
+# U_file.writeFile()
 
 
 if __name__ == "__main__":

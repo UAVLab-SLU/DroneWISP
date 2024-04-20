@@ -1,0 +1,88 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  10
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 10-c4cf895ad8fa
+Exec   : patchSummary -parallel
+Date   : Apr 04 2024
+Time   : 16:18:02
+Host   : "DESKTOP-4RFGA5K"
+PID    : 269683
+I/O    : uncollated
+Case   : /home/uavlab/zhangbohan/RealisticWind/python/openFoamCase
+nProcs : 6
+Slaves : 
+5
+(
+"DESKTOP-4RFGA5K.269684"
+"DESKTOP-4RFGA5K.269685"
+"DESKTOP-4RFGA5K.269686"
+"DESKTOP-4RFGA5K.269687"
+"DESKTOP-4RFGA5K.269688"
+)
+
+Pstream initialised with:
+    floatTransfer      : 0
+    nProcsSimpleSum    : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+Time = 0s
+
+Valid fields:
+    volScalarField	nut
+    volVectorField	U
+    volScalarField	k
+    volScalarField	p
+    volScalarField	omega
+
+patch	: frontAndBack
+wall	: upperWall
+    scalar		nut		calculated
+    scalar		k		slip
+    scalar		p		slip
+    scalar		omega		slip
+    vector		U		slip
+
+patch	: inlet
+    scalar		nut		calculated
+    scalar		k		fixedValue
+    scalar		p		zeroGradient
+    scalar		omega		fixedValue
+    vector		U		fixedValue
+
+patch	: outlet
+    scalar		nut		calculated
+    scalar		k		inletOutlet
+    scalar		p		fixedValue
+    scalar		omega		inletOutlet
+    vector		U		inletOutlet
+
+wall	: lowerWall
+    scalar		nut		nutkWallFunction
+    scalar		k		kqRWallFunction
+    scalar		p		zeroGradient
+    scalar		omega		omegaWallFunction
+    vector		U		fixedValue
+
+group	: processor
+    scalar		nut		processor
+    scalar		k		processor
+    scalar		p		processor
+    scalar		omega		processor
+    vector		U		processor
+
+End
+
+Finalising parallel run

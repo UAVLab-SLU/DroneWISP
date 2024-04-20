@@ -1,0 +1,153 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  10
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 10-c4cf895ad8fa
+Exec   : simpleFoam -parallel
+Date   : Apr 04 2024
+Time   : 16:18:02
+Host   : "DESKTOP-4RFGA5K"
+PID    : 269730
+I/O    : uncollated
+Case   : /home/uavlab/zhangbohan/RealisticWind/python/openFoamCase
+nProcs : 6
+Slaves : 
+5
+(
+"DESKTOP-4RFGA5K.269731"
+"DESKTOP-4RFGA5K.269732"
+"DESKTOP-4RFGA5K.269733"
+"DESKTOP-4RFGA5K.269734"
+"DESKTOP-4RFGA5K.269735"
+)
+
+Pstream initialised with:
+    floatTransfer      : 0
+    nProcsSimpleSum    : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+
+SIMPLE: No convergence criteria found
+
+Reading field p
+
+Reading field U
+
+Reading/calculating face flux field phi
+
+Selecting viscosity model constant
+Selecting turbulence model type RAS
+Selecting RAS turbulence model kOmegaSST
+Selecting patchDistMethod meshWave
+RAS
+{
+    model           kOmegaSST;
+    turbulence      on;
+    printCoeffs     on;
+    alphaK1         0.85;
+    alphaK2         1;
+    alphaOmega1     0.5;
+    alphaOmega2     0.856;
+    gamma1          0.555556;
+    gamma2          0.44;
+    beta1           0.075;
+    beta2           0.0828;
+    betaStar        0.09;
+    a1              0.31;
+    b1              1;
+    c1              10;
+    F3              false;
+}
+
+No MRF models present
+
+No fvModels present
+No fvConstraints present
+
+Starting time loop
+
+streamlines streamlines:
+    automatic track length specified through number of sub cycles : 5
+
+Reading surface description:
+    yNormal
+
+forces forceCoeffs1:
+--> FOAM Warning : 
+    From function Foam::labelHashSet Foam::polyBoundaryMesh::patchSet(const Foam::UList<Foam::wordRe>&, bool, bool) const
+    in file meshes/polyMesh/polyBoundaryMesh/polyBoundaryMesh.C at line 834
+    Cannot find any patch or group names matching combinedGroup
+    Not including porosity effects
+forceCoeffs forceCoeffs1:
+--> FOAM Warning : 
+    From function Foam::labelHashSet Foam::polyBoundaryMesh::patchSet(const Foam::UList<Foam::wordRe>&, bool, bool) const
+    in file meshes/polyMesh/polyBoundaryMesh/polyBoundaryMesh.C at line 834
+    Cannot find any patch or group names matching combinedGroup
+    Not including porosity effects
+streamlines streamlines write:
+    Seeded 20 particles
+    Sampled 2520 locations
+forceCoeffs forceCoeffs1 write:
+    Cm    = 0
+    Cd    = 0
+    Cl    = 0
+    Cl(f) = 0
+    Cl(r) = 0
+
+Time = 10s
+
+smoothSolver:  Solving for Ux, Initial residual = 0.206407, Final residual = 0.0199939, No Iterations 13
+smoothSolver:  Solving for Uy, Initial residual = 0.34438, Final residual = 0.03095, No Iterations 19
+smoothSolver:  Solving for Uz, Initial residual = 0.529713, Final residual = 0.0500717, No Iterations 15
+GAMG:  Solving for p, Initial residual = 1, Final residual = 0.00480959, No Iterations 7
+time step continuity errors : sum local = 8.70698e-09, global = -3.63672e-10, cumulative = -3.63672e-10
+smoothSolver:  Solving for omega, Initial residual = 0.0984886, Final residual = 0.00969946, No Iterations 3
+smoothSolver:  Solving for k, Initial residual = 1, Final residual = 0.098425, No Iterations 3
+ExecutionTime = 0.084717 s  ClockTime = 0 s
+
+streamlines streamlines write:
+    Seeded 20 particles
+    Sampled 2520 locations
+forceCoeffs forceCoeffs1 write:
+    Cm    = 0
+    Cd    = 0
+    Cl    = 0
+    Cl(f) = 0
+    Cl(r) = 0
+
+Time = 20s
+
+smoothSolver:  Solving for Ux, Initial residual = 0.408078, Final residual = 0.0383113, No Iterations 15
+smoothSolver:  Solving for Uy, Initial residual = 0.879218, Final residual = 0.0846574, No Iterations 19
+smoothSolver:  Solving for Uz, Initial residual = 0.754921, Final residual = 0.0671347, No Iterations 15
+GAMG:  Solving for p, Initial residual = 0.0800544, Final residual = 0.000799457, No Iterations 6
+time step continuity errors : sum local = 1.34732e-08, global = 1.54032e-09, cumulative = 1.17664e-09
+smoothSolver:  Solving for omega, Initial residual = 0.0950423, Final residual = 0.00941746, No Iterations 3
+smoothSolver:  Solving for k, Initial residual = 0.839911, Final residual = 0.0831015, No Iterations 3
+ExecutionTime = 0.1283 s  ClockTime = 1 s
+
+streamlines streamlines write:
+    Seeded 20 particles
+    Sampled 2520 locations
+forceCoeffs forceCoeffs1 write:
+    Cm    = 0
+    Cd    = 0
+    Cl    = 0
+    Cl(f) = 0
+    Cl(r) = 0
+
+End
+
+Finalising parallel run

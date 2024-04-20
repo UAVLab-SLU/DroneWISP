@@ -1,0 +1,117 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  10
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 10-c4cf895ad8fa
+Exec   : decomposePar -copyZero
+Date   : Apr 04 2024
+Time   : 16:18:01
+Host   : "DESKTOP-4RFGA5K"
+PID    : 269654
+I/O    : uncollated
+Case   : /home/uavlab/zhangbohan/RealisticWind/python/openFoamCase
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+
+
+Decomposing mesh region0
+
+Create mesh
+
+Calculating distribution of cells
+Selecting decomposer hierarchical
+
+Finished decomposition in 0.003465 s
+
+Calculating original mesh data
+
+Distributing cells to processors
+
+Distributing faces to processors
+
+Distributing points to processors
+
+Constructing processor meshes
+
+Processor 0
+    Number of cells = 2083
+    Number of faces shared with processor 1 = 135
+    Number of faces shared with processor 3 = 101
+    Number of processor patches = 2
+    Number of processor faces = 236
+    Number of boundary faces = 1044
+
+Processor 1
+    Number of cells = 2083
+    Number of faces shared with processor 0 = 135
+    Number of faces shared with processor 2 = 124
+    Number of faces shared with processor 4 = 82
+    Number of processor patches = 3
+    Number of processor faces = 341
+    Number of boundary faces = 917
+
+Processor 2
+    Number of cells = 2084
+    Number of faces shared with processor 1 = 124
+    Number of faces shared with processor 4 = 1
+    Number of faces shared with processor 5 = 100
+    Number of processor patches = 3
+    Number of processor faces = 225
+    Number of boundary faces = 1039
+
+Processor 3
+    Number of cells = 2083
+    Number of faces shared with processor 0 = 101
+    Number of faces shared with processor 4 = 125
+    Number of processor patches = 2
+    Number of processor faces = 226
+    Number of boundary faces = 1038
+
+Processor 4
+    Number of cells = 2083
+    Number of faces shared with processor 1 = 82
+    Number of faces shared with processor 2 = 1
+    Number of faces shared with processor 3 = 125
+    Number of faces shared with processor 5 = 135
+    Number of processor patches = 4
+    Number of processor faces = 343
+    Number of boundary faces = 919
+
+Processor 5
+    Number of cells = 2084
+    Number of faces shared with processor 2 = 100
+    Number of faces shared with processor 4 = 135
+    Number of processor patches = 2
+    Number of processor faces = 235
+    Number of boundary faces = 1043
+
+Number of processor faces = 803
+Max number of cells = 2084 (0.032% above average 2083.33)
+Max number of processor patches = 4 (50% above average 2.66667)
+Max number of faces between processors = 343 (28.1445% above average 267.667)
+
+Time = 0s
+Processor 0: copying "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/0"
+ to "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/processor0/0"
+Processor 1: copying "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/0"
+ to "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/processor1/0"
+Processor 2: copying "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/0"
+ to "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/processor2/0"
+Processor 3: copying "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/0"
+ to "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/processor3/0"
+Processor 4: copying "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/0"
+ to "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/processor4/0"
+Processor 5: copying "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/0"
+ to "/home/uavlab/zhangbohan/RealisticWind/python/openFoamCase/processor5/0"
+
+End
+
