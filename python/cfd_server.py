@@ -102,8 +102,7 @@ def lla():
 @app.route('/openfoam', methods=['POST'])
 def configure_openfoam_case():
     """
-    Configure the OpenFOAM case
-    input: wind speed, wind direction, wind type
+    Configure the OpenFOAM case, request is json containing all the necessary data
     :returns: success message, ready to run the simulation, does not start the simulation, wait for the binary mask
     """
     # get boundary vertices from request

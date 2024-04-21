@@ -25,8 +25,8 @@ boundaryField
   outlet
   {
     type inletOutlet;
-    inletValue uniform (10 0 0);
     value uniform (10 0 0);
+    inletValue uniform (10 0 0);
   }
   front
   {
@@ -52,5 +52,5 @@ boundaryField
   {
     type noSlip;
   }
-} 	// ************************************************************************* //
+}
 

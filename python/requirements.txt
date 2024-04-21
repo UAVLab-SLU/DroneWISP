@@ -1,6 +1,6 @@
 matplotlib==3.7.1
 plotly==5.14.1
-PyFoam==2022.9
+PyFoam==2023.7
 flask==2.3.2
 empy==3.3.4
 flask_cors
