@@ -24,7 +24,11 @@ boundaryField
     //- Set patchGroups for constraint patches
     #includeEtc "caseDicts/setConstraintTypes"
 
-    #include "include/fixedInlet"
+    inlet
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
 
     outlet
     {
@@ -45,22 +49,23 @@ boundaryField
     }
 
     upperWall
-{
-    type            omegaWallFunction;
-        value           $internalField;
-}
+    {
+        type            omegaWallFunction;
+            value       $internalField;
+    }
 
-front
-{
-    type            omegaWallFunction;
-        value           $internalField;
-}
-back
-{
-    type            omegaWallFunction;
-        value           $internalField;
-}
-}
+    front
+    {
+        type            omegaWallFunction;
+            value       $internalField;
+    }
+
+    back
+    {
+        type            omegaWallFunction;
+            value       $internalField;
+    }
+    }
 
 
 // ************************************************************************* //

@@ -9,12 +9,10 @@ FoamFile
  object U;
 }
 
-#include        "include/initialConditions"
-
+#include "include/initialConditions"
 dimensions [ 0 1 -1 0 0 0 0 ];
 
-internalField   uniform $flowVelocity;
-
+internalField uniform $flowVelocity;
 
 boundaryField
 {
@@ -27,10 +25,25 @@ boundaryField
   outlet
   {
     type inletOutlet;
-    inletValue uniform (0 0 0);
+    inletValue uniform (10 0 0);
+    value uniform (10 0 0);
+  }
+  front
+  {
+    type fixedValue;
+    value uniform (10 0 0);
+  }
+  back
+  {
+    type fixedValue;
     value uniform (10 0 0);
   }
   lowerWall
+  {
+    type fixedValue;
+    value uniform (10 0 0);
+  }
+  upperWall
   {
     type fixedValue;
     value uniform (10 0 0);
@@ -39,21 +52,5 @@ boundaryField
   {
     type noSlip;
   }
-upperWall
-{
-    type fixedValue;
-    value uniform (10 0 0);
-}
-
-front
-{
-    type fixedValue;
-    value uniform (10 0 0);
-}
-back
-{
-    type fixedValue;
-    value uniform (10 0 0);
-}
 } 	// ************************************************************************* //
 

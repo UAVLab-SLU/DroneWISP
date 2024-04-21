@@ -24,8 +24,11 @@ boundaryField
     //- Set patchGroups for constraint patches
     #includeEtc "caseDicts/setConstraintTypes"
 
-    //- Define inlet conditions
-    #include "include/fixedInlet"
+    inlet
+    {
+        type  fixedValue;
+        value $internalField;
+    }
 
     outlet
     {

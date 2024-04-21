@@ -36,34 +36,16 @@ blocks
       6
       7
     )
-
-(103 103 28)    simpleGrading
+    (103 103 28)
+    simpleGrading
     (1 1 1)
   );
 
 boundary
   (
-    front
-    {
-        type wall;
-        faces
-        (
-            (1 5 4 0)
-        );
-    }
-
-    back
-    {
-        type wall;
-        faces
-        (
-            (3 7 6 2)
-        );
-    }
     inlet
 
     {
-      type patch;
       faces
         (
 
@@ -74,12 +56,12 @@ boundary
             3
           )
         );
+      type patch;
 
     }
     outlet
 
     {
-      type patch;
       faces
         (
 
@@ -90,28 +72,44 @@ boundary
             1
           )
         );
+      type patch;
 
     }
-    lowerWall
+    front
 
     {
-      type wall;
       faces
         (
 
           (
-            0
-            3
-            2
             1
+            5
+            4
+            0
           )
         );
+      type wall;
+
+    }
+    back
+
+    {
+      faces
+        (
+
+          (
+            3
+            7
+            6
+            2
+          )
+        );
+      type wall;
 
     }
     upperWall
 
     {
-      type wall;
       faces
         (
 
@@ -122,6 +120,23 @@ boundary
             7
           )
         );
+      type wall;
+
+    }
+    lowerWall
+
+    {
+      faces
+        (
+
+          (
+            0
+            3
+            2
+            1
+          )
+        );
+      type wall;
 
     }
   ); 	// ************************************************************************* //
