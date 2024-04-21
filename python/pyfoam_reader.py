@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import subprocess
-import PyFoam
 import pandas as pd
 from PyFoam.RunDictionary.ParsedBlockMeshDict import ParsedBlockMeshDict
 from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
@@ -23,7 +22,6 @@ class OpenFoamController:
         self.mesh_utils = StlMeshUtils()
 
     # async
-
     def run(self):
         """
         Run "Allrun" in OpenFOAM case
@@ -355,25 +353,6 @@ class OpenFoamController:
             df.to_csv(save_path, index=False)
             print(f"Saved preprocessed data to {save_path}")
 
-    def __set_wind_velocity(self, velocity):
-        """
-        Set wind velocity in OpenFOAM case
-        :param velocity: wind velocity value, float or int
-        :return: None
-        """
-
-        # check type
-        if not isinstance(velocity, float) and not isinstance(velocity, int):
-            print("Wind velocity must be float or int")
-            return
-        filename = os.path.join(self.case_root, "0", "U.orig")
-
-        # TODO: this does not work
-        content = PyFoam.RunDictionary.ParsedParameterFile.ParsedParameterFile(filename)
-        # print(content)
-        content["internalField"] = "uniform (" + str(velocity) + " 0 0)"
-        content.writeFile()
-
     def replace_mesh_with_file(self, stl_file_name):
         """
         Replace mesh in OpenFOAM case
@@ -423,8 +402,7 @@ class OpenFoamController:
         case_time = os.path.join(self.case_root, str(time))
         filename = os.path.join(case_time, "k")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         content = ParsedParameterFile(filename).content
         internal_field = content["internalField"]
         array = np.array(internal_field)
@@ -440,8 +418,7 @@ class OpenFoamController:
         case_time = os.path.join(self.case_root, str(time))
         filename = os.path.join(case_time, "nut")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         content = ParsedParameterFile(filename).content
         internal_field = content["internalField"]
         array = np.array(internal_field)
@@ -457,8 +434,7 @@ class OpenFoamController:
         case_time = os.path.join(self.case_root, str(time))
         filename = os.path.join(case_time, "omega")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         content = ParsedParameterFile(filename).content
         internal_field = content["internalField"]
         array = np.array(internal_field)
@@ -473,8 +449,7 @@ class OpenFoamController:
         case_time = os.path.join(self.case_root, str(time))
         filename = os.path.join(case_time, "p")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         content = ParsedParameterFile(filename).content
         internal_field = content["internalField"]
         array = np.array(internal_field)
@@ -487,12 +462,12 @@ class OpenFoamController:
         """
         filename = os.path.join(self.case_root, "system", "snappyHexMeshDict")
         if not os.path.exists(filename):
-            print("File do not exist:", filename)
-            return None
+            raise ValueError("File do not exist:", filename)
 
         return ParsedParameterFile(filename)
 
-    def calculate_shm_inside_point(self, vertices):
+    @staticmethod
+    def calculate_shm_inside_point(vertices):
         """
         Calculate inside point for snappyHexMeshDict from vertices.
         The center of the box on the x, y plane with a magic offset is calculated,
@@ -532,7 +507,7 @@ class OpenFoamController:
             snappy_hex_mesh_dict["castellatedMeshControls"]["insidePoint"] = new_inside_point
             snappy_hex_mesh_dict.writeFile()
         else:
-            print("Failed to read snappyHexMeshDict.")
+            raise ValueError("Failed to read snappyHexMeshDict.")
 
     def update_dimension(self, x_size, y_size, z_size):
         """
@@ -553,55 +528,24 @@ class OpenFoamController:
             block_mesh_dict["blocks"][2] = [x_size_larger, y_size_larger, z_size_larger]
             block_mesh_dict.writeFile()
         else:
-            print("Failed to read blockMeshDict.")
-
-    def change_openfoam_inlet_face(self, wind_vector):
-        """
-        Change the inlet face in OpenFOAM case based on wind direction.
-        :param wind_vector: tuple, The wind speed vector (x, y, z)
-        :return: None
-        """
-
-        # read U file
-        u_file = os.path.join(self.case_root, "0", "U.orig")
-        u_content = ParsedParameterFile(u_file).content
-
-        # read blockMeshDict
-        block_mesh_dict_file = os.path.join(self.case_root, "system", "blockMeshDict")
-        block_mesh_dict_content = ParsedParameterFile(block_mesh_dict_file).content
-
-        # figure out the wind direction component
-        zero_count = wind_vector.count(0)
-        # case 1: one direction wind, two components are 0
-        if zero_count == 2:
-            # find the non-zero component
-            non_zero_index = wind_vector.index([i for i in wind_vector if i != 0][0])
-            # set the U file
-            u_content["boundaryField"]["inlet"]["value"] = f"uniform (0 0 0)"
-            u_content["boundaryField"]["inlet"]["value"][non_zero_index] = f"uniform {wind_vector[non_zero_index]}"
-            u_content.writeFile()
-
-            # set the blockMeshDict
-            block_mesh_dict_content["blocks"][0][non_zero_index] = f"simpleGrading (1 1 1)"
-            block_mesh_dict_content.writeFile()
-
-
-        # case 2: two direction wind, one component is 0
-        elif zero_count == 1:
-            pass
-
-        # case 3: three direction wind, no component is 0
-        else:
-            pass
+            raise ValueError("Failed to read blockMeshDict.")
 
     def update_wind(self, x, y, z, wind_type="uniform", turb_percent=0):
         """
-        Update the wind in OpenFOAM case by changing boundary face type, flow velocity, and turbulence properties.
+        Update the wind in OpenFOAM case by changing boundary face values.
+        subsequent update will overwrite the previous update
+        :param x: number, wind speed in x direction
+        :param y: number, wind speed in y direction
+        :param z: number, wind speed in z direction
+        :param wind_type: str, type of wind, "uniform" or "turbulent"
+        :param turb_percent: number, percentage of turbulence
         """
 
         if z != 0:
-            print("Error: z direction wind is not supported yet.")
-            return
+            raise ValueError("z direction wind is not supported yet.")
+
+        if x == 0 and y == 0 and z == 0:
+            raise ValueError("Wind speed is zero.")
 
         self.update_block_mesh_dict_bounds_from_wind_vector(x, y, z)
         self.update_u_orig_from_wind_vector(x, y, z)
@@ -620,11 +564,12 @@ class OpenFoamController:
         """
 
         if z != 0:
-            print("Error: z direction wind is not supported yet.")
-            return
+            raise ValueError("Error: z direction wind is not supported yet.")
 
         u_orig = self.read_empty_u_orig()
         zero_count = [x, y, z].count(0)
+        if zero_count == 3:
+            raise ValueError("Wind speed is zero.")
 
         if zero_count == 2:
             # figure out the non-zero component
@@ -749,7 +694,7 @@ class OpenFoamController:
                 u_orig.content["boundaryField"]["inlet"]["inletValue"] = f"uniform ({x} {y} 0)"
 
         else:
-            print("Error: three direction wind is not supported yet.")
+            raise ValueError("three direction wind is not supported yet.")
 
         u_orig.content["boundaryField"]["lowerWall"]["type"] = "fixedValue"
         u_orig.content["boundaryField"]["lowerWall"]["value"] = f"uniform ({x} {y} 0)"
@@ -774,8 +719,7 @@ class OpenFoamController:
 
         if z != 0:
             # not supported yet
-            print("Error: z direction wind is not supported yet.")
-            return
+            raise ValueError("Error: z direction wind is not supported yet.")
 
         if zero_count == 2:
             # one direction wind
@@ -818,6 +762,12 @@ class OpenFoamController:
 
             block_mesh_dict.content["boundary"][6] = "back"
             block_mesh_dict.content["boundary"][7] = dict(type="patch", faces=[[3, 7, 6, 2]])
+
+        elif zero_count == 3:
+            raise ValueError("Wind speed is zero.")
+
+        else:
+            raise ValueError("three direction wind is not supported yet.")
 
         block_mesh_dict.content["boundary"][10] = "lowerWall"
         block_mesh_dict.content["boundary"][11] = dict(type="wall", faces=[[0, 3, 2, 1]])
@@ -873,8 +823,8 @@ class OpenFoamController:
         Update k file based on wind vector components.
         """
         if z != 0:
-            print("Error: z direction wind is not supported yet.")
-            return
+            raise ValueError("Error: z direction wind is not supported yet.")
+
 
         k_orig = self.read_empty_k_orig()
         zero_count = [x, y, z].count(0)
@@ -1000,7 +950,7 @@ class OpenFoamController:
                 k_orig.content["boundaryField"]["inlet"]["inletValue"] = "$internalField"
 
         else:
-            print("Error: three direction wind is not supported yet.")
+            raise ValueError("Error: three direction wind is not supported yet.")
 
         k_orig.content["boundaryField"]["lowerWall"]["type"] = "kqRWallFunction"
         k_orig.content["boundaryField"]["lowerWall"]["value"] = "$internalField"
@@ -1021,8 +971,7 @@ class OpenFoamController:
         nut = self.read_empty_nut_orig()
 
         if z != 0:
-            print("Error: z direction wind is not supported yet.")
-            return
+            raise ValueError("Error: z direction wind is not supported yet.")
 
         zero_count = [x, y, z].count(0)
 
@@ -1061,7 +1010,7 @@ class OpenFoamController:
             nut.content["boundaryField"]["front"]["type"] = "calculated"
 
         else:
-            print("Error: three direction wind is not supported yet.")
+            raise ValueError("Error: three direction wind is not supported yet.")
 
         nut_run = self.read_nut_orig()
         nut_run.writeFile(nut.content)
@@ -1077,8 +1026,7 @@ class OpenFoamController:
         """
 
         if z != 0:
-            print("Error: z direction wind is not supported yet.")
-            return
+            raise ValueError("Error: z direction wind is not supported yet.")
 
         omega_orig = self.read_empty_omega_orig()
         zero_count = [x, y, z].count(0)
@@ -1204,7 +1152,7 @@ class OpenFoamController:
                 omega_orig.content["boundaryField"]["inlet"]["inletValue"] = "$internalField"
 
         else:
-            print("Error: three direction wind is not supported yet.")
+            raise ValueError("Error: three direction wind is not supported yet.")
 
         omega_orig.content["boundaryField"]["lowerWall"]["type"] = "omegaWallFunction"
         omega_orig.content["boundaryField"]["lowerWall"]["value"] = "$internalField"
@@ -1220,29 +1168,25 @@ class OpenFoamController:
     def read_p_orig(self):
         filename = os.path.join(self.case_root, "0", "p")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         return ParsedParameterFile(filename)
 
     def read_empty_p_orig(self):
         filename = os.path.join(self.empty_openfoam_case_root, "0", "p")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         return ParsedParameterFile(filename)
 
     def read_k_orig(self):
         filename = os.path.join(self.case_root, "0", "k")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         return ParsedParameterFile(filename)
 
     def read_empty_k_orig(self):
         filename = os.path.join(self.empty_openfoam_case_root, "0", "k")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         return ParsedParameterFile(filename)
 
 
@@ -1253,13 +1197,17 @@ if __name__ == "__main__":
     foam.update_wind(10, 0, 0)
     #foam.run()
     #print(foam.check_run_valid())
-    # for x in [10, -10]:
-    #     for y in [10, -10]:
+
+    # for x in [10, -10, 0]:
+    #     for y in [10, -10, 0]:
     #         foam.clean()
     #         foam.update_wind(x, y, 0)
+    #         print("testing: x=", x, " y=", y, " z=", 0)
     #         foam.run()
     #         if not foam.check_run_valid():
-    #             print("Failed run for wind: x=", x, " y=", y)
+    #             print("Fail")
+    #         else:
+    #             print("Pass")
 
     ####################### This part can automate things
     # value_vertices = [(-100, -100, 0),
