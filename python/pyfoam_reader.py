@@ -17,7 +17,7 @@ class OpenFoamController:
         :param case_root: OpenFOAM case root
         """
         self.case_root = case_root
-        self.foam_stl_path = os.path.join("python", self.case_root, "constant", "geometry", "combined.stl")
+        self.foam_stl_path = os.path.join(self.case_root, "constant", "geometry", "combined.stl")
         self.empty_openfoam_case_root = "openFoamCaseEmpty"
         self.mesh_utils = StlMeshUtils()
 
@@ -98,8 +98,7 @@ class OpenFoamController:
         case_time = os.path.join(self.case_root, str(time))
         filename = os.path.join(case_time, "C")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         content = ParsedParameterFile(filename).content
         internal_field = content["internalField"]
         array = np.array(internal_field)
@@ -114,8 +113,7 @@ class OpenFoamController:
         case_time = os.path.join(self.case_root, str(time))
         filename = os.path.join(case_time, "U")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         content = ParsedParameterFile(filename).content
         internal_field = content["internalField"]
         array = np.array(internal_field)
@@ -127,8 +125,7 @@ class OpenFoamController:
         """
         filename = os.path.join(self.case_root, "0", "U.orig")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         return ParsedParameterFile(filename)
 
     def read_empty_u_orig(self):
@@ -137,8 +134,7 @@ class OpenFoamController:
         """
         filename = os.path.join(self.empty_openfoam_case_root, "0", "U.orig")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         return ParsedParameterFile(filename)
 
     def read_nut_orig(self):
@@ -147,8 +143,7 @@ class OpenFoamController:
         """
         filename = os.path.join(self.case_root, "0", "nut")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         return ParsedParameterFile(filename)
 
     def read_empty_nut_orig(self):
@@ -157,8 +152,7 @@ class OpenFoamController:
         """
         filename = os.path.join(self.empty_openfoam_case_root, "0", "nut")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         return ParsedParameterFile(filename)
 
     def read_omega_orig(self):
@@ -167,8 +161,7 @@ class OpenFoamController:
         """
         filename = os.path.join(self.case_root, "0", "omega")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         return ParsedParameterFile(filename)
 
     def read_empty_omega_orig(self):
@@ -177,8 +170,7 @@ class OpenFoamController:
         """
         filename = os.path.join(self.empty_openfoam_case_root, "0", "omega")
         if not os.path.exists(filename):
-            print("File do not exist: ", filename)
-            return None
+            raise ValueError("File do not exist: ", filename)
         return ParsedParameterFile(filename)
 
     def read_block_mesh_dict(self):
@@ -187,9 +179,7 @@ class OpenFoamController:
         """
         filename = os.path.join(self.case_root, "system", "blockMeshDict")
         if not os.path.exists(filename):
-            print("File do not exist:", filename)
-            return None
-
+            raise ValueError("File do not exist:", filename)
         return ParsedBlockMeshDict(filename)
 
     @staticmethod

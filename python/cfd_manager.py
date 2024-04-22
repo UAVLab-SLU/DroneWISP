@@ -1,3 +1,5 @@
+import requests
+
 from pyfoam_reader import OpenFoamController
 from openfoam_csv_reader import FoamCSVReader
 import threading
@@ -104,6 +106,16 @@ class CFDManager:
                     return False
             list_vertex.append((vertex['x'], vertex['y'], vertex['z']))
 
+        self.range_x = request_json['x_length'] * 2 + 1
+        self.range_y = request_json['y_length'] * 2 + 1
+        self.range_z = request_json['z_length']
+        self.x_min = min([vertex['x'] for vertex in vertices])
+        self.x_max = max([vertex['x'] for vertex in vertices])
+        self.y_min = min([vertex['y'] for vertex in vertices])
+        self.y_max = max([vertex['y'] for vertex in vertices])
+        self.z_min = min([vertex['z'] for vertex in vertices])
+        self.z_max = max([vertex['z'] for vertex in vertices])
+
         self.openfoam_controller.update_vertices(list_vertex)
         self.openfoam_controller.update_dimension(request_json['x_length'] * 2 + 1, request_json['y_length'] * 2 + 1,
                                                   request_json['z_length'])
@@ -112,15 +124,7 @@ class CFDManager:
 
         self.openfoam_case_ready = True
         if self.openfoam_case_ready and self.stl_mesh_ready:
-            self.range_x = request_json['x_length'] * 2 + 1
-            self.range_y = request_json['y_length'] * 2 + 1
-            self.range_z = request_json['z_length']
-            self.x_min = min([vertex['x'] for vertex in vertices])
-            self.x_max = max([vertex['x'] for vertex in vertices])
-            self.y_min = min([vertex['y'] for vertex in vertices])
-            self.y_max = max([vertex['y'] for vertex in vertices])
-            self.z_min = min([vertex['z'] for vertex in vertices])
-            self.z_max = max([vertex['z'] for vertex in vertices])
+
             self.run_simulation_and_preprocess_thread()
         return True
 
@@ -140,6 +144,8 @@ class CFDManager:
                 self.y_min is None or self.y_max is None or
                 self.z_min is None or self.z_max is None):
             print("Variables are not set")
+            print(self.range_x, self.range_y, self.range_z, self.x_min, self.x_max, self.y_min, self.y_max, self.z_min,
+                  self.z_max)
             return
 
         if not self.openfoam_case_ready or not self.stl_mesh_ready:
@@ -170,7 +176,8 @@ class CFDManager:
             self.foam_csv_reader.rwds_load_first_csv(int(self.openfoam_controller.get_time_folders()[0]))
 
             print("Ready to serve wind data")
-            self.state = "ready"  # Set self.state to "ready" after the thread completes
+
+            requests.post("http://192.168.1.181:5000/cfdDoneNotify") # TODO: hard coded DRV ip
 
         simulation_thread = threading.Thread(target=target_function)
         simulation_thread.start()
@@ -193,11 +200,5 @@ class CFDManager:
         vel = self.foam_csv_reader.get_spacial_temporal_velocity_next_time_step(cartesian_coordinates)
         return vel
 
-if __name__ == "__main__":
-    def mock_test():
-        cfd_manager = CFDManager()
-
-        # initial state
-        assert cfd_manager.get_state() == "idle"
 
 

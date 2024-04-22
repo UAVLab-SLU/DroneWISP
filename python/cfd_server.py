@@ -45,21 +45,23 @@ def wind():
     request_json = request.get_json()
     print("request_json:", request_json)
 
-    # dummy coordinates
-    cartesian_coordinates = {
-        "x": 1,
-        "y": 2,
-        "z": 3
-    }
+    # Structure check
+    if not all(key in request_json for key in ["x", "y", "z"]):
+        return json.dumps({"error": "Missing keys in request"})
 
-    # TODO: read wind data from preprocessed df
-    dummy_wind_data = json.dumps({"wind": [1, 2, 3]})
-    #return dummy_wind_data
+    # check if coordinates are float or int
+    if not all(isinstance(i, (int, float)) for i in [request_json["x"], request_json["y"], request_json["z"]]):
+        return json.dumps({"error": "Coordinates are not int or float"})
 
-    wind_vector = cfd_manager.get_wind_vector_from_df([
-        cartesian_coordinates["x"], cartesian_coordinates["y"], cartesian_coordinates["z"]])
+    cartesian_coordinates = [request_json["x"], request_json["y"], request_json["z"]]
 
-    return json.dumps({"wind": wind_vector, "cartesian_coordinates": cartesian_coordinates})
+    print("cartesian_coordinates:", cartesian_coordinates)
+
+    wind_vector = cfd_manager.get_wind_vector_from_df(cartesian_coordinates)
+
+    print("wind_vector:", wind_vector)
+
+    return json.dumps({"x": wind_vector[0], "y": wind_vector[1], "z": wind_vector[2]})
 
 
 @app.route('/openfoam', methods=['POST'])
@@ -83,7 +85,6 @@ def cfd_status():
     Check the status of the CFD simulation
     :returns: status of the CFD simulation [running, completed, idle]
     """
-    # TODO: return the current openfoam case status
     state = cfd_manager.get_state()
     return json.dumps({"state": state})
 
