@@ -206,19 +206,36 @@ class OpenFoamController:
         Update vertices in the blockMeshDict.
         :param new_vertices: List of new vertex coordinates as strings.
         """
+        if not isinstance(new_vertices, list):
+            raise ValueError("new_vertices must be a list.")
+        if len(new_vertices) != 8:
+            raise ValueError("There must be exactly 8 vertices.")
+
+        # convert to string if not already
+        if not all(isinstance(v, str) for v in new_vertices):
+            new_vertices = self.vertices_to_string(new_vertices)
+
+        print("updating vertices to", new_vertices)
         block_mesh_dict = self.read_block_mesh_dict()
         if block_mesh_dict is not None:
             block_mesh_dict["vertices"] = new_vertices
             block_mesh_dict.writeFile()
+            print("Updated blockMeshDict vertices.")
         else:
             print("Failed to read blockMeshDict.")
 
-    def read_cell_and_velocity(self, time):
+    def read_cell_and_velocity(self, time=None):
         """
         Read cell and velocity from OpenFOAM case
         :param time: time folder
         :return: two numpy array of cell and velocity
         """
+
+        if time is None:
+            # load latest time folder
+            time_folders = self.get_time_folders()
+            time = time_folders[-1]
+
         cell = self.__read_c(time)
         velocity = self.__read_u(time)
 
@@ -230,6 +247,15 @@ class OpenFoamController:
             return None, None
         else:
             return cell, velocity
+
+    def get_time_folders(self):
+        time_folders = [f for f in os.listdir(self.case_root) if os.path.isdir(os.path.join(self.case_root, f))]
+        # filter out non-numeric folders
+        time_folders = [f for f in time_folders if f.replace('.', '', 1).isdigit()]
+        # filter out 0 folder
+        time_folders = [f for f in time_folders if f != "0"]
+        time_folders.sort(key=float)
+        return time_folders
 
     def save_cell_and_velocity(self, time, save_path):
         """
@@ -279,14 +305,7 @@ class OpenFoamController:
         :return:
         """
         # get all time folders
-        time_folders = [f for f in os.listdir(self.case_root) if os.path.isdir(os.path.join(self.case_root, f))]
-        # filter out non-numeric folders
-        time_folders = [f for f in time_folders if f.replace('.', '', 1).isdigit()]
-        # filter out 0 folder
-        time_folders = [f for f in time_folders if f != "0"]
-
-        # Sort folders numerically by converting to float
-        time_folders.sort(key=float)
+        time_folders = self.get_time_folders()
 
         print("Time folders: ", time_folders)
         for time in time_folders:
@@ -517,6 +536,7 @@ class OpenFoamController:
         :param z_size:
         :return:
         """
+        print("Updating dimension to", x_size, y_size, z_size)
         block_mesh_dict = self.read_block_mesh_dict()
         if block_mesh_dict is not None:
 
@@ -527,6 +547,7 @@ class OpenFoamController:
 
             block_mesh_dict["blocks"][2] = [x_size_larger, y_size_larger, z_size_larger]
             block_mesh_dict.writeFile()
+            print("Updated blockMeshDict dimension.")
         else:
             raise ValueError("Failed to read blockMeshDict.")
 
@@ -547,12 +568,15 @@ class OpenFoamController:
         if x == 0 and y == 0 and z == 0:
             raise ValueError("Wind speed is zero.")
 
+        print("Updating wind to", x, y, z)
+
         self.update_block_mesh_dict_bounds_from_wind_vector(x, y, z)
         self.update_u_orig_from_wind_vector(x, y, z)
         self.update_p_from_wind_vector(x, y, z)
         self.update_k_from_wind_vector(x, y, z)
         self.update_nut_from_wind_vector(x, y, z)
         self.update_omega_from_wind_vector(x, y, z)
+        print("Updated u, p, k, nut, omega, blockMeshDict.")
 
     def update_u_orig_from_wind_vector(self, x, y, z):
         """
@@ -824,7 +848,6 @@ class OpenFoamController:
         """
         if z != 0:
             raise ValueError("Error: z direction wind is not supported yet.")
-
 
         k_orig = self.read_empty_k_orig()
         zero_count = [x, y, z].count(0)
@@ -1188,6 +1211,75 @@ class OpenFoamController:
         if not os.path.exists(filename):
             raise ValueError("File do not exist: ", filename)
         return ParsedParameterFile(filename)
+
+    def rwds_save_all_result_and_preprocess(self, range_x=None, range_y=None, range_z=None, x_min=None, x_max=None,
+                                            y_min=None, y_max=None, z_min=None, z_max=None):
+        """
+        save the all result to csv file,
+        - convert all x y z to integer precision, cast to nearest integer using manhattan distance
+        - remove duplicate data row, duplicate data is defined as same x y z after conversion, keep the first one
+        - fill the missing data with 0 on x y z, missing data is defined as missing x y z after conversion
+         within the range defined by x_min, x_max, y_min, y_max, z_min, z_max
+        - save the result to csv file header: x, y, z, u, v, w
+        :param range_x: int, number of value in x direction
+        :param range_y: int, number of value in y direction
+        :param range_z: int, number of value in z direction
+        :param x_min: int, minimum value in x direction
+        :param x_max: int, maximum value in x direction
+        :param y_min: int, minimum value in y direction
+        :param y_max: int, maximum value in y direction
+        :param z_min: int, minimum value in z direction
+        :param z_max: int, maximum value in z direction
+        """
+        # get all time folders
+        time_folders = self.get_time_folders()
+
+        print("Time folders: ", time_folders)
+        for time in time_folders:
+            cell = self.__read_c(time)
+            if cell is None:
+                print("Error: reading cell data failed")
+                continue
+
+            x, y, z = cell[:, 0], cell[:, 1], cell[:, 2]
+            velocity = self.__read_u(time)
+            if velocity is None:
+                print("Error: reading velocity data failed")
+                continue
+            u, v, w = velocity[:, 0], velocity[:, 1], velocity[:, 2]
+
+            # Combine all results and convert to DataFrame
+            data = np.column_stack((x, y, z, u, v, w))
+            df = pd.DataFrame(data, columns=["x", "y", "z", "u", "v", "w"])
+
+            # Convert x, y, z to integer precision
+            df[["x", "y", "z"]] = df[["x", "y", "z"]].round().astype(int)
+
+            # Remove duplicates based on x, y, z
+            df.drop_duplicates(subset=["x", "y", "z"], keep="first", inplace=True)
+
+            # Sort data
+            df.sort_values(by=["x", "y", "z"], inplace=True)
+
+            # Fill missing data
+            if all(v is not None for v in [range_x, range_y, range_z, x_min, x_max, y_min, y_max, z_min, z_max]):
+                x_coords = np.linspace(x_min, x_max, range_x, dtype=int)
+                y_coords = np.linspace(y_min, y_max, range_y, dtype=int)
+                z_coords = np.linspace(z_min, z_max, range_z, dtype=int)
+
+                mesh = pd.DataFrame(np.array(np.meshgrid(x_coords, y_coords, z_coords, indexing='ij')).T.reshape(-1, 3),
+                                    columns=["x", "y", "z"])
+                df = pd.merge(mesh, df, on=["x", "y", "z"], how="outer")
+                df = pd.merge(mesh, df, on=["x", "y", "z"], how="left")
+
+            # Check size
+            if range_x is not None and range_y is not None and range_z is not None:
+                if len(df) != range_x * range_y * range_z:
+                    print(f"Error: Data size is not correct. Expected {range_x * range_y * range_z}, got {len(df)}")
+
+            save_path = os.path.join(self.case_root, f"rwds_{time}.csv")
+            df.to_csv(save_path, index=False)
+            print(f"Saved preprocessed data to {save_path}")
 
 
 if __name__ == "__main__":

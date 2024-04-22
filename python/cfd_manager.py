@@ -13,7 +13,17 @@ class CFDManager:
     """
 
     def __init__(self):
-        self.state = "idle"
+        self.range_x = None
+        self.range_y = None
+        self.range_z = None
+        self.x_min = None
+        self.x_max = None
+        self.y_min = None
+        self.y_max = None
+        self.z_min = None
+        self.z_max = None
+
+        self.state = "idle"  # can be "idle", "cfd_running", "ready"
         self.openfoam_case_ready = False
         self.stl_mesh_ready = False
         self.wind_type = "uniform"  # default wind type, can be "uniform", "turbulent", "turbulent_multi_source"
@@ -31,13 +41,17 @@ class CFDManager:
         :return: boolean success or failure
         """
 
+        if self.state == "cfd_running":
+            print("CFD simulation is running, cannot replace mesh with binary mask")
+            return False
+
         # json object to list of tuples
         bm_list = [(vertex['x'], vertex['y'], vertex['z']) for vertex in request_json['maskData']]
         replace_success = self.openfoam_controller.replace_mesh_with_binary_mask(bm_list)
         if replace_success:
             self.stl_mesh_ready = True
             if self.openfoam_case_ready and self.stl_mesh_ready:
-                self.run_simulation()
+                self.run_simulation_and_preprocess_thread()
             return True
         else:
             return False
@@ -98,18 +112,64 @@ class CFDManager:
 
         self.openfoam_case_ready = True
         if self.openfoam_case_ready and self.stl_mesh_ready:
-            self.run_simulation()
+            self.range_x = request_json['x_length'] * 2 + 1
+            self.range_y = request_json['y_length'] * 2 + 1
+            self.range_z = request_json['z_length']
+            self.x_min = min([vertex['x'] for vertex in vertices])
+            self.x_max = max([vertex['x'] for vertex in vertices])
+            self.y_min = min([vertex['y'] for vertex in vertices])
+            self.y_max = max([vertex['y'] for vertex in vertices])
+            self.z_min = min([vertex['z'] for vertex in vertices])
+            self.z_max = max([vertex['z'] for vertex in vertices])
+            self.run_simulation_and_preprocess_thread()
         return True
 
-    def run_simulation(self):
+    def run_simulation_and_preprocess_thread(self):
         """
         Run the simulation on separate thread, and prepare the results
         """
 
+        # check if the simulation is already running
+        if self.state == "cfd_running":
+            print("CFD simulation is already running")
+            return
+
+        # check if variables are set
+        if (self.range_x is None or self.range_y is None or self.range_z is None or
+                self.x_min is None or self.x_max is None or
+                self.y_min is None or self.y_max is None or
+                self.z_min is None or self.z_max is None):
+            print("Variables are not set")
+            return
+
+        if not self.openfoam_case_ready or not self.stl_mesh_ready:
+            print("OpenFOAM case or STL mesh is not ready")
+            return
+
+
         # Define a target function for the thread
         def target_function():
             self.state = "cfd_running"
+            print("Running CFD simulation")
+            self.openfoam_controller.clean()
             self.openfoam_controller.run()
+
+            if self.openfoam_controller.check_run_valid():
+                print("CFD simulation completed")
+            else:
+                print("Error: invalid run")
+                self.openfoam_controller.debug_failed_run()
+                self.state = "idle"
+                return
+
+            print("Preprocessing CFD results")
+            self.openfoam_controller.rwds_save_all_result_and_preprocess(range_x=self.range_x, range_y=self.range_y,
+                                                                        range_z=self.range_z, x_min=self.x_min, y_min=self.y_min,
+                                                                        z_min=self.z_min, x_max=self.x_max, y_max=self.y_max,
+                                                                        z_max=self.z_max)
+            self.foam_csv_reader.rwds_load_first_csv(int(self.openfoam_controller.get_time_folders()[0]))
+
+            print("Ready to serve wind data")
             self.state = "ready"  # Set self.state to "ready" after the thread completes
 
         simulation_thread = threading.Thread(target=target_function)
@@ -124,5 +184,20 @@ class CFDManager:
         self.openfoam_case_ready = False
         self.openfoam_controller.clean()
 
-    def get_wind_at_cartesian(self, cartesian_coordinates):
-        pass
+    def get_wind_vector_from_df(self, cartesian_coordinates):
+        """
+        Get the wind vector from the preprocessed dataframe
+        :param cartesian_coordinates: [x, y, z] coordinates
+        :return: wind vector [x, y, z]
+        """
+        vel = self.foam_csv_reader.get_spacial_temporal_velocity_next_time_step(cartesian_coordinates)
+        return vel
+
+if __name__ == "__main__":
+    def mock_test():
+        cfd_manager = CFDManager()
+
+        # initial state
+        assert cfd_manager.get_state() == "idle"
+
+

@@ -56,47 +56,10 @@ def wind():
     dummy_wind_data = json.dumps({"wind": [1, 2, 3]})
     #return dummy_wind_data
 
-    wind_vector = cfd_manager.get_wind_vector_from_df(cartesian_coordinates)
+    wind_vector = cfd_manager.get_wind_vector_from_df([
+        cartesian_coordinates["x"], cartesian_coordinates["y"], cartesian_coordinates["z"]])
 
     return json.dumps({"wind": wind_vector, "cartesian_coordinates": cartesian_coordinates})
-
-
-
-@app.route('/lla', methods=['POST'])
-def lla():
-    """
-    Propagate the LLA data to the UE side UDP port
-    :return:
-    """
-    # get LLA data from request
-    request_json = request.get_json()
-    # expected format:
-    data = {
-        "latitude": 41.885777,
-        "longitude": -87.624166,
-        "scan_x_min": -50,  # all in meters
-        "scan_x_max": 50,
-        "scan_y_min": -50,
-        "scan_y_max": 50,
-        "scan_z_min": -5,
-        "scan_z_max": 20,
-        "scan_step": 1,
-        "from_port": MY_INBOUND_UDP_PORT  # DRV will not send this, add it on our side
-    }
-
-    # verify the request format
-    if not all(key in request_json for key in data.keys()):
-        return json.dumps({"status": "error", "message": "invalid request format"})
-    else:
-        data = request_json
-
-    print("request_json:", request_json)
-    json_data = json.dumps(data)
-    # send the LLA data to the UE side UDP port
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.sendto(json_data.encode(), (UE_ADDRESS, UE_PORT))
-
-    return json.dumps({"status": "success"})
 
 
 @app.route('/openfoam', methods=['POST'])
@@ -108,8 +71,10 @@ def configure_openfoam_case():
     # get boundary vertices from request
     request_json = request.get_json()
     print("request_json:", request_json)
-    # TODO: update the openfoam case with the wind data
-    cfd_manager.update_openfoam_case(request_json)
+    if cfd_manager.update_openfoam_case(request_json):
+        return json.dumps({"status": "success"})
+    else:
+        return json.dumps({"status": "error"})
 
 
 @app.route('/cfd', methods=['GET'])
