@@ -4,7 +4,7 @@ import subprocess
 import pandas as pd
 from PyFoam.RunDictionary.ParsedBlockMeshDict import ParsedBlockMeshDict
 from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
-from python.stl.mesh_utils import StlMeshUtils
+from stl.mesh_utils import StlMeshUtils
 
 
 class OpenFoamController:

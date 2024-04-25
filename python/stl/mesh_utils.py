@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 import pyvista as pv
 import numpy as np
-import open3d as o3d
+#import open3d as o3d
 import plotly.express as px
 from matplotlib import pyplot
 from mpl_toolkits import mplot3d
@@ -24,26 +24,26 @@ class StlMeshUtils:
         self.mesh_binary_mask_blocks = None  # list of binary mask blocks
         self.velocity_blocks = None  # list of velocity blocks
 
-    def load_convert_mesh(self, stl_file_name):
-        """
-        Load the stl file
-        :param stl_file_name:
-        :return:
-        """
-        if stl_file_name is None:
-            print("stl file name is None")
-            return
-        try:
-            self.mesh = o3d.io.read_triangle_mesh(stl_file_name)
-            self.mesh_point_cloud = self.mesh.sample_points_poisson_disk(62500)
-            self.mesh_point_cloud_array = np.asarray(self.mesh_point_cloud.points)
-            # int list of unique points
-            self.mesh_unique_points = np.int32(
-                np.unique(self.mesh_point_cloud_array.reshape(
-                    [int(self.mesh_point_cloud_array.size / 3), 3]), axis=0)
-            )
-        except:
-            print("Error loading mesh")
+    # def load_convert_mesh(self, stl_file_name):
+    #     """
+    #     Load the stl file
+    #     :param stl_file_name:
+    #     :return:
+    #     """
+    #     if stl_file_name is None:
+    #         print("stl file name is None")
+    #         return
+    #     try:
+    #         self.mesh = o3d.io.read_triangle_mesh(stl_file_name)
+    #         self.mesh_point_cloud = self.mesh.sample_points_poisson_disk(62500)
+    #         self.mesh_point_cloud_array = np.asarray(self.mesh_point_cloud.points)
+    #         # int list of unique points
+    #         self.mesh_unique_points = np.int32(
+    #             np.unique(self.mesh_point_cloud_array.reshape(
+    #                 [int(self.mesh_point_cloud_array.size / 3), 3]), axis=0)
+    #         )
+    #     except:
+    #         print("Error loading mesh")
 
     def pv_load_convert_mesh(self, stl_file_name):
         """
