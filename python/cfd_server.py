@@ -35,7 +35,7 @@ def hello():
     return 'Hello, WSL CFD Server!'
 
 
-@app.route('/wind', methods=['POST'])
+@app.route('/wind', methods=['GET'])
 def wind():
     """
     Read the wind data from the U file
@@ -43,23 +43,29 @@ def wind():
     """
     # get target location from request
     request_json = request.get_json()
-    print("request_json:", request_json)
-
     # Structure check
     if not all(key in request_json for key in ["x", "y", "z"]):
-        return json.dumps({"error": "Missing keys in request"})
+        print("Missing keys in request")
+        return json.dumps({"x": 0, "y": 0, "z": 0})
 
     # check if coordinates are float or int
     if not all(isinstance(i, (int, float)) for i in [request_json["x"], request_json["y"], request_json["z"]]):
-        return json.dumps({"error": "Coordinates are not int or float"})
+        print("Coordinates are not int or float")
+        return json.dumps({"x": 0, "y": 0, "z": 0})
 
     cartesian_coordinates = [request_json["x"], request_json["y"], request_json["z"]]
 
-    print("cartesian_coordinates:", cartesian_coordinates)
+    #print("cartesian_coordinates:", cartesian_coordinates)
 
     wind_vector = cfd_manager.get_wind_vector_from_df(cartesian_coordinates)
+    if wind_vector is None:
+        print("Wind does not exist")
+        return json.dumps({"x": 0, "y": 0, "z": 0})
 
-    print("wind_vector:", wind_vector)
+    if not isinstance(wind_vector[0], (int, float)) or not isinstance(wind_vector[1], (int, float)) or not isinstance(
+            wind_vector[2], (int, float)):
+        print("Coordinates are not int or float")
+        return json.dumps({"x": 0, "y": 0, "z": 0})
 
     return json.dumps({"x": wind_vector[0], "y": wind_vector[1], "z": wind_vector[2]})
 
@@ -87,6 +93,7 @@ def cfd_status():
     """
     state = cfd_manager.get_state()
     return json.dumps({"state": state})
+
 
 @app.route('/bm', methods=['POST'])
 def binary_mask():

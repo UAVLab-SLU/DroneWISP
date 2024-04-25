@@ -47,6 +47,8 @@ class CFDManager:
             print("CFD simulation is running, cannot replace mesh with binary mask")
             return False
 
+        self.state = "idle"
+
         # json object to list of tuples
         bm_list = [(vertex['x'], vertex['y'], vertex['z']) for vertex in request_json['maskData']]
         replace_success = self.openfoam_controller.replace_mesh_with_binary_mask(bm_list)
@@ -69,6 +71,12 @@ class CFDManager:
         'v7': {'x': 50, 'y': 50, 'z': 5}, 'v8': {'x': -50, 'y': 50, 'z': 5}}
         :return: success or failure
         """
+
+        # check if the simulation is already running
+        if self.state == "cfd_running":
+            print("CFD simulation is already running")
+            return False
+
         # type check
         if (not isinstance(request_json['wind_speed_x'], (int, float)) or
                 not isinstance(request_json['wind_speed_y'], (int, float)) or
@@ -115,6 +123,8 @@ class CFDManager:
         self.y_max = max([vertex['y'] for vertex in vertices])
         self.z_min = min([vertex['z'] for vertex in vertices])
         self.z_max = max([vertex['z'] for vertex in vertices])
+
+        self.state = "idle"
 
         self.openfoam_controller.update_vertices(list_vertex)
         self.openfoam_controller.update_dimension(request_json['x_length'] * 2 + 1, request_json['y_length'] * 2 + 1,
@@ -176,20 +186,21 @@ class CFDManager:
             self.foam_csv_reader.rwds_load_first_csv(int(self.openfoam_controller.get_time_folders()[0]))
 
             print("Ready to serve wind data")
+            self.state = "ready"
+            self.reset_flag()
 
             requests.post("http://192.168.1.181:5000/cfdDoneNotify") # TODO: hard coded DRV ip
 
         simulation_thread = threading.Thread(target=target_function)
         simulation_thread.start()
 
-    def clean_simulation(self):
+    def reset_flag(self):
         """
         Clean the simulation, on current thread
         """
 
         self.stl_mesh_ready = False
         self.openfoam_case_ready = False
-        self.openfoam_controller.clean()
 
     def get_wind_vector_from_df(self, cartesian_coordinates):
         """
@@ -197,6 +208,10 @@ class CFDManager:
         :param cartesian_coordinates: [x, y, z] coordinates
         :return: wind vector [x, y, z]
         """
+        # check if case is prepared
+        if self.state != "ready":
+            print("Wind data is not ready")
+            return None
         vel = self.foam_csv_reader.get_spacial_temporal_velocity_next_time_step(cartesian_coordinates)
         return vel
 
