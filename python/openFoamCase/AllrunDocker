@@ -1,9 +1,8 @@
 #!/bin/sh
 cd ${0%/*} || exit 1    # Run from this directory
 
-# Source tutorial run functions
-. /usr/lib/openfoam/openfoam/etc/bashrc
-. /usr/lib/openfoam/openfoam/bin/tools/RunFunctions
+. /opt/openfoam10/etc/bashrc
+. /opt/openfoam10/bin/tools/RunFunctions
 
 runApplication surfaceFeatures
 

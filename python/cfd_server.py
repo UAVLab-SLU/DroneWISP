@@ -22,7 +22,7 @@ DRV_PORT = 5000
 MY_INBOUND_UDP_PORT = 3001
 
 cfd_manager = CFDManager()
-if os.getenv("IN_DOCKER") == "True":
+if os.getenv("IN_DOCKER", False):
     ascii_art = """ 
 ______        ______  ____    ____   ___   ____ _  _______ ____  
 |  _ \ \      / /  _ \/ ___|  |  _ \ / _ \ / ___| |/ / ____|  _ \ 
