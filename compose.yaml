@@ -1,0 +1,13 @@
+services:
+  server:
+    image: rwds_server
+    stop_signal: SIGINT
+    ports:
+      - '5001:5001'
+    volumes:
+      - '${USERPROFILE:-$HOME}/Documents/AirSim:/root/Documents/AirSim'
+
+
+# run frontend
+
+# run unreal game

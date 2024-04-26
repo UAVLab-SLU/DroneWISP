@@ -1,0 +1,28 @@
+# Ignore virtual environment directories
+venv/
+.env/
+geometry_resource/
+readme_image/
+run/
+Data/
+.vscode/*
+
+# Ignore Python cache
+**/__pycache__/
+
+# Ignore data files
+*.csv
+
+# Ignore Python path files
+*.pth
+
+# Ignore Markdown documentation
+*.md
+
+*.png
+*.jpg
+*.jpeg
+
+
+# ignore all files in the .idea folder
+.idea/*

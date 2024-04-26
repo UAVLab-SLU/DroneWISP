@@ -84,6 +84,18 @@ NOT SUPPORTED
 ### install openfoam on mac
 Only possible through docker, would not recommend since majority of code requires file system access and need frequent I/O operations.
 
+### RWDS backend on docker
+build the docker image
+```bash
+cd python
+docker build -t rwds_server .
+```
+run the docker image
+(assume you are in `python` directory)
+```bash
+docker compose up
+```
+
 ## Directory Structure
 all OpenFOAM research scenarios are in the run directory
 ```bash
