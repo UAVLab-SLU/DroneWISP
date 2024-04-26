@@ -28,7 +28,11 @@ class OpenFoamController:
         :return:
         """
         print("Running OpenFOAM case: ", self.case_root)
-        proc = subprocess.Popen(["./Allrun"],
+        if os.environ.get("IN_DOCKER", False):
+            proc = subprocess.Popen(["./AllrunDocker"],
+                                    cwd=self.case_root)
+        else:
+            proc = subprocess.Popen(["./Allrun"],
                                 cwd=self.case_root)
 
         proc.wait()
@@ -38,8 +42,12 @@ class OpenFoamController:
         Clean OpenFOAM case
         :return:
         """
-        print("Cleaning OpenFOAM case: ", self.case_root)
-        proc = subprocess.Popen(["./Allclean"],
+        print("Running OpenFOAM case: ", self.case_root)
+        if os.environ.get("IN_DOCKER", False):
+            proc = subprocess.Popen(["./AllcleanDocker"],
+                                    cwd=self.case_root)
+        else:
+            proc = subprocess.Popen(["./Allclean"],
                                 cwd=self.case_root)
 
         proc.wait()

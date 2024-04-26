@@ -2,6 +2,9 @@
 cd ${0%/*} || exit 1    # Run from this directory
 
 # Source tutorial run functions
+. /usr/lib/openfoam/openfoam/etc/bashrc
+. /usr/lib/openfoam/openfoam/bin/tools/RunFunctions
+
 runApplication surfaceFeatures
 
 runApplication blockMesh
