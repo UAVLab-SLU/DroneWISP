@@ -1,13 +1,24 @@
+version: '3.8'
+
 services:
-  server:
+  rwds_server:
     image: rwds_server
     stop_signal: SIGINT
     ports:
       - '5001:5001'
+    networks:
+      - app-network
+
+  drv_server:
+    image: drv_server
+    stop_signal: SIGINT
+    ports:
+      - '5000:5000'
     volumes:
-      - '${USERPROFILE:-$HOME}/Documents/AirSim:/root/Documents/AirSim'
+      - '${USERPROFILE:-$HOME}/Documents/AirSim:/root/Documents/AirSim'  # Assuming your container expects this at /root/Documents/AirSim
+    networks:
+      - app-network
 
-
-# run frontend
-
-# run unreal game
+networks:
+  app-network:
+    driver: bridge

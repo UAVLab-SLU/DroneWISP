@@ -1,6 +1,8 @@
 import json
+import os
 import struct
 
+import requests
 from flask import Flask, request
 import threading
 import socket
@@ -20,13 +22,22 @@ DRV_PORT = 5000
 MY_INBOUND_UDP_PORT = 3001
 
 cfd_manager = CFDManager()
-ascii_art = """
-     ______        ______  ____  
-    |  _ \ \      / /  _ \/ ___| 
-    | |_) \ \ /\ / /| | | \___ \ 
-    |  _ < \ V  V / | |_| |___) |
-    |_| \_\ \_/\_/  |____/|____/ 
-    """
+if os.getenv("IN_DOCKER") == "True":
+    ascii_art = """ 
+______        ______  ____    ____   ___   ____ _  _______ ____  
+|  _ \ \      / /  _ \/ ___|  |  _ \ / _ \ / ___| |/ / ____|  _ \ 
+| |_) \ \ /\ / /| | | \___ \  | | | | | | | |   | ' /|  _| | |_) |
+|  _ < \ V  V / | |_| |___) | | |_| | |_| | |___| . \| |___|  _ < 
+|_| \_\ \_/\_/  |____/|____/  |____/ \___/ \____|_|\_\_____|_| \_\ 
+"""
+else:
+    ascii_art = """
+______        ______  ____  
+|  _ \ \      / /  _ \/ ___| 
+| |_) \ \ /\ / /| | | \___ \ 
+|  _ < \ V  V / | |_| |___) |
+|_| \_\ \_/\_/  |____/|____/ 
+"""
 print(ascii_art)
 
 
@@ -112,4 +123,17 @@ def binary_mask():
 
 if __name__ == '__main__':
     # Start the UDP server in a new thread
+    # quick check on drv server rest api, see if we can access it
+    try:
+        if os.environ.get("IN_DOCKER", False):
+            response = requests.get(f"http://drv_server:5000/state")
+        else:
+            response = requests.get(f"http://localhost:5000/state")
+        if response.status_code == 200:
+            print("Connected to DRV server")
+        else:
+            print("Error connecting to DRV server")
+    except requests.exceptions.RequestException as e:
+        print("Error connecting to DRV server:", e)
+
     app.run(host='0.0.0.0', port=5001)

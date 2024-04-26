@@ -1,6 +1,6 @@
 # Ignore virtual environment directories
-venv/
-.env/
+python/venv/
+python/.env/
 geometry_resource/
 readme_image/
 run/
@@ -10,18 +10,18 @@ Data/
 # Ignore Python cache
 **/__pycache__/
 
-# Ignore data files
-*.csv
+# Ignore all csv files
+**/*.csv
 
 # Ignore Python path files
-*.pth
+**/*.pth
 
 # Ignore Markdown documentation
-*.md
+**/*.md
 
-*.png
-*.jpg
-*.jpeg
+**/*.png
+**/*.jpg
+**/*.jpeg
 
 
 # ignore all files in the .idea folder

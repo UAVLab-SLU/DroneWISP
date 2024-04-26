@@ -1,3 +1,5 @@
+import os
+
 import requests
 
 from pyfoam_reader import OpenFoamController
@@ -188,8 +190,11 @@ class CFDManager:
             print("Ready to serve wind data")
             self.state = "ready"
             self.reset_flag()
-
-            requests.post("http://localhost:5000/cfdDoneNotify") # TODO: hard coded DRV ip
+            # if in docker IN_DOCKER = True,
+            if os.getenv("IN_DOCKER") == "True":
+                requests.post("http://drv_server:5000/cfdDoneNotify")
+            else:
+                requests.post("http://localhost:5000/cfdDoneNotify") # TODO: hard coded DRV ip
 
         simulation_thread = threading.Thread(target=target_function)
         simulation_thread.start()
