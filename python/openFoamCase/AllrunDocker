@@ -1,7 +1,7 @@
 #!/bin/sh
 cd ${0%/*} || exit 1    # Run from this directory
 
-. /opt/openfoam10/etc/bashrc
+. /opt/openfoam10/etc/bashrc  # TODO: this create a problem when running in docker, cannot open /openfoam10/etc/config.sh/functions: No such file
 . /opt/openfoam10/bin/tools/RunFunctions
 
 runApplication surfaceFeatures
@@ -18,8 +18,7 @@ runParallel $(getApplication)
 runApplication reconstructParMesh -constant
 runApplication reconstructPar
 postProcess -func writeCellCentres
-# this is a hack to get the cell centres written out, which is needed for the velocity field to coordinate mapping
-touch results.foam
+
 
 
 #------------------------------------------------------------------------------
