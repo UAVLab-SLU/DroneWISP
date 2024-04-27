@@ -32,8 +32,9 @@ class OpenFoamController:
             proc = subprocess.Popen(["./AllrunDocker"],
                                     cwd=self.case_root)
         else:
-            proc = subprocess.Popen(["./Allrun"],
-                                cwd=self.case_root)
+            proc = subprocess.Popen(["bash ./Allrun"],
+                                    shell=True,
+                                    cwd=self.case_root)
 
         proc.wait()
 
@@ -47,8 +48,9 @@ class OpenFoamController:
             proc = subprocess.Popen(["./AllcleanDocker"],
                                     cwd=self.case_root)
         else:
-            proc = subprocess.Popen(["./Allclean"],
-                                cwd=self.case_root)
+            proc = subprocess.Popen(["bash ./Allclean"],
+                                    shell=True,
+                                    cwd=self.case_root)
 
         proc.wait()
 
@@ -276,7 +278,8 @@ class OpenFoamController:
         preprocess procedure(PINN specific):
         - convert all x y z to integer precision, cast to nearest integer using manhattan distance
         - remove duplicate data row, duplicate data is defined as same x y z after conversion, keep the first one
-        - fill the missing data with 0 on x y z, missing data is defined as missing x y z after conversion and within the range defined by x_min, x_max, y_min, y_max, z_min, z_max
+        - fill the missing data with 0 on x y z, missing data is defined as missing x y z after conversion and
+        within the range defined by x_min, x_max, y_min, y_max, z_min, z_max
         - do a quick size check, should have range_x * range_y * range_z data points
         - sort the data by x y z, this sequence information is used to reconstruct the mesh
         - for all filled data, fill the u v w p k nut omega with null value to distinguish from real data
@@ -573,151 +576,62 @@ class OpenFoamController:
     def update_u_orig_from_wind_vector(self, x, y, z):
         """
         Update U.orig file based on wind vector components.
-        :param x: number, wind speed in x direction
-        :param y: number, wind speed in y direction
-        :param z: number, wind speed in z direction
-        :return:
         """
-
         if z != 0:
             raise ValueError("Error: z direction wind is not supported yet.")
 
         u_orig = self.read_empty_u_orig()
         zero_count = [x, y, z].count(0)
+
         if zero_count == 3:
             raise ValueError("Wind speed is zero.")
-
-        if zero_count == 2:
-            # figure out the non-zero component
-            if x != 0:
-                # x direction wind
-                # is it positive or negative
-                if x > 0:
-                    # create substrucutre if not exist
-
-                    u_orig.content["boundaryField"]["inlet"]["type"] = "fixedValue"
-                    u_orig.content["boundaryField"]["inlet"]["value"] = f"uniform ({x} 0 0)"
-
-                    u_orig.content["boundaryField"]["outlet"]["type"] = "inletOutlet"
-                    u_orig.content["boundaryField"]["outlet"]["value"] = f"uniform ({x} 0 0)"
-                    u_orig.content["boundaryField"]["outlet"]["inletValue"] = f"uniform ({x} 0 0)"
-
-                else:
-                    # negative x direction wind
-                    u_orig.content["boundaryField"]["inlet"]["type"] = "inletOutlet"
-                    u_orig.content["boundaryField"]["inlet"]["value"] = f"uniform ({x} 0 0)"
-                    u_orig.content["boundaryField"]["inlet"]["inletValue"] = f"uniform ({x} 0 0)"
-
-                    u_orig.content["boundaryField"]["outlet"]["type"] = "fixedValue"
-                    u_orig.content["boundaryField"]["outlet"]["value"] = f"uniform ({x} 0 0)"
-
-                u_orig.content["boundaryField"]["front"]["type"] = "fixedValue"
-                u_orig.content["boundaryField"]["front"]["value"] = f"uniform ({x} 0 0)"
-
-                u_orig.content["boundaryField"]["back"]["type"] = "fixedValue"
-                u_orig.content["boundaryField"]["back"]["value"] = f"uniform ({x} 0 0)"
-
-            if y != 0:
-                # y direction wind
-                # is it positive or negative
-                if y > 0:
-                    u_orig.content["boundaryField"]["back"]["type"] = "fixedValue"
-                    u_orig.content["boundaryField"]["back"]["value"] = f"uniform (0 {y} 0)"
-
-                    u_orig.content["boundaryField"]["front"]["type"] = "inletOutlet"
-                    u_orig.content["boundaryField"]["front"]["value"] = f"uniform (0 {y} 0)"
-                    u_orig.content["boundaryField"]["front"]["inletValue"] = f"uniform (0 {y} 0)"
-
-                else:
-                    # negative y direction wind
-                    u_orig.content["boundaryField"]["back"]["type"] = "inletOutlet"
-                    u_orig.content["boundaryField"]["back"]["value"] = f"uniform (0 {y} 0)"
-                    u_orig.content["boundaryField"]["back"]["inletValue"] = f"uniform (0 {y} 0)"
-
-                    u_orig.content["boundaryField"]["front"]["type"] = "fixedValue"
-                    u_orig.content["boundaryField"]["front"]["value"] = f"uniform (0 {y} 0)"
-
-                u_orig.content["boundaryField"]["inlet"]["type"] = "fixedValue"
-                u_orig.content["boundaryField"]["inlet"]["value"] = f"uniform (0 {y} 0)"
-
-                u_orig.content["boundaryField"]["outlet"]["type"] = "fixedValue"
-                u_orig.content["boundaryField"]["outlet"]["value"] = f"uniform (0 {y} 0)"
-
-        elif zero_count == 1:
-            # two direction wind
-            # +X +Y
-            if x > 0 and y > 0:
-                u_orig.content["boundaryField"]["inlet"]["type"] = "fixedValue"
-                u_orig.content["boundaryField"]["inlet"]["value"] = f"uniform ({x} {y} 0)"
-
-                u_orig.content["boundaryField"]["back"]["type"] = "fixedValue"
-                u_orig.content["boundaryField"]["back"]["value"] = f"uniform ({x} {y} 0)"
-
-                u_orig.content["boundaryField"]["front"]["type"] = "inletOutlet"
-                u_orig.content["boundaryField"]["front"]["value"] = f"uniform ({x} {y} 0)"
-                u_orig.content["boundaryField"]["front"]["inletValue"] = f"uniform ({x} {y} 0)"
-
-                u_orig.content["boundaryField"]["outlet"]["type"] = "inletOutlet"
-                u_orig.content["boundaryField"]["outlet"]["value"] = f"uniform ({x} {y} 0)"
-                u_orig.content["boundaryField"]["outlet"]["inletValue"] = f"uniform ({x} {y} 0)"
-
-            # +X -Y
-            elif x > 0 and y < 0:
-                u_orig.content["boundaryField"]["inlet"]["type"] = "fixedValue"
-                u_orig.content["boundaryField"]["inlet"]["value"] = f"uniform ({x} {y} 0)"
-
-                u_orig.content["boundaryField"]["front"]["type"] = "fixedValue"
-                u_orig.content["boundaryField"]["front"]["value"] = f"uniform ({x} {y} 0)"
-
-                u_orig.content["boundaryField"]["back"]["type"] = "inletOutlet"
-                u_orig.content["boundaryField"]["back"]["value"] = f"uniform ({x} {y} 0)"
-                u_orig.content["boundaryField"]["back"]["inletValue"] = f"uniform ({x} {y} 0)"
-
-                u_orig.content["boundaryField"]["outlet"]["type"] = "inletOutlet"
-                u_orig.content["boundaryField"]["outlet"]["value"] = f"uniform ({x} {y} 0)"
-                u_orig.content["boundaryField"]["outlet"]["inletValue"] = f"uniform ({x} {y} 0)"
-
-            # -X +Y
-            elif x < 0 and y > 0:
-                u_orig.content["boundaryField"]["outlet"]["type"] = "fixedValue"
-                u_orig.content["boundaryField"]["outlet"]["value"] = f"uniform ({x} {y} 0)"
-
-                u_orig.content["boundaryField"]["back"]["type"] = "fixedValue"
-                u_orig.content["boundaryField"]["back"]["value"] = f"uniform ({x} {y} 0)"
-
-                u_orig.content["boundaryField"]["front"]["type"] = "inletOutlet"
-                u_orig.content["boundaryField"]["front"]["value"] = f"uniform ({x} {y} 0)"
-                u_orig.content["boundaryField"]["front"]["inletValue"] = f"uniform ({x} {y} 0)"
-
-                u_orig.content["boundaryField"]["inlet"]["type"] = "inletOutlet"
-                u_orig.content["boundaryField"]["inlet"]["value"] = f"uniform ({x} {y} 0)"
-                u_orig.content["boundaryField"]["inlet"]["inletValue"] = f"uniform ({x} {y} 0)"
-
-            # -X -Y
-            elif x < 0 and y < 0:
-                u_orig.content["boundaryField"]["outlet"]["type"] = "fixedValue"
-                u_orig.content["boundaryField"]["outlet"]["value"] = f"uniform ({x} {y} 0)"
-
-                u_orig.content["boundaryField"]["front"]["type"] = "fixedValue"
-                u_orig.content["boundaryField"]["front"]["value"] = f"uniform ({x} {y} 0)"
-
-                u_orig.content["boundaryField"]["back"]["type"] = "inletOutlet"
-                u_orig.content["boundaryField"]["back"]["value"] = f"uniform ({x} {y} 0)"
-                u_orig.content["boundaryField"]["back"]["inletValue"] = f"uniform ({x} {y} 0)"
-
-                u_orig.content["boundaryField"]["inlet"]["type"] = "inletOutlet"
-                u_orig.content["boundaryField"]["inlet"]["value"] = f"uniform ({x} {y} 0)"
-                u_orig.content["boundaryField"]["inlet"]["inletValue"] = f"uniform ({x} {y} 0)"
-
-        else:
+        if zero_count > 2:
             raise ValueError("three direction wind is not supported yet.")
 
-        u_orig.content["boundaryField"]["lowerWall"]["type"] = "fixedValue"
-        u_orig.content["boundaryField"]["lowerWall"]["value"] = f"uniform ({x} {y} 0)"
+        def set_boundary_fixed(boundary_name, vector):
+            u_orig.content["boundaryField"][boundary_name]["type"] = "fixedValue"
+            u_orig.content["boundaryField"][boundary_name]["value"] = f"uniform ({vector[0]} {vector[1]} 0)"
 
-        u_orig.content["boundaryField"]["upperWall"]["type"] = "fixedValue"
-        u_orig.content["boundaryField"]["upperWall"]["value"] = f"uniform ({x} {y} 0)"
+        def set_boundary_inlet_outlet(boundary_name, vector):
+            u_orig.content["boundaryField"][boundary_name]["type"] = "inletOutlet"
+            u_orig.content["boundaryField"][boundary_name]["value"] = f"uniform ({vector[0]} {vector[1]} 0)"
+            u_orig.content["boundaryField"][boundary_name]["inletValue"] = f"uniform ({vector[0]} {vector[1]} 0)"
 
+        if zero_count == 2:
+            if x != 0:
+                vector = (x, 0)
+                if x > 0:
+                    set_boundary_fixed("inlet", vector)
+                    set_boundary_inlet_outlet("outlet", vector)
+                else:
+                    set_boundary_inlet_outlet("inlet", vector)
+                    set_boundary_fixed("outlet", vector)
+
+                set_boundary_fixed("front", vector)
+                set_boundary_fixed("back", vector)
+
+            if y != 0:
+                vector = (0, y)
+                if y > 0:
+                    set_boundary_fixed("back", vector)
+                    set_boundary_inlet_outlet("front", vector)
+                else:
+                    set_boundary_inlet_outlet("back", vector)
+                    set_boundary_fixed("front", vector)
+
+                set_boundary_fixed("inlet", vector)
+                set_boundary_fixed("outlet", vector)
+
+        elif zero_count == 1:
+            vector = (x, y)
+            set_boundary_fixed("inlet", vector)
+            set_boundary_fixed("back", vector)
+            set_boundary_inlet_outlet("front", vector)
+            set_boundary_inlet_outlet("outlet", vector)
+
+        # Set fixed values for walls and combined group
+        set_boundary_fixed("lowerWall", (x, y))
+        set_boundary_fixed("upperWall", (x, y))
         u_orig.content["boundaryField"]["combinedGroup"]["type"] = "noSlip"
 
         u_orig_run = self.read_u_orig()
@@ -726,70 +640,46 @@ class OpenFoamController:
     def update_block_mesh_dict_bounds_from_wind_vector(self, x, y, z):
         """
         Change blockMeshDict boundaries based on wind vector components.
-        only change the boundaries fields
+        Only change the boundaries fields.
         """
-        # boundary fields is a 12 element list, each 2 element list is a boundary field, total 6 boundary fields
-
         block_mesh_dict = self.read_block_mesh_dict()
         zero_count = [x, y, z].count(0)
 
         if z != 0:
-            # not supported yet
             raise ValueError("Error: z direction wind is not supported yet.")
-
-        if zero_count == 2:
-            # one direction wind
-            if x != 0:
-                block_mesh_dict.content["boundary"][0] = "inlet"
-                block_mesh_dict.content["boundary"][1] = dict(type="patch", faces=[[0, 4, 7, 3]])
-
-                block_mesh_dict.content["boundary"][2] = "outlet"
-                block_mesh_dict.content["boundary"][3] = dict(type="patch", faces=[[2, 6, 5, 1]])
-
-                block_mesh_dict.content["boundary"][4] = "front"
-                block_mesh_dict.content["boundary"][5] = dict(type="wall", faces=[[1, 5, 4, 0]])
-
-                block_mesh_dict.content["boundary"][6] = "back"
-                block_mesh_dict.content["boundary"][7] = dict(type="wall", faces=[[3, 7, 6, 2]])
-
-            elif y != 0:
-                block_mesh_dict.content["boundary"][0] = "inlet"
-                block_mesh_dict.content["boundary"][1] = dict(type="wall", faces=[[0, 4, 7, 3]])
-
-                block_mesh_dict.content["boundary"][2] = "outlet"
-                block_mesh_dict.content["boundary"][3] = dict(type="wall", faces=[[2, 6, 5, 1]])
-
-                block_mesh_dict.content["boundary"][4] = "front"
-                block_mesh_dict.content["boundary"][5] = dict(type="patch", faces=[[1, 5, 4, 0]])
-
-                block_mesh_dict.content["boundary"][6] = "back"
-                block_mesh_dict.content["boundary"][7] = dict(type="patch", faces=[[3, 7, 6, 2]])
-
-        # case 2: two direction wind, one component is 0
-        elif zero_count == 1:
-            block_mesh_dict.content["boundary"][0] = "inlet"
-            block_mesh_dict.content["boundary"][1] = dict(type="patch", faces=[[0, 4, 7, 3]])
-
-            block_mesh_dict.content["boundary"][2] = "outlet"
-            block_mesh_dict.content["boundary"][3] = dict(type="patch", faces=[[2, 6, 5, 1]])
-
-            block_mesh_dict.content["boundary"][4] = "front"
-            block_mesh_dict.content["boundary"][5] = dict(type="patch", faces=[[1, 5, 4, 0]])
-
-            block_mesh_dict.content["boundary"][6] = "back"
-            block_mesh_dict.content["boundary"][7] = dict(type="patch", faces=[[3, 7, 6, 2]])
-
-        elif zero_count == 3:
+        if zero_count == 3:
             raise ValueError("Wind speed is zero.")
+        if zero_count < 1 or zero_count > 2:
+            raise ValueError("Unsupported wind configuration.")
 
-        else:
-            raise ValueError("three direction wind is not supported yet.")
+        # Simplify the boundary settings based on the wind vector component count
+        def set_boundary(index, name, boundary_type, faces):
+            block_mesh_dict.content["boundary"][index] = name
+            block_mesh_dict.content["boundary"][index + 1] = dict(type=boundary_type, faces=faces)
 
-        block_mesh_dict.content["boundary"][10] = "lowerWall"
-        block_mesh_dict.content["boundary"][11] = dict(type="wall", faces=[[0, 3, 2, 1]])
+        if zero_count == 2:  # One direction wind
+            if x != 0:
+                # Wind along the x-axis
+                set_boundary(0, "inlet", "patch", [[0, 4, 7, 3]])
+                set_boundary(2, "outlet", "patch", [[2, 6, 5, 1]])
+                set_boundary(4, "front", "wall", [[1, 5, 4, 0]])
+                set_boundary(6, "back", "wall", [[3, 7, 6, 2]])
+            elif y != 0:
+                # Wind along the y-axis
+                set_boundary(0, "inlet", "wall", [[0, 4, 7, 3]])
+                set_boundary(2, "outlet", "wall", [[2, 6, 5, 1]])
+                set_boundary(4, "front", "patch", [[1, 5, 4, 0]])
+                set_boundary(6, "back", "patch", [[3, 7, 6, 2]])
 
-        block_mesh_dict.content["boundary"][8] = "upperWall"
-        block_mesh_dict.content["boundary"][9] = dict(type="wall", faces=[[4, 5, 6, 7]])
+        elif zero_count == 1:  # Two direction wind, one component is 0
+            set_boundary(0, "inlet", "patch", [[0, 4, 7, 3]])
+            set_boundary(2, "outlet", "patch", [[2, 6, 5, 1]])
+            set_boundary(4, "front", "patch", [[1, 5, 4, 0]])
+            set_boundary(6, "back", "patch", [[3, 7, 6, 2]])
+
+        # Common boundary settings for all supported configurations
+        set_boundary(8, "upperWall", "wall", [[4, 5, 6, 7]])
+        set_boundary(10, "lowerWall", "wall", [[0, 3, 2, 1]])
 
         block_mesh_dict.writeFile()
 
@@ -799,37 +689,27 @@ class OpenFoamController:
         """
         p = self.read_empty_p_orig()
 
-        # opposite side is fixed value
-        if x > 0:
-            p.content["boundaryField"]["outlet"]["type"] = "fixedValue"
-            p.content["boundaryField"]["outlet"]["value"] = "uniform 0"
+        def set_boundary_conditions(axis_value, positive_boundary, negative_boundary):
+            if axis_value > 0:
+                p.content["boundaryField"][positive_boundary]["type"] = "fixedValue"
+                p.content["boundaryField"][positive_boundary]["value"] = "uniform 0"
+                p.content["boundaryField"][negative_boundary]["type"] = "zeroGradient"
+            elif axis_value < 0:
+                p.content["boundaryField"][negative_boundary]["type"] = "fixedValue"
+                p.content["boundaryField"][negative_boundary]["value"] = "uniform 0"
+                p.content["boundaryField"][positive_boundary]["type"] = "zeroGradient"
+            else:
+                p.content["boundaryField"][positive_boundary]["type"] = "zeroGradient"
+                p.content["boundaryField"][negative_boundary]["type"] = "zeroGradient"
 
-            p.content["boundaryField"]["inlet"]["type"] = "zeroGradient"
-        elif x < 0:
-            p.content["boundaryField"]["inlet"]["type"] = "fixedValue"
-            p.content["boundaryField"]["inlet"]["value"] = "uniform 0"
+        # Set boundary conditions based on x and y wind components
+        set_boundary_conditions(x, "outlet", "inlet")
+        set_boundary_conditions(y, "front", "back")
 
-            p.content["boundaryField"]["outlet"]["type"] = "zeroGradient"
-        else:
-            p.content["boundaryField"]["inlet"]["type"] = "zeroGradient"
-            p.content["boundaryField"]["outlet"]["type"] = "zeroGradient"
-        if y > 0:
-            p.content["boundaryField"]["front"]["type"] = "fixedValue"
-            p.content["boundaryField"]["front"]["value"] = "uniform 0"
-
-            p.content["boundaryField"]["back"]["type"] = "zeroGradient"
-        elif y < 0:
-            p.content["boundaryField"]["back"]["type"] = "fixedValue"
-            p.content["boundaryField"]["back"]["value"] = "uniform 0"
-
-            p.content["boundaryField"]["front"]["type"] = "zeroGradient"
-        else:
-            p.content["boundaryField"]["front"]["type"] = "zeroGradient"
-            p.content["boundaryField"]["back"]["type"] = "zeroGradient"
-
-        p.content["boundaryField"]["lowerWall"]["type"] = "zeroGradient"
-        p.content["boundaryField"]["upperWall"]["type"] = "zeroGradient"
-        p.content["boundaryField"]["combinedGroup"]["type"] = "zeroGradient"
+        # Common boundary settings for walls and combined groups
+        common_boundaries = ["lowerWall", "upperWall", "combinedGroup"]
+        for boundary in common_boundaries:
+            p.content["boundaryField"][boundary]["type"] = "zeroGradient"
 
         p_run = self.read_p_orig()
         p_run.writeFile(p.content)
@@ -844,137 +724,45 @@ class OpenFoamController:
         k_orig = self.read_empty_k_orig()
         zero_count = [x, y, z].count(0)
 
-        if zero_count == 2:
-            # figure out the non-zero component
-            if x != 0:
-                # x direction wind
-                # is it positive or negative
-                if x > 0:
-                    k_orig.content["boundaryField"]["inlet"]["type"] = "fixedValue"
-                    k_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-
-                    k_orig.content["boundaryField"]["outlet"]["type"] = "inletOutlet"
-                    k_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-                    k_orig.content["boundaryField"]["outlet"]["inletValue"] = "$internalField"
-
-                else:
-                    # negative x direction wind
-                    k_orig.content["boundaryField"]["inlet"]["type"] = "inletOutlet"
-                    k_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-                    k_orig.content["boundaryField"]["inlet"]["inletValue"] = "$internalField"
-
-                    k_orig.content["boundaryField"]["outlet"]["type"] = "fixedValue"
-                    k_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-
-                k_orig.content["boundaryField"]["front"]["type"] = "kqRWallFunction"
-                k_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-
-                k_orig.content["boundaryField"]["back"]["type"] = "kqRWallFunction"
-                k_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-
-            if y != 0:
-                # y direction wind
-                # is it positive or negative
-                if y > 0:
-                    k_orig.content["boundaryField"]["back"]["type"] = "fixedValue"
-                    k_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-
-                    k_orig.content["boundaryField"]["front"]["type"] = "inletOutlet"
-                    k_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-                    k_orig.content["boundaryField"]["front"]["inletValue"] = "$internalField"
-
-                else:
-                    # negative y direction wind
-                    k_orig.content["boundaryField"]["back"]["type"] = "inletOutlet"
-                    k_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-                    k_orig.content["boundaryField"]["back"]["inletValue"] = "$internalField"
-
-                    k_orig.content["boundaryField"]["front"]["type"] = "fixedValue"
-                    k_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-
-                k_orig.content["boundaryField"]["inlet"]["type"] = "kqRWallFunction"
-                k_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-
-                k_orig.content["boundaryField"]["outlet"]["type"] = "kqRWallFunction"
-                k_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-
-        elif zero_count == 1:
-            # two direction wind
-            # +X +Y
-            if x > 0 and y > 0:
-                k_orig.content["boundaryField"]["inlet"]["type"] = "fixedValue"
-                k_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-
-                k_orig.content["boundaryField"]["back"]["type"] = "fixedValue"
-                k_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-
-                k_orig.content["boundaryField"]["front"]["type"] = "inletOutlet"
-                k_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-                k_orig.content["boundaryField"]["front"]["inletValue"] = "$internalField"
-
-                k_orig.content["boundaryField"]["outlet"]["type"] = "inletOutlet"
-                k_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-                k_orig.content["boundaryField"]["outlet"]["inletValue"] = "$internalField"
-
-            # +X -Y
-            elif x > 0 and y < 0:
-                k_orig.content["boundaryField"]["inlet"]["type"] = "fixedValue"
-                k_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-
-                k_orig.content["boundaryField"]["front"]["type"] = "fixedValue"
-                k_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-
-                k_orig.content["boundaryField"]["back"]["type"] = "inletOutlet"
-                k_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-                k_orig.content["boundaryField"]["back"]["inletValue"] = "$internalField"
-
-                k_orig.content["boundaryField"]["outlet"]["type"] = "inletOutlet"
-                k_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-                k_orig.content["boundaryField"]["outlet"]["inletValue"] = "$internalField"
-
-            # -X +Y
-            elif x < 0 and y > 0:
-                k_orig.content["boundaryField"]["outlet"]["type"] = "fixedValue"
-                k_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-
-                k_orig.content["boundaryField"]["back"]["type"] = "fixedValue"
-                k_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-
-                k_orig.content["boundaryField"]["front"]["type"] = "inletOutlet"
-                k_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-                k_orig.content["boundaryField"]["front"]["inletValue"] = "$internalField"
-
-                k_orig.content["boundaryField"]["inlet"]["type"] = "inletOutlet"
-                k_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-                k_orig.content["boundaryField"]["inlet"]["inletValue"] = "$internalField"
-
-            # -X -Y
-            elif x < 0 and y < 0:
-                k_orig.content["boundaryField"]["outlet"]["type"] = "fixedValue"
-                k_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-
-                k_orig.content["boundaryField"]["front"]["type"] = "fixedValue"
-                k_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-
-                k_orig.content["boundaryField"]["back"]["type"] = "inletOutlet"
-                k_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-                k_orig.content["boundaryField"]["back"]["inletValue"] = "$internalField"
-
-                k_orig.content["boundaryField"]["inlet"]["type"] = "inletOutlet"
-                k_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-                k_orig.content["boundaryField"]["inlet"]["inletValue"] = "$internalField"
-
-        else:
+        if zero_count > 2:
             raise ValueError("Error: three direction wind is not supported yet.")
 
-        k_orig.content["boundaryField"]["lowerWall"]["type"] = "kqRWallFunction"
-        k_orig.content["boundaryField"]["lowerWall"]["value"] = "$internalField"
+        def set_boundary(boundary_name, type_value, internal_field=True):
+            k_orig.content["boundaryField"][boundary_name]["type"] = type_value
+            k_orig.content["boundaryField"][boundary_name]["value"] = "$internalField"
+            if type_value == "inletOutlet":
+                k_orig.content["boundaryField"][boundary_name]["inletValue"] = "$internalField"
 
-        k_orig.content["boundaryField"]["upperWall"]["type"] = "kqRWallFunction"
-        k_orig.content["boundaryField"]["upperWall"]["value"] = "$internalField"
+        def configure_boundaries_for_direction(positive, negative, vector_pos):
+            vector = {"x": 0, "y": 0}
+            vector.update(vector_pos)
+            positive_type = "fixedValue" if vector['x'] > 0 or vector['y'] > 0 else "inletOutlet"
+            negative_type = "inletOutlet" if vector['x'] > 0 or vector['y'] > 0 else "fixedValue"
 
-        k_orig.content["boundaryField"]["combinedGroup"]["type"] = "kqRWallFunction"
-        k_orig.content["boundaryField"]["combinedGroup"]["value"] = "$internalField"
+            set_boundary(positive, positive_type)
+            set_boundary(negative, negative_type)
+
+        if zero_count == 2:
+            if x != 0:
+                configure_boundaries_for_direction("inlet", "outlet", {"x": x})
+                # Set front and back with kqRWallFunction
+                set_boundary("front", "kqRWallFunction")
+                set_boundary("back", "kqRWallFunction")
+            if y != 0:
+                configure_boundaries_for_direction("back", "front", {"y": y})
+                # Set inlet and outlet with kqRWallFunction
+                set_boundary("inlet", "kqRWallFunction")
+                set_boundary("outlet", "kqRWallFunction")
+
+        elif zero_count == 1:
+            # Two direction wind, simplify by using positive/negative logic for both x and y
+            configure_boundaries_for_direction("inlet", "outlet", {"x": x})
+            configure_boundaries_for_direction("back", "front", {"y": y})
+
+        # Common settings for walls and combined groups
+        wall_boundaries = ["lowerWall", "upperWall", "combinedGroup"]
+        for boundary in wall_boundaries:
+            set_boundary(boundary, "kqRWallFunction")
 
         k_orig_run = self.read_k_orig()
         k_orig_run.writeFile(k_orig.content)
@@ -989,193 +777,95 @@ class OpenFoamController:
             raise ValueError("Error: z direction wind is not supported yet.")
 
         zero_count = [x, y, z].count(0)
+        if zero_count > 2:
+            raise ValueError("Error: three direction wind is not supported yet.")
 
-        nut.content["boundaryField"]["inlet"]["value"] = "uniform 0"
-        nut.content["boundaryField"]["outlet"]["value"] = "uniform 0"
-        nut.content["boundaryField"]["front"]["value"] = "uniform 0"
-        nut.content["boundaryField"]["back"]["value"] = "uniform 0"
+        def set_uniform_value(boundary_name, type_value="uniform 0"):
+            nut.content["boundaryField"][boundary_name]["value"] = type_value
 
-        nut.content["boundaryField"]["lowerWall"]["value"] = "uniform 0"
-        nut.content["boundaryField"]["lowerWall"]["type"] = "nutkWallFunction"
-        nut.content["boundaryField"]["upperWall"]["value"] = "uniform 0"
-        nut.content["boundaryField"]["upperWall"]["type"] = "nutkWallFunction"
-        nut.content["boundaryField"]["combinedGroup"]["value"] = "uniform 0"
-        nut.content["boundaryField"]["combinedGroup"]["type"] = "nutkWallFunction"
+        def set_type(boundary_name, type_value):
+            nut.content["boundaryField"][boundary_name]["type"] = type_value
 
+        # Set uniform values for all fields
+        boundaries = ["inlet", "outlet", "front", "back", "lowerWall", "upperWall", "combinedGroup"]
+        for boundary in boundaries:
+            set_uniform_value(boundary)
+
+        # Default type settings for walls and combined groups
+        for boundary in ["lowerWall", "upperWall", "combinedGroup"]:
+            set_type(boundary, "nutkWallFunction")
+
+        # Type settings based on wind direction
         if zero_count == 2:
-            # figure out the non-zero component
             if x != 0:
-                # x direction wind
-                nut.content["boundaryField"]["inlet"]["type"] = "calculated"
-                nut.content["boundaryField"]["outlet"]["type"] = "calculated"
-                nut.content["boundaryField"]["back"]["type"] = "nutkWallFunction"
-                nut.content["boundaryField"]["front"]["type"] = "nutkWallFunction"
-
+                set_type("inlet", "calculated")
+                set_type("outlet", "calculated")
+                set_type("front", "nutkWallFunction")
+                set_type("back", "nutkWallFunction")
             if y != 0:
-                nut.content["boundaryField"]["back"]["type"] = "calculated"
-                nut.content["boundaryField"]["front"]["type"] = "calculated"
-                nut.content["boundaryField"]["inlet"]["type"] = "nutkWallFunction"
-                nut.content["boundaryField"]["outlet"]["type"] = "nutkWallFunction"
-
+                set_type("front", "calculated")
+                set_type("back", "calculated")
+                set_type("inlet", "nutkWallFunction")
+                set_type("outlet", "nutkWallFunction")
 
         elif zero_count == 1:
-            nut.content["boundaryField"]["inlet"]["type"] = "calculated"
-            nut.content["boundaryField"]["outlet"]["type"] = "calculated"
-            nut.content["boundaryField"]["back"]["type"] = "calculated"
-            nut.content["boundaryField"]["front"]["type"] = "calculated"
-
-        else:
-            raise ValueError("Error: three direction wind is not supported yet.")
+            # Two direction wind
+            calculated_boundaries = ["inlet", "outlet", "front", "back"]
+            for boundary in calculated_boundaries:
+                set_type(boundary, "calculated")
 
         nut_run = self.read_nut_orig()
         nut_run.writeFile(nut.content)
 
     def update_omega_from_wind_vector(self, x, y, z):
-
         """
         Update U.orig file based on wind vector components.
-        :param x: number, wind speed in x direction
-        :param y: number, wind speed in y direction
-        :param z: number, wind speed in z direction
-        :return:
         """
-
         if z != 0:
             raise ValueError("Error: z direction wind is not supported yet.")
 
         omega_orig = self.read_empty_omega_orig()
         zero_count = [x, y, z].count(0)
 
-        if zero_count == 2:
-            # figure out the non-zero component
-            if x != 0:
-                # x direction wind
-                # is it positive or negative
-                if x > 0:
-                    omega_orig.content["boundaryField"]["inlet"]["type"] = "fixedValue"
-                    omega_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-
-                    omega_orig.content["boundaryField"]["outlet"]["type"] = "inletOutlet"
-                    omega_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-                    omega_orig.content["boundaryField"]["outlet"]["inletValue"] = "$internalField"
-
-                else:
-                    # negative x direction wind
-                    omega_orig.content["boundaryField"]["inlet"]["type"] = "inletOutlet"
-                    omega_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-                    omega_orig.content["boundaryField"]["inlet"]["inletValue"] = "$internalField"
-
-                    omega_orig.content["boundaryField"]["outlet"]["type"] = "fixedValue"
-                    omega_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["front"]["type"] = "omegaWallFunction"
-                omega_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["back"]["type"] = "omegaWallFunction"
-                omega_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-
-            if y != 0:
-                # y direction wind
-                # is it positive or negative
-                if y > 0:
-                    omega_orig.content["boundaryField"]["back"]["type"] = "fixedValue"
-                    omega_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-
-                    omega_orig.content["boundaryField"]["front"]["type"] = "inletOutlet"
-                    omega_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-                    omega_orig.content["boundaryField"]["front"]["inletValue"] = "$internalField"
-
-                else:
-                    # negative y direction wind
-                    omega_orig.content["boundaryField"]["back"]["type"] = "inletOutlet"
-                    omega_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-                    omega_orig.content["boundaryField"]["back"]["inletValue"] = "$internalField"
-
-                    omega_orig.content["boundaryField"]["front"]["type"] = "fixedValue"
-                    omega_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["inlet"]["type"] = "omegaWallFunction"
-                omega_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["outlet"]["type"] = "omegaWallFunction"
-                omega_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-
-        elif zero_count == 1:
-            # two direction wind
-            # +X +Y
-            if x > 0 and y > 0:
-                omega_orig.content["boundaryField"]["inlet"]["type"] = "fixedValue"
-                omega_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["back"]["type"] = "fixedValue"
-                omega_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["front"]["type"] = "inletOutlet"
-                omega_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-                omega_orig.content["boundaryField"]["front"]["inletValue"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["outlet"]["type"] = "inletOutlet"
-                omega_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-                omega_orig.content["boundaryField"]["outlet"]["inletValue"] = "$internalField"
-
-            # +X -Y
-            elif x > 0 and y < 0:
-                omega_orig.content["boundaryField"]["inlet"]["type"] = "fixedValue"
-                omega_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["front"]["type"] = "fixedValue"
-                omega_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["back"]["type"] = "inletOutlet"
-                omega_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-                omega_orig.content["boundaryField"]["back"]["inletValue"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["outlet"]["type"] = "inletOutlet"
-                omega_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-                omega_orig.content["boundaryField"]["outlet"]["inletValue"] = "$internalField"
-
-            # -X +Y
-            elif x < 0 and y > 0:
-                omega_orig.content["boundaryField"]["outlet"]["type"] = "fixedValue"
-                omega_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["back"]["type"] = "fixedValue"
-                omega_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["front"]["type"] = "inletOutlet"
-                omega_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-                omega_orig.content["boundaryField"]["front"]["inletValue"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["inlet"]["type"] = "inletOutlet"
-                omega_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-                omega_orig.content["boundaryField"]["inlet"]["inletValue"] = "$internalField"
-
-            # -X -Y
-            elif x < 0 and y < 0:
-                omega_orig.content["boundaryField"]["outlet"]["type"] = "fixedValue"
-                omega_orig.content["boundaryField"]["outlet"]["value"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["front"]["type"] = "fixedValue"
-                omega_orig.content["boundaryField"]["front"]["value"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["back"]["type"] = "inletOutlet"
-                omega_orig.content["boundaryField"]["back"]["value"] = "$internalField"
-                omega_orig.content["boundaryField"]["back"]["inletValue"] = "$internalField"
-
-                omega_orig.content["boundaryField"]["inlet"]["type"] = "inletOutlet"
-                omega_orig.content["boundaryField"]["inlet"]["value"] = "$internalField"
-                omega_orig.content["boundaryField"]["inlet"]["inletValue"] = "$internalField"
-
-        else:
+        if zero_count > 2:
             raise ValueError("Error: three direction wind is not supported yet.")
 
-        omega_orig.content["boundaryField"]["lowerWall"]["type"] = "omegaWallFunction"
-        omega_orig.content["boundaryField"]["lowerWall"]["value"] = "$internalField"
+        def set_boundary(boundary_name, type_value, is_inlet=False):
+            omega_orig.content["boundaryField"][boundary_name]["type"] = type_value
+            omega_orig.content["boundaryField"][boundary_name]["value"] = "$internalField"
+            if is_inlet:
+                omega_orig.content["boundaryField"][boundary_name]["inletValue"] = "$internalField"
 
-        omega_orig.content["boundaryField"]["upperWall"]["type"] = "omegaWallFunction"
-        omega_orig.content["boundaryField"]["upperWall"]["value"] = "$internalField"
+        if zero_count == 2:
+            if x != 0:
+                direction = "positive" if x > 0 else "negative"
+                primary, secondary = ("inlet", "outlet") if direction == "positive" else ("outlet", "inlet")
+                set_boundary(primary, "fixedValue")
+                set_boundary(secondary, "inletOutlet", is_inlet=True)
+                set_boundary("front", "omegaWallFunction")
+                set_boundary("back", "omegaWallFunction")
+            if y != 0:
+                direction = "positive" if y > 0 else "negative"
+                primary, secondary = ("front", "back") if direction == "positive" else ("back", "front")
+                set_boundary(primary, "fixedValue")
+                set_boundary(secondary, "inletOutlet", is_inlet=True)
+                set_boundary("inlet", "omegaWallFunction")
+                set_boundary("outlet", "omegaWallFunction")
 
+        elif zero_count == 1:
+            # Two direction wind, simplify by setting all boundaries involved to either fixedValue or inletOutlet
+            directions = {"inlet": x, "outlet": x, "front": y, "back": y}
+            for boundary, direction in directions.items():
+                if direction > 0:
+                    set_boundary(boundary, "fixedValue")
+                elif direction < 0:
+                    set_boundary(boundary, "inletOutlet", is_inlet=True)
+
+        # Common settings for walls and combined groups
+        set_boundary("lowerWall", "omegaWallFunction")
+        set_boundary("upperWall", "omegaWallFunction")
         omega_orig.content["boundaryField"]["combinedGroup"]["type"] = "slip"
+        omega_orig.content["boundaryField"]["combinedGroup"]["value"] = "$internalField"
 
         omega_orig_run = self.read_omega_orig()
         omega_orig_run.writeFile(omega_orig.content)
@@ -1279,8 +969,8 @@ if __name__ == "__main__":
     foam = OpenFoamController(case_root)
     foam.clean()
     foam.update_wind(10, 0, 0)
-    #foam.run()
-    #print(foam.check_run_valid())
+    # foam.run()
+    # print(foam.check_run_valid())
 
     # for x in [10, -10, 0]:
     #     for y in [10, -10, 0]:
@@ -1293,7 +983,7 @@ if __name__ == "__main__":
     #         else:
     #             print("Pass")
 
-    ####################### This part can automate things
+    # This part can automate things
     # value_vertices = [(-100, -100, 0),
     #                   (100, -100, 0),
     #                   (100, 100, 0),
