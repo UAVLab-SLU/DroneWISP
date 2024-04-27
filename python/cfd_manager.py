@@ -177,6 +177,13 @@ class CFDManager:
             else:
                 print("Error: invalid run")
                 self.openfoam_controller.debug_failed_run()
+                self.state = "cfd_fail"
+                self.reset_flag()
+                # if in docker IN_DOCKER = True,
+                if os.getenv("IN_DOCKER", "False"):
+                    requests.post("http://drv_server:5000/cfdFailNotify")
+                else:
+                    requests.post("http://localhost:5000/cfdFailNotify")
                 self.state = "idle"
                 return
 
@@ -191,7 +198,7 @@ class CFDManager:
             self.state = "ready"
             self.reset_flag()
             # if in docker IN_DOCKER = True,
-            if os.getenv("IN_DOCKER") == "True":
+            if os.getenv("IN_DOCKER", "False"):
                 requests.post("http://drv_server:5000/cfdDoneNotify")
             else:
                 requests.post("http://localhost:5000/cfdDoneNotify") # TODO: hard coded DRV ip
