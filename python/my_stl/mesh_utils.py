@@ -547,6 +547,39 @@ class StlMeshUtils:
         # combined_mesh.export(output_filename)
         return combined_mesh
 
+    @staticmethod
+    def height_mask_to_tall_cubes(height_mask, cube_size=1):
+        """
+        Convert a height mask to an STL mesh by generating a tall cube with the height specified in z.
+        This method attempts to optimize processing by reducing loop overhead and using vectorized operations.
+        :param height_mask: list of tuples (x, y, z) where z is the height of the cube.
+        :param cube_size: the size of each cube in the height mask.
+        :return: TriMesh object representing the height mask.
+        """
+        cubes = []
+
+        # Extract positions and heights from height_mask
+        positions = np.array(height_mask)[:, :2]  # x, y positions
+        heights = np.array(height_mask)[:, 2]  # z heights
+
+        # Adjust positions to include z-coordinate for translation
+        # Add a third column for z, initially set to zeros since it's just the base position
+        full_positions = np.hstack([positions * cube_size, np.zeros((positions.shape[0], 1))])
+
+        # Iterate over each position and height to create cubes
+        for i, (pos, h) in enumerate(zip(full_positions, heights)):
+            cube_dimensions = (cube_size, cube_size, h)
+            cube_mesh = trimesh.creation.box(extents=cube_dimensions)
+            center_offset = np.array([0.5 * cube_size, 0.5 * cube_size, 0.5 * h])  # Adjust for height
+            cube_mesh.apply_translation(pos + center_offset)
+            cubes.append(cube_mesh)
+
+        # Combine all the cube meshes into a single mesh
+        combined_mesh = trimesh.util.concatenate(cubes)
+        return combined_mesh
+
+
+
 
 if __name__ == "__main__":
     stl_file = "../stl/chicago100shrunk.stl"

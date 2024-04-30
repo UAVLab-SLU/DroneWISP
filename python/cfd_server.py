@@ -128,7 +128,7 @@ if __name__ == '__main__':
         if os.environ.get("IN_DOCKER", False):
             response = requests.get(f"http://drv_server:5000/state")
         else:
-            response = requests.get(f"http://localhost:5000/state")
+            response = requests.get(f"http://192.168.1.181:5000/state")
         if response.status_code == 200:
             print("Connected to DRV server")
         else:

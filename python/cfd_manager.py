@@ -180,10 +180,10 @@ class CFDManager:
                 self.state = "cfd_fail"
                 self.reset_flag()
                 # if in docker IN_DOCKER = True,
-                if os.getenv("IN_DOCKER", "False"):
+                if os.getenv("IN_DOCKER", False):
                     requests.post("http://drv_server:5000/cfdFailNotify")
                 else:
-                    requests.post("http://localhost:5000/cfdFailNotify")
+                    requests.post("http://192.168.1.181:5000/cfdFailNotify")
                 self.state = "idle"
                 return
 
@@ -198,10 +198,10 @@ class CFDManager:
             self.state = "ready"
             self.reset_flag()
             # if in docker IN_DOCKER = True,
-            if os.getenv("IN_DOCKER", "False"):
+            if os.getenv("IN_DOCKER", False):
                 requests.post("http://drv_server:5000/cfdDoneNotify")
             else:
-                requests.post("http://localhost:5000/cfdDoneNotify") # TODO: hard coded DRV ip
+                requests.post("http://192.168.1.181:5000/cfdDoneNotify") # TODO: hard coded DRV ip
 
         simulation_thread = threading.Thread(target=target_function)
         simulation_thread.start()

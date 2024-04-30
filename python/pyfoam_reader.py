@@ -4,7 +4,7 @@ import subprocess
 import pandas as pd
 from PyFoam.RunDictionary.ParsedBlockMeshDict import ParsedBlockMeshDict
 from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
-from stl.mesh_utils import StlMeshUtils
+from my_stl.mesh_utils import StlMeshUtils
 
 
 class OpenFoamController:
@@ -29,8 +29,7 @@ class OpenFoamController:
         """
         print("Running OpenFOAM case: ", self.case_root)
         if os.environ.get("IN_DOCKER", False):
-            proc = subprocess.Popen(["./AllrunDocker"],
-                                    cwd=self.case_root)
+            proc = subprocess.run("bash ./AllrunDocker", shell=True, text=True, cwd=self.case_root)
         else:
             proc = subprocess.Popen(["bash ./Allrun"],
                                     shell=True,
@@ -46,6 +45,7 @@ class OpenFoamController:
         print("Running OpenFOAM case: ", self.case_root)
         if os.environ.get("IN_DOCKER", False):
             proc = subprocess.Popen(["./AllcleanDocker"],
+                                    shell=True,
                                     cwd=self.case_root)
         else:
             proc = subprocess.Popen(["bash ./Allclean"],
@@ -566,14 +566,14 @@ class OpenFoamController:
         print("Updating wind to", x, y, z)
 
         self.update_block_mesh_dict_bounds_from_wind_vector(x, y, z)
-        self.update_u_orig_from_wind_vector(x, y, z)
-        self.update_p_from_wind_vector(x, y, z)
-        self.update_k_from_wind_vector(x, y, z)
-        self.update_nut_from_wind_vector(x, y, z)
-        self.update_omega_from_wind_vector(x, y, z)
+        self.update_u_orig_from_wind_vector(x, y, z, wind_type, turb_percent)
+        self.update_p_from_wind_vector(x, y, z, wind_type, turb_percent)
+        self.update_k_from_wind_vector(x, y, z, wind_type, turb_percent)
+        self.update_nut_from_wind_vector(x, y, z, wind_type, turb_percent)
+        self.update_omega_from_wind_vector(x, y, z, wind_type, turb_percent)
         print("Updated u, p, k, nut, omega, blockMeshDict.")
 
-    def update_u_orig_from_wind_vector(self, x, y, z):
+    def update_u_orig_from_wind_vector(self, x, y, z, wind_type="uniform", turb_percent=0):
         """
         Update U.orig file based on wind vector components.
         """
@@ -589,8 +589,16 @@ class OpenFoamController:
             raise ValueError("three direction wind is not supported yet.")
 
         def set_boundary_fixed(boundary_name, vector):
-            u_orig.content["boundaryField"][boundary_name]["type"] = "fixedValue"
-            u_orig.content["boundaryField"][boundary_name]["value"] = f"uniform ({vector[0]} {vector[1]} 0)"
+            if wind_type == "uniform":
+                u_orig.content["boundaryField"][boundary_name]["type"] = "fixedValue"
+                u_orig.content["boundaryField"][boundary_name]["value"] = f"uniform ({vector[0]} {vector[1]} 0)"
+            elif wind_type == "turbulent":
+                u_orig.content["boundaryField"][boundary_name]["type"] = "turbulentInlet"
+                u_orig.content["boundaryField"][boundary_name]["value"] = f"uniform ({vector[0]} {vector[1]} 0)"
+                u_orig.content["boundaryField"][boundary_name][
+                    "referenceField"] = f"uniform ({vector[0]} {vector[1]} 0)"
+                u_orig.content["boundaryField"][boundary_name][
+                    "fluctuationScale"] = f"( {vector[0] * turb_percent / 100} {vector[1] * turb_percent / 100} 0 )"
 
         def set_boundary_inlet_outlet(boundary_name, vector):
             u_orig.content["boundaryField"][boundary_name]["type"] = "inletOutlet"
@@ -683,7 +691,7 @@ class OpenFoamController:
 
         block_mesh_dict.writeFile()
 
-    def update_p_from_wind_vector(self, x, y, z):
+    def update_p_from_wind_vector(self, x, y, z, wind_type="uniform", turb_percent=0):
         """
         Update p file based on wind vector components.
         """
@@ -714,7 +722,7 @@ class OpenFoamController:
         p_run = self.read_p_orig()
         p_run.writeFile(p.content)
 
-    def update_k_from_wind_vector(self, x, y, z):
+    def update_k_from_wind_vector(self, x, y, z, wind_type="uniform", turb_percent=0):
         """
         Update k file based on wind vector components.
         """
@@ -767,7 +775,7 @@ class OpenFoamController:
         k_orig_run = self.read_k_orig()
         k_orig_run.writeFile(k_orig.content)
 
-    def update_nut_from_wind_vector(self, x, y, z):
+    def update_nut_from_wind_vector(self, x, y, z, wind_type="uniform", turb_percent=0):
         """
         Update nut file based on wind vector components.
         """
@@ -817,7 +825,7 @@ class OpenFoamController:
         nut_run = self.read_nut_orig()
         nut_run.writeFile(nut.content)
 
-    def update_omega_from_wind_vector(self, x, y, z):
+    def update_omega_from_wind_vector(self, x, y, z, wind_type="uniform", turb_percent=0):
         """
         Update U.orig file based on wind vector components.
         """

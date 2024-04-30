@@ -1,0 +1,46 @@
+# Use the official base image
+FROM openfoam/openfoam-dev-paraview510:latest
+
+USER root
+# Update system and install necessary packages
+RUN apt-get update && apt-get install -y \
+    python3.10 \
+    python3-pip \
+    ssh \
+    curl \
+    nano \
+    git \
+    htop \
+    build-essential \
+    software-properties-common \
+    ca-certificates \
+    sudo \
+    wget \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+
+
+# Set environment variables to avoid some common issues with running Docker as root
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+
+
+# Install Python dependencies
+COPY python/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY python/ .
+
+# Create directories and set permissions
+
+# Set necessary environment variable
+ENV IN_DOCKER Yes
+
+# Expose necessary port
+EXPOSE 5001
+
+
+# Set the command to run the application
+CMD ["python3", "cfd_server.py", "-h", "0.0.0.0", "-p", "5001"]
