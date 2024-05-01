@@ -1,0 +1,24 @@
+#!/bin/sh
+cd ${0%/*} || exit 1    # Run from this directory
+
+. /opt/openfoam10/etc/bashrc  # TODO: this create a problem when running in docker, cannot open /openfoam10/etc/config.sh/functions: No such file
+. /opt/openfoam10/bin/tools/RunFunctions
+
+runApplication surfaceFeatures
+
+runApplication blockMesh
+
+runApplication decomposePar -copyZero
+runParallel snappyHexMesh -overwrite
+
+runParallel patchSummary
+runParallel potentialFoam
+runParallel $(getApplication)
+
+runApplication reconstructParMesh -constant
+runApplication reconstructPar
+postProcess -func writeCellCentres
+
+
+
+#------------------------------------------------------------------------------

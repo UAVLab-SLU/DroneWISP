@@ -3,11 +3,11 @@ import math
 import matplotlib.pyplot as plt
 import pyvista as pv
 import numpy as np
-import open3d as o3d
+#import open3d as o3d
 import plotly.express as px
 from matplotlib import pyplot
 from mpl_toolkits import mplot3d
-
+import trimesh
 
 class StlMeshUtils:
 
@@ -24,26 +24,26 @@ class StlMeshUtils:
         self.mesh_binary_mask_blocks = None  # list of binary mask blocks
         self.velocity_blocks = None  # list of velocity blocks
 
-    def load_convert_mesh(self, stl_file_name):
-        """
-        Load the stl file
-        :param stl_file_name:
-        :return:
-        """
-        if stl_file_name is None:
-            print("stl file name is None")
-            return
-        try:
-            self.mesh = o3d.io.read_triangle_mesh(stl_file_name)
-            self.mesh_point_cloud = self.mesh.sample_points_poisson_disk(62500)
-            self.mesh_point_cloud_array = np.asarray(self.mesh_point_cloud.points)
-            # int list of unique points
-            self.mesh_unique_points = np.int32(
-                np.unique(self.mesh_point_cloud_array.reshape(
-                    [int(self.mesh_point_cloud_array.size / 3), 3]), axis=0)
-            )
-        except:
-            print("Error loading mesh")
+    # def load_convert_mesh(self, stl_file_name):
+    #     """
+    #     Load the stl file
+    #     :param stl_file_name:
+    #     :return:
+    #     """
+    #     if stl_file_name is None:
+    #         print("stl file name is None")
+    #         return
+    #     try:
+    #         self.mesh = o3d.io.read_triangle_mesh(stl_file_name)
+    #         self.mesh_point_cloud = self.mesh.sample_points_poisson_disk(62500)
+    #         self.mesh_point_cloud_array = np.asarray(self.mesh_point_cloud.points)
+    #         # int list of unique points
+    #         self.mesh_unique_points = np.int32(
+    #             np.unique(self.mesh_point_cloud_array.reshape(
+    #                 [int(self.mesh_point_cloud_array.size / 3), 3]), axis=0)
+    #         )
+    #     except:
+    #         print("Error loading mesh")
 
     def pv_load_convert_mesh(self, stl_file_name):
         """
@@ -520,6 +520,65 @@ class StlMeshUtils:
         bbox = hexahedron.extract_surface()
         clipped_mesh = mesh.clip_surface(bbox)
         clipped_mesh.save(output_stl_file_path)
+
+
+    @staticmethod
+    def binary_mask_to_trimesh(point_list, cube_size=1):
+        """
+        Convert a binary mask to an STL file by generating a cube for each '1'.
+        Then, export the combined mesh as an STL file.
+        :param cube_size: the size of each cube in the binary mask.
+        :param binary_mask: a list of points where each point is a tuple (x, y, z) representing a '1' in the binary mask.
+        :return: TriMesh object representing the binary mask.
+        """
+
+        def create_cube_at_position(position, cube_size):
+            cube_mesh = trimesh.creation.box(extents=(cube_size, cube_size, cube_size))
+            cube_mesh.apply_translation(np.array(position) * cube_size)
+            return cube_mesh
+        cubes = []
+        for point in point_list:
+            center_offset = (0.5 * cube_size, 0.5 * cube_size, 0.5 * cube_size)
+            point = np.array(point) + center_offset
+            cube = create_cube_at_position(point, cube_size)
+            cubes.append(cube)
+        combined_mesh = trimesh.util.concatenate(cubes)
+        # Export the combined mesh as an STL file
+        # combined_mesh.export(output_filename)
+        return combined_mesh
+
+    @staticmethod
+    def height_mask_to_tall_cubes(height_mask, cube_size=1):
+        """
+        Convert a height mask to an STL mesh by generating a tall cube with the height specified in z.
+        This method attempts to optimize processing by reducing loop overhead and using vectorized operations.
+        :param height_mask: list of tuples (x, y, z) where z is the height of the cube.
+        :param cube_size: the size of each cube in the height mask.
+        :return: TriMesh object representing the height mask.
+        """
+        cubes = []
+
+        # Extract positions and heights from height_mask
+        positions = np.array(height_mask)[:, :2]  # x, y positions
+        heights = np.array(height_mask)[:, 2]  # z heights
+
+        # Adjust positions to include z-coordinate for translation
+        # Add a third column for z, initially set to zeros since it's just the base position
+        full_positions = np.hstack([positions * cube_size, np.zeros((positions.shape[0], 1))])
+
+        # Iterate over each position and height to create cubes
+        for i, (pos, h) in enumerate(zip(full_positions, heights)):
+            cube_dimensions = (cube_size, cube_size, h)
+            cube_mesh = trimesh.creation.box(extents=cube_dimensions)
+            center_offset = np.array([0.5 * cube_size, 0.5 * cube_size, 0.5 * h])  # Adjust for height
+            cube_mesh.apply_translation(pos + center_offset)
+            cubes.append(cube_mesh)
+
+        # Combine all the cube meshes into a single mesh
+        combined_mesh = trimesh.util.concatenate(cubes)
+        return combined_mesh
+
+
 
 
 if __name__ == "__main__":

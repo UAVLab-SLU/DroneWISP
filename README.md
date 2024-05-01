@@ -1,9 +1,9 @@
-# RealisticWind
+# RealWindDroneSim(RWDS) and RWDSX (RealWindDroneSimXelerate)
 
-This project uses OpenFoam to simulate realist wind conditions for a given geometry. 
+This project uses OpenFoam to simulate realist wind conditions for a given geometry. Also propose a PINN model to predict the wind velocity field in the given geometry.
 
 ## Requirements
-- Linux or Windows Linux Subsystem (WSL) 
+- Linux or WSL (WSL preferred)
 - OpenFoam 10
 - ParaView (optional, for visualization)
 
@@ -12,6 +12,12 @@ This project uses OpenFoam to simulate realist wind conditions for a given geome
 - 8GB+ RAM
 - 20GB+ available storage
 
+## Port reservation
+- DRV REST: port 5000
+- RWDS REST: port 5001
+- RWDS UDP inbound: port 3001
+- UE UDP inbound port: 8008
+- UE UDP outbound target port: 3001
 
 
 ## Getting Started
@@ -78,6 +84,18 @@ NOT SUPPORTED
 ### install openfoam on mac
 Only possible through docker, would not recommend since majority of code requires file system access and need frequent I/O operations.
 
+### RWDS backend on docker
+build the docker image
+```bash
+cd python
+docker build -t rwds_server .
+```
+run the docker image
+(assume you are in `python` directory)
+```bash
+docker compose up
+```
+
 ## Directory Structure
 all OpenFOAM research scenarios are in the run directory
 ```bash
@@ -95,6 +113,11 @@ bash ./Allrun
 
 ### Python entry points
 
+#### RWDS
+start RWDS side flask server: `python3 cfd_server.py -h "0.0.0.0" -p 5001`
+
+
+#### PINN
 preprocess velocity csv: `auto_preprocess_all_for_sim.py`, `auto_preprocess_all_for_train.py`. for sim uses weak preprocessing, for train uses strong preprocessing.
 
 prepare training data: `pinn/prepare_training_dataset.py` 

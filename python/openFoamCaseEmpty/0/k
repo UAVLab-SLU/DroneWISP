@@ -8,41 +8,47 @@
 FoamFile
 {
     format      ascii;
-    class       dictionary;
-    object      controlDict;
+    class       volScalarField;
+    object      k;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     simpleFoam;
+#include        "include/initialConditions"
 
-startFrom       startTime;
+dimensions      [0 2 -2 0 0 0 0];
 
-startTime       0;
+internalField   uniform $turbulentKE;
 
-stopAt          endTime;
+boundaryField
+{
+    #includeEtc "caseDicts/setConstraintTypes"
 
-endTime         51;
+    inlet
+    {
+    }
 
-deltaT          1;
+    outlet
+    {
+    }
 
-writeControl    timeStep;
+    lowerWall
+    {
+    }
 
-writeInterval   50;
+    combinedGroup
+    {
+    }
+    upperWall
+    {
+    }
 
-purgeWrite      0;
-
-writeFormat     ascii;
-
-writePrecision  6;
-
-writeCompression off;
-
-timeFormat      general;
-
-timePrecision   6;
-
-runTimeModifiable true;
-
+    front
+    {
+    }
+    back
+    {
+    }
+}
 
 
 // ************************************************************************* //

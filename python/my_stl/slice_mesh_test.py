@@ -1,4 +1,4 @@
-from python.stl.mesh_utils import StlMeshUtils
+from mesh_utils import StlMeshUtils
 
 mesh_utils = StlMeshUtils()
 # vertices = [

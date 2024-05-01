@@ -8,41 +8,50 @@
 FoamFile
 {
     format      ascii;
-    class       dictionary;
-    object      controlDict;
+    class       volScalarField;
+    object      omega;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     simpleFoam;
+#include        "include/initialConditions"
 
-startFrom       startTime;
+dimensions      [0 0 -1 0 0 0 0];
 
-startTime       0;
+internalField   uniform $turbulentOmega;
 
-stopAt          endTime;
+boundaryField
+{
+    #includeEtc "caseDicts/setConstraintTypes"
+    inlet
+    {
 
-endTime         51;
+    }
 
-deltaT          1;
+    outlet
+    {
 
-writeControl    timeStep;
+    }
 
-writeInterval   50;
+    lowerWall
+    {
+    }
 
-purgeWrite      0;
+    combinedGroup
+    {
+    }
 
-writeFormat     ascii;
+    upperWall
+    {
+    }
 
-writePrecision  6;
+    front
+    {
+    }
 
-writeCompression off;
-
-timeFormat      general;
-
-timePrecision   6;
-
-runTimeModifiable true;
-
+    back
+    {
+    }
+    }
 
 
 // ************************************************************************* //

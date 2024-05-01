@@ -18,32 +18,31 @@ boundaryField
 #includeEtc "caseDicts/setConstraintTypes"
   inlet
   {
-    type zeroGradient;
+
   }
   outlet
   {
-    type fixedValue;
-    value uniform 0;
+
   }
   lowerWall
   {
-    type zeroGradient;
+
   }
   combinedGroup
   {
-    type zeroGradient;
+
   }
   upperWall
   {
-    type zeroGradient;
+
   }
   front
   {
-    type zeroGradient;
+
   }
   back
   {
-    type zeroGradient;
+
   }
 } 	// ************************************************************************* //
 

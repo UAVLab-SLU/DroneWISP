@@ -5,15 +5,33 @@
     \\  /    A nd           | Version:  10
      \\/     M anipulation  |
 \*---------------------------------------------------------------------------*/
-
-upperWall
+FoamFile
 {
-    type slip;
+    format      ascii;
+    class       dictionary;
+    object      decomposeParDict;
 }
 
-frontAndBack
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+numberOfSubdomains  6;
+
+decomposer      hierarchical;
+distributor     ptscotch;
+// distributor     zoltan;
+// libs            ("libzoltanDecomp.so");
+
+hierarchicalCoeffs
 {
-    type slip;
+    n               (3 2 1);
+    order           xyz;
 }
+
+zoltanCoeffs
+{
+    lb_method       hypergraph;
+    lb_approach     partition;
+}
+
 
 // ************************************************************************* //

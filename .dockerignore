@@ -1,0 +1,32 @@
+# Ignore virtual environment directories
+.github/
+python/venv/
+python/.env/
+geometry_resource/
+readme_image/
+run/
+Data/
+.vscode/*
+
+# Ignore large training data
+python/pinn/training_mesh/*
+
+# Ignore Python cache
+**/__pycache__/
+
+# Ignore all csv files
+**/*.csv
+
+# Ignore Python path files
+**/*.pth
+
+# Ignore Markdown documentation
+**/*.md
+
+**/*.png
+**/*.jpg
+**/*.jpeg
+
+
+# ignore all files in the .idea folder
+.idea/*
