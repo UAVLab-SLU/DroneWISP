@@ -29,7 +29,7 @@ class OpenFoamController:
         """
         print("Running OpenFOAM case: ", self.case_root)
         if os.environ.get("IN_DOCKER", False):
-            proc = subprocess.run("bash ./AllrunDocker", shell=True, text=True, cwd=self.case_root)
+            proc = subprocess.Popen("bash ./AllrunDocker", shell=True, text=True, cwd=self.case_root)
         else:
             proc = subprocess.Popen(["bash ./Allrun"],
                                     shell=True,

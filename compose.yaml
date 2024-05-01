@@ -2,7 +2,8 @@ services:
   rwds_server:
     build:
       context: .
-      dockerfile: Dockerfile2
+      dockerfile: Dockerfile
+    image: rwds_server
     stop_signal: SIGINT
     ports:
       - '5001:5001'
