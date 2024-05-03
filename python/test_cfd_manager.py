@@ -27,7 +27,7 @@ cfd_manager.update_openfoam_case(request_json)
 
 time_start = time.time()
 
-# at this point, RWDS should be running
+# at this point, wisp should be running
 assert cfd_manager.get_state() == "cfd_running"
 
 # wait for the simulation to finish

@@ -188,11 +188,11 @@ class CFDManager:
                 return
 
             print("Preprocessing CFD results")
-            self.openfoam_controller.rwds_save_all_result_and_preprocess(range_x=self.range_x, range_y=self.range_y,
-                                                                        range_z=self.range_z, x_min=self.x_min, y_min=self.y_min,
-                                                                        z_min=self.z_min, x_max=self.x_max, y_max=self.y_max,
-                                                                        z_max=self.z_max)
-            self.foam_csv_reader.rwds_load_first_csv(int(self.openfoam_controller.get_time_folders()[0]))
+            self.openfoam_controller.wisp_save_all_result_and_preprocess(range_x=self.range_x, range_y=self.range_y,
+                                                                         range_z=self.range_z, x_min=self.x_min, y_min=self.y_min,
+                                                                         z_min=self.z_min, x_max=self.x_max, y_max=self.y_max,
+                                                                         z_max=self.z_max)
+            self.foam_csv_reader.wisp_load_first_csv(int(self.openfoam_controller.get_time_folders()[0]))
 
             print("Ready to serve wind data")
             self.state = "ready"

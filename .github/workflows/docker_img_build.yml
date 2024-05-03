@@ -3,7 +3,7 @@ name: Docker Image CI
 on:
   push:
     branches:
-      - dev-rwds-full-auto
+      - main
   pull_request:
     branches:
       - main
@@ -16,4 +16,4 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Build the Docker image
-      run: docker build -t rwds_server .
+      run: docker build -t wisp_server .

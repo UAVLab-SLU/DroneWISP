@@ -25,20 +25,20 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a new user "rwds" and add it to the sudoers list
-RUN adduser --disabled-password --gecos '' rwds && \
-    adduser rwds sudo && \
+# Create a new user "wisp" and add it to the sudoers list
+RUN adduser --disabled-password --gecos '' wisp && \
+    adduser wisp sudo && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-# Switch to the new user "rwds"
-USER rwds
+# Switch to the new user "wisp"
+USER wisp
 
 # Set environment variables to avoid some common issues with running Docker as root
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 # Set the working directory
-WORKDIR /home/rwds
+WORKDIR /home/wisp
 
 # Add OpenFOAM repository and key, and install OpenFOAM
 RUN sudo sh -c "wget -O - http://dl.openfoam.org/gpg.key | apt-key add -" && \
@@ -48,13 +48,13 @@ RUN sudo sh -c "wget -O - http://dl.openfoam.org/gpg.key | apt-key add -" && \
     sudo apt-get install --only-upgrade -y openfoam10
 
 # Set up environment for OpenFOAM
-RUN echo "source /opt/openfoam10/etc/bashrc" >> /home/rwds/.bashrc
+RUN echo "source /opt/openfoam10/etc/bashrc" >> /home/wisp/.bashrc
 
 # Install Python dependencies
-COPY --chown=rwds:rwds python/requirements.txt .
+COPY --chown=wisp:wisp python/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY --chown=rwds:rwds python/ .
+COPY --chown=wisp:wisp python/ .
 
 # Create directories and set permissions
 

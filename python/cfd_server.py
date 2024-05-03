@@ -126,9 +126,9 @@ if __name__ == '__main__':
     # quick check on drv server rest api, see if we can access it
     try:
         if os.environ.get("IN_DOCKER", False):
-            response = requests.get(f"http://drv_server:5000/state")
+            response = requests.get(f"http://drv_server:5000/state", timeout=1)
         else:
-            response = requests.get(f"http://192.168.1.181:5000/state")
+            response = requests.get(f"http://192.168.1.181:5000/state", timeout=1)
         if response.status_code == 200:
             print("Connected to DRV server")
         else:

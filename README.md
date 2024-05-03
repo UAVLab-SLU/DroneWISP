@@ -1,4 +1,9 @@
-# RealWindDroneSim(RWDS) and RWDSX (RealWindDroneSimXelerate)
+# DroneWISP (Wind Simulation and Prediction)
+DroneWISP, or WISP for short, is a project that aims to simulate wind conditions for a given geometry and predict the wind velocity field using a PINN model.
+
+(DroneWISP was previously known as RWDS, or Real Wind Drone Sim (RWDS), but was renamed to better reflect the project's goals.)
+
+DRV, or Drone Req Validator, is a project that aims to streamline the process of validating the requirements of a drone software system. available at [here](https://github.com/UAVLab-SLU/AirsimMonitors)
 
 This project uses OpenFoam to simulate realist wind conditions for a given geometry. Also propose a PINN model to predict the wind velocity field in the given geometry.
 
@@ -14,8 +19,8 @@ This project uses OpenFoam to simulate realist wind conditions for a given geome
 
 ## Port reservation
 - DRV REST: port 5000
-- RWDS REST: port 5001
-- RWDS UDP inbound: port 3001
+- WISP REST: port 5001
+- WISP UDP inbound: port 3001
 - UE UDP inbound port: 8008
 - UE UDP outbound target port: 3001
 
@@ -82,13 +87,13 @@ pip install -r requirements.txt
 NOT SUPPORTED
 
 ### install openfoam on mac
-Only possible through docker, would not recommend since majority of code requires file system access and need frequent I/O operations.
+Docker is recommended for Mac users.
 
-### RWDS backend on docker
+### WISP backend on docker
 build the docker image
 ```bash
 cd python
-docker build -t rwds_server .
+docker build -t wisp_server .
 ```
 run the docker image
 (assume you are in `python` directory)
@@ -113,8 +118,8 @@ bash ./Allrun
 
 ### Python entry points
 
-#### RWDS
-start RWDS side flask server: `python3 cfd_server.py -h "0.0.0.0" -p 5001`
+#### WISP
+start WISP side flask server: `python3 cfd_server.py -h "0.0.0.0" -p 5001`
 
 
 #### PINN
