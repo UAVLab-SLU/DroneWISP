@@ -1,8 +1,8 @@
 version: '3.8'
 
 services:
-  rwds_server:
-    image: rwds_server
+  wisp_server:
+    image: wisp_server
     stop_signal: SIGINT
     ports:
       - '5001:5001'

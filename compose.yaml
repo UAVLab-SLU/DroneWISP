@@ -1,9 +1,9 @@
 services:
-  rwds_server:
+  wisp_server:
     build:
       context: .
       dockerfile: Dockerfile
-    image: rwds_server
+    image: wisp_server
     stop_signal: SIGINT
     ports:
       - '5001:5001'

@@ -24,13 +24,13 @@ class FoamCSVReader:
         self.csv_filename = None
         # self.preprocess()
 
-    def rwds_load_first_csv(self, time_folder):
+    def wisp_load_first_csv(self, time_folder):
         """
         Load the first csv file in the sequence
         :param time_folder: int, the time folder number
         """
-        self.csv_filename = os.path.join(self.openfoam_root, "rwds_" + str(time_folder) + ".csv")
-        self.df = self.read_csv("rwds_" + str(time_folder) + ".csv")
+        self.csv_filename = os.path.join(self.openfoam_root, "wisp_" + str(time_folder) + ".csv")
+        self.df = self.read_csv("wisp_" + str(time_folder) + ".csv")
 
     def read_csv(self, filename):
         start_read = time.time()

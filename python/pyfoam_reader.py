@@ -902,7 +902,7 @@ class OpenFoamController:
             raise ValueError("File do not exist: ", filename)
         return ParsedParameterFile(filename)
 
-    def rwds_save_all_result_and_preprocess(self, range_x=None, range_y=None, range_z=None, x_min=None, x_max=None,
+    def wisp_save_all_result_and_preprocess(self, range_x=None, range_y=None, range_z=None, x_min=None, x_max=None,
                                             y_min=None, y_max=None, z_min=None, z_max=None):
         """
         save the all result to csv file,
@@ -967,7 +967,7 @@ class OpenFoamController:
                 if len(df) != range_x * range_y * range_z:
                     print(f"Error: Data size is not correct. Expected {range_x * range_y * range_z}, got {len(df)}")
 
-            save_path = os.path.join(self.case_root, f"rwds_{time}.csv")
+            save_path = os.path.join(self.case_root, f"wisp_{time}.csv")
             df.to_csv(save_path, index=False)
             print(f"Saved preprocessed data to {save_path}")
 
