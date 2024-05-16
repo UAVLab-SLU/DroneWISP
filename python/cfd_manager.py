@@ -129,6 +129,7 @@ class CFDManager:
         self.state = "idle"
 
         self.openfoam_controller.update_vertices(list_vertex)
+        self.openfoam_controller.update_shm_inside_point(self.openfoam_controller.calculate_shm_inside_point(list_vertex))
         self.openfoam_controller.update_dimension(request_json['x_length'] * 2 + 1, request_json['y_length'] * 2 + 1,
                                                   request_json['z_length'])
         self.openfoam_controller.update_wind(request_json['wind_speed_x'], request_json['wind_speed_y'],

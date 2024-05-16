@@ -269,7 +269,7 @@ class OpenFoamController:
         np.savetxt(save_path, cell_and_velocity, delimiter=",", header=header)
 
     def pinn_save_all_result_and_preprocess(self, range_x=None, range_y=None, range_z=None, x_min=None, x_max=None,
-                                            y_min=None, y_max=None, z_min=None, z_max=None):
+                                            y_min=None, y_max=None, z_min=None, z_max=None, data_dir="../5k_training_dataset"):
         """
         save the all result to csv file,
         optional param range_x, range_y, range_z to preprocess the data
@@ -360,7 +360,6 @@ class OpenFoamController:
             sub_dir_name = str(x_min) + "_" + str(x_max) + "_" + str(y_min) + "_" + str(y_max) + "_" + str(
                 z_min) + "_" + str(z_max)
             # create sub dir if not exist
-            data_dir = "../5k_training_dataset"
             if not os.path.exists(os.path.join(data_dir, sub_dir_name)):
                 os.makedirs(os.path.join(data_dir, sub_dir_name))
             save_path = os.path.join(data_dir, sub_dir_name, f"result_preprocessed_{time}.csv")
