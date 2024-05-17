@@ -26,7 +26,7 @@ max_y = 25
 min_z = 0
 max_z = 10
 
-sample_points = 2
+sample_points = 1
 
 # generate random GPS coordinates uniformly distributed in the area
 def generate_random_gps():
@@ -55,7 +55,7 @@ def run_cfd(wind_x, wind_y):
 
 
     json_request = dict(wind_speed_x=-wind_x, wind_speed_y=wind_y, wind_speed_z=0, wind_type='uniform',
-                        x_length=50, y_length=50, z_length=10,
+                        x_length=25, y_length=25, z_length=10,
                         v1={'x': -25, 'y': -25, 'z': 0},
                         v2={'x': 25, 'y': -25, 'z': 0},
                         v3={'x': 25, 'y': 25, 'z': 0},
@@ -118,6 +118,11 @@ def gather_data(wind_x, wind_y):
         # convert the mesh to VTK format
         convert_stl_to_vtk(mesh_file, dir_name, "combined.vtk")
 
+        # also save original stl to the directory
+        stl_file = os.path.join(dir_name, "combined.stl")
+        os.rename(mesh_file, stl_file)
+
+
     print("Gathering data")
     openfoam_controller.pinn_save_all_result_and_preprocess(range_x=50 , range_y=50, range_z=10,
                                                              x_min=-25, y_min=-25, z_min=0,
@@ -141,10 +146,14 @@ def generate_random_wind(mag_min=10, mag_max=20):
 
 if __name__ == '__main__':
 
+    success_count = 0
     for i in range(sample_points):
         print("Set ", i)
         wind_x, wind_y = generate_random_wind()
-        gps_loc = generate_random_gps()
+        #gps_loc = generate_random_gps()
+        gps_loc = my_fav
         scan_terrain(gps_loc)
-        run_cfd(wind_x, wind_y)
-        gather_data(wind_x, wind_y)
+        if run_cfd(wind_x, wind_y):
+            gather_data(wind_x, wind_y)
+            success_count += 1
+            print("Success: ", success_count)
