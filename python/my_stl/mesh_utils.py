@@ -556,55 +556,119 @@ class StlMeshUtils:
         :param cube_size: the size of each cube in the height mask.
         :return: TriMesh object representing the height mask.
         """
-        cubes = []
-
         # Extract positions and heights from height_mask
         positions = np.array(height_mask)[:, :2]  # x, y positions
         heights = np.array(height_mask)[:, 2]  # z heights
 
         # Adjust positions to include z-coordinate for translation
-        # Add a third column for z, initially set to zeros since it's just the base position
         full_positions = np.hstack([positions * cube_size, np.zeros((positions.shape[0], 1))])
 
-        # Iterate over each position and height to create cubes
-        for i, (pos, h) in enumerate(zip(full_positions, heights)):
-            cube_dimensions = (cube_size, cube_size, h)
-            cube_mesh = trimesh.creation.box(extents=cube_dimensions)
-            center_offset = np.array([0.5 * cube_size, 0.5 * cube_size, 0.5 * h])  # Adjust for height
-            cube_mesh.apply_translation(pos + center_offset)
-            cubes.append(cube_mesh)
+        # Calculate the number of vertices and faces per cube
+        num_cubes = len(height_mask)
+        vertices_per_cube = 8
+        faces_per_cube = 12
+        total_vertices = vertices_per_cube * num_cubes
+        total_faces = faces_per_cube * num_cubes
 
-        # Combine all the cube meshes into a single mesh
-        combined_mesh = trimesh.util.concatenate(cubes)
+        # Initialize arrays for vertices and faces
+        vertices = np.zeros((total_vertices, 3))
+        faces = np.zeros((total_faces, 3), dtype=int)
+
+        # Template for a unit cube
+        unit_cube_vertices = np.array([
+            [-0.5, -0.5, -0.5],
+            [0.5, -0.5, -0.5],
+            [0.5, 0.5, -0.5],
+            [-0.5, 0.5, -0.5],
+            [-0.5, -0.5, 0.5],
+            [0.5, -0.5, 0.5],
+            [0.5, 0.5, 0.5],
+            [-0.5, 0.5, 0.5]
+        ])
+
+        unit_cube_faces = np.array([
+            [0, 1, 2], [0, 2, 3],
+            [4, 5, 6], [4, 6, 7],
+            [0, 1, 5], [0, 5, 4],
+            [2, 3, 7], [2, 7, 6],
+            [0, 3, 7], [0, 7, 4],
+            [1, 2, 6], [1, 6, 5]
+        ])
+
+        # Fill the vertices and faces arrays
+        for i, (pos, h) in enumerate(zip(full_positions, heights)):
+            start_vertex_index = i * vertices_per_cube
+            start_face_index = i * faces_per_cube
+
+            # Scale and translate unit cube vertices
+            scaled_vertices = unit_cube_vertices * [cube_size, cube_size, h]
+            translated_vertices = scaled_vertices + pos + [0.5 * cube_size, 0.5 * cube_size, 0.5 * h]
+
+            vertices[start_vertex_index:start_vertex_index + vertices_per_cube] = translated_vertices
+            faces[start_face_index:start_face_index + faces_per_cube] = unit_cube_faces + start_vertex_index
+
+        # Create the mesh from vertices and faces
+        combined_mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
         return combined_mesh
 
+    @staticmethod
+    def height_mask_to_horizontal_faces(height_mask, cube_size=1):
+        """
+        Convert a height mask to an STL mesh by generating a horizontal face (rectangle) with the height specified in z.
+        This method attempts to optimize processing by reducing loop overhead and using vectorized operations.
+        :param height_mask: list of tuples (x, y, z) where z is the height of the face.
+        :param cube_size: the size of each base of the face in the height mask.
+        :return: TriMesh object representing the height mask.
+        """
+        # Extract positions and heights from height_mask
+        positions = np.array(height_mask)[:, :2]  # x, y positions
+        heights = np.array(height_mask)[:, 2]  # z heights
 
+        # Adjust positions to include z-coordinate for translation
+        full_positions = positions * cube_size
 
+        # Calculate the number of vertices and faces per face
+        num_faces = len(height_mask)
+        vertices_per_face = 4
+        faces_per_face = 2
+        total_vertices = vertices_per_face * num_faces
+        total_faces = faces_per_face * num_faces
 
-if __name__ == "__main__":
-    stl_file = "../stl/chicago100shrunk.stl"
-    vl_file = "../openFoamCase/10ms_2.csv"
+        # Initialize arrays for vertices and faces
+        vertices = []
+        faces = []
 
-    stl_mesh_utils = StlMeshUtils()  # chicago dimensions: -2014 2073 -1710 1706 0 441
-    stl_mesh_utils.load_convert_mesh(stl_file)
+        # Fill the vertices and faces arrays
+        vertex_index = 0
+        for pos, h in zip(full_positions, heights):
+            # Define the vertices for the current horizontal face
+            current_vertices = np.array([
+                [pos[0], pos[1], h],
+                [pos[0] + cube_size, pos[1], h],
+                [pos[0] + cube_size, pos[1] + cube_size, h],
+                [pos[0], pos[1] + cube_size, h]
+            ])
 
-    block_size_x = 50
-    block_size_y = 50
-    x_min = -100
-    x_max = 100
-    y_min = -100
-    y_max = 100
+            # Add the vertices to the list
+            vertices.extend(current_vertices)
 
-    blocks = stl_mesh_utils.partition_mesh_block(block_size_x, block_size_y, x_min, x_max, y_min, y_max)
-    print("block count: ", len(blocks))
+            # Define the faces (triangles) for the current face
+            current_faces = np.array([
+                [vertex_index, vertex_index + 1, vertex_index + 2],
+                [vertex_index, vertex_index + 2, vertex_index + 3]
+            ])
 
-    for i, block in enumerate(blocks):
-        binary_mask = stl_mesh_utils.to_binary_mask(block)
-        stl_mesh_utils.save_binary_array("binary_mask_" + str(i) + ".npy", binary_mask)
+            # Add the faces to the list
+            faces.extend(current_faces)
 
-    stl_mesh_utils.load_velocity(vl_file)
-    vel_blocks = stl_mesh_utils.partition_velocity_block(block_size_x, block_size_y, x_min, x_max, y_min, y_max)
-    print("vel block count: ", len(vel_blocks))
+            # Update the vertex index for the next face
+            vertex_index += vertices_per_face
 
-    for i, block in enumerate(vel_blocks):
-        np.save("velocity_" + str(i) + ".npy", block)
+        # Convert lists to numpy arrays
+        vertices = np.array(vertices)
+        faces = np.array(faces)
+
+        # Create the mesh from vertices and faces
+        combined_mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+        return combined_mesh
+
