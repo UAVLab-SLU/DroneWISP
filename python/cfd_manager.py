@@ -68,6 +68,7 @@ class CFDManager:
         :param request_json: raw json from the request
         expected format: {'wind_speed_x': 0, 'wind_speed_y': 0, 'wind_speed_z': 0, 'wind_type': 'uniform',
         'x_length': 50, 'y_length': 50, 'z_length': 20,
+        'dt': 1, 'end_time': 51, 'write_interval': 50,
         'v1': {'x': -50, 'y': -50, 'z': -5}, 'v2': {'x': 50, 'y': -50, 'z': -5} 'v3': {'x': 50, 'y': 50, 'z': -5},
         'v4': {'x': -50, 'y': 50, 'z': -5}, 'v5': {'x': -50, 'y': -50, 'z': 5}, 'v6': {'x': 50, 'y': -50, 'z': 5},
         'v7': {'x': 50, 'y': 50, 'z': 5}, 'v8': {'x': -50, 'y': 50, 'z': 5}}
@@ -134,6 +135,29 @@ class CFDManager:
                                                   request_json['z_length'])
         self.openfoam_controller.update_wind(request_json['wind_speed_x'], request_json['wind_speed_y'],
                                              request_json['wind_speed_z'], request_json['wind_type'])
+
+        if 'dt' in request_json:
+            # convert to float if not
+            if not isinstance(request_json['dt'], (int, float)):
+                try:
+                    request_json['dt'] = float(request_json['dt'])
+                except ValueError:
+                    return False
+            self.openfoam_controller.update_dt(request_json['dt'])
+        if 'end_time' in request_json:
+            if not isinstance(request_json['end_time'], (int, float)):
+                try:
+                    request_json['end_time'] = float(request_json['end_time'])
+                except ValueError:
+                    return False
+            self.openfoam_controller.update_end_time(request_json['end_time'])
+        if 'write_interval' in request_json:
+            if not isinstance(request_json['write_interval'], int):
+                try:
+                    request_json['write_interval'] = int(request_json['write_interval'])
+                except ValueError:
+                    return False
+            self.openfoam_controller.update_write_interval(request_json['write_interval'])
 
         self.openfoam_case_ready = True
         if self.openfoam_case_ready and self.stl_mesh_ready:

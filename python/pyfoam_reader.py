@@ -186,6 +186,17 @@ class OpenFoamController:
             raise ValueError("File do not exist:", filename)
         return ParsedBlockMeshDict(filename)
 
+    def read_control_dict(self):
+        """
+        Read controlDict from OpenFOAM case
+        :return:
+        """
+        filename = os.path.join(self.case_root, "system", "controlDict")
+        if not os.path.exists(filename):
+            raise ValueError("File do not exist:", filename)
+
+        return ParsedParameterFile(filename)
+
     @staticmethod
     def vertices_to_string(vertices):
         """
@@ -969,6 +980,42 @@ class OpenFoamController:
             save_path = os.path.join(self.case_root, f"wisp_{time}.csv")
             df.to_csv(save_path, index=False)
             print(f"Saved preprocessed data to {save_path}")
+
+    def update_dt(self, dt_seconds):
+        """
+        Update dt in controlDict.
+        :param dt_seconds: float, new dt value in seconds
+        """
+        control_dict = self.read_control_dict()
+        if control_dict is not None:
+            control_dict["deltaT"] = dt_seconds
+            control_dict.writeFile()
+        else:
+            raise ValueError("Failed to read controlDict.")
+
+    def update_end_time(self, end_time_seconds):
+        """
+        Update endTime in controlDict.
+        :param end_time_seconds: float, new endTime value in seconds
+        """
+        control_dict = self.read_control_dict()
+        if control_dict is not None:
+            control_dict["endTime"] = end_time_seconds
+            control_dict.writeFile()
+        else:
+            raise ValueError("Failed to read controlDict.")
+
+    def update_write_interval(self, write_interval_seconds):
+        """
+        Update writeInterval in controlDict.
+        :param write_interval_seconds: int, new writeInterval value in seconds
+        """
+        control_dict = self.read_control_dict()
+        if control_dict is not None:
+            control_dict["writeInterval"] = write_interval_seconds
+            control_dict.writeFile()
+        else:
+            raise ValueError("Failed to read controlDict.")
 
 
 if __name__ == "__main__":
