@@ -33,6 +33,7 @@ class CFDManager:
         self.wind_type = "uniform"  # default wind type, can be "uniform", "turbulent", "turbulent_multi_source"
         self.openfoam_controller = OpenFoamController("openFoamCase")
         self.foam_csv_reader = FoamCSVReader("openFoamCase")
+        self.DEBUG_USE_SAME_DATA = False # for debugging, use the same data for subsequent requests
 
     def get_state(self):
         return self.state
@@ -48,6 +49,11 @@ class CFDManager:
         if self.state == "cfd_running":
             print("CFD simulation is running, cannot replace mesh with binary mask")
             return False
+
+        if self.DEBUG_USE_SAME_DATA:
+            self.stl_mesh_ready = True
+            self.state = "ready"
+            return True
 
         self.state = "idle"
 
@@ -79,6 +85,15 @@ class CFDManager:
         if self.state == "cfd_running":
             print("CFD simulation is already running")
             return False
+
+        if self.DEBUG_USE_SAME_DATA:
+            self.openfoam_case_ready = True
+            self.state = "ready"
+            # simulate a delay
+            import time
+            time.sleep(3)
+            self.notify_ready()
+            return True
 
         # type check
         if (not isinstance(request_json['wind_speed_x'], (int, float)) or
@@ -175,6 +190,10 @@ class CFDManager:
             print("CFD simulation is already running")
             return
 
+        if self.DEBUG_USE_SAME_DATA:
+            self.state = "ready"
+            return
+
         # check if variables are set
         if (self.range_x is None or self.range_y is None or self.range_z is None or
                 self.x_min is None or self.x_max is None or
@@ -204,11 +223,7 @@ class CFDManager:
                 self.openfoam_controller.debug_failed_run()
                 self.state = "cfd_fail"
                 self.reset_flag()
-                # if in docker IN_DOCKER = True,
-                if os.getenv("IN_DOCKER", False):
-                    requests.post("http://drv_server:5000/cfdFailNotify")
-                else:
-                    requests.post("http://192.168.1.181:5000/cfdFailNotify")
+                self.notify_fail()
                 self.state = "idle"
                 return
 
@@ -223,13 +238,27 @@ class CFDManager:
             self.state = "ready"
             self.reset_flag()
             # if in docker IN_DOCKER = True,
-            if os.getenv("IN_DOCKER", False):
-                requests.post("http://drv_server:5000/cfdDoneNotify")
-            else:
-                requests.post("http://192.168.1.181:5000/cfdDoneNotify") # TODO: hard coded DRV ip
+            self.notify_ready()
+
+
 
         simulation_thread = threading.Thread(target=target_function)
         simulation_thread.start()
+
+    @staticmethod
+    def notify_fail():
+        # if in docker IN_DOCKER = True,
+        if os.getenv("IN_DOCKER", False):
+            requests.post("http://drv_server:5000/cfdFailNotify")
+        else:
+            requests.post("http://192.168.1.181:5000/cfdFailNotify")
+
+    @staticmethod
+    def notify_ready():
+        if os.getenv("IN_DOCKER", False):
+            requests.post("http://drv_server:5000/cfdDoneNotify")
+        else:
+            requests.post("http://192.168.1.181:5000/cfdDoneNotify")  # TODO: hard coded DRV ip
 
     def reset_flag(self):
         """
@@ -243,14 +272,15 @@ class CFDManager:
         """
         Get the wind vector from the preprocessed dataframe
         :param cartesian_coordinates: [x, y, z] coordinates
-        :return: wind vector [x, y, z]
+        :return: wind vector [x, y, z] or None if data is not ready
         """
-        # check if case is prepared
-        if self.state != "ready":
+        if not self.DEBUG_USE_SAME_DATA and self.state != "ready":
             print("Wind data is not ready")
             return None
-        vel = self.foam_csv_reader.get_spacial_temporal_velocity_next_time_step(cartesian_coordinates)
-        return vel
+
+        return self.foam_csv_reader.get_spacial_temporal_velocity_next_time_step(cartesian_coordinates)
 
 
-
+if __name__ == "__main__":
+    cfd_manager = CFDManager()
+    cfd_manager.openfoam_controller.wisp_save_all_result_and_preprocess()
