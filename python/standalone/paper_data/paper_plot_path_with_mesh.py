@@ -176,7 +176,7 @@ planned_path_y = 0 + 8 * np.sin(theta)
 planned_path_z = np.full_like(planned_path_x, 7)
 
 
-# Load the STL file
+# Load the STL file from current directory
 terrain_mesh = mesh.Mesh.from_file('plot_mesh.stl')
 
 # Calculate the min and max ranges for x, y, and z coordinates

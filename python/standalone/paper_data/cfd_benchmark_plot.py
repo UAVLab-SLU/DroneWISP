@@ -44,37 +44,3 @@ plt.show()
 
 # Display the polynomial coefficients for preparation time
 print("Linear Fit Coefficients (Preparation Time):", p1.convert().coef)
-
-# Plotting the CFD time data
-plt.figure(figsize=(8, 6))
-plt.scatter(time_length, cfd_time, color='red', label='CFD Time')
-
-# Fit a linear polynomial to the CFD time data
-p2 = Polynomial.fit(time_length, cfd_time, 1)
-x_new_cfd = np.linspace(time_length[0], time_length[-1], 500)
-y_new_2 = p2(x_new_cfd)
-
-# Plot the fitted curve for CFD time
-plt.plot(x_new_cfd, y_new_2, color='purple', linestyle='--', label='Linear Fit (CFD Time)')
-
-# Adjust axis labels
-plt.xlabel('Simulation Duration (seconds)', fontsize=14)  # Use raw values for x-axis
-plt.ylabel('Time (seconds)', fontsize=14)
-plt.title('Wind Simulation Preparation Time vs. Simulation Duration', fontsize=12)
-plt.legend()
-
-# Adjust x-axis to use 10^x format
-ax = plt.gca()
-# ax.set_xscale('log')
-# ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'$10^{{{int(np.log10(x))}}}$'))
-plt.xticks(fontsize=12)
-plt.yticks(fontsize=12)
-
-# Save the CFD time plot
-plt.savefig("cfd_time_vs_length.png")
-
-# Show the CFD time plot
-plt.show()
-
-# Display the polynomial coefficients for CFD time
-print("Linear Fit Coefficients (CFD Time):", p2.convert().coef)
