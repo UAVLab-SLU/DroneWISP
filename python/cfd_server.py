@@ -7,17 +7,17 @@ from flask import Flask, request
 from flask_cors import CORS
 
 from cfd_manager import CFDManager
+from network_env import get_host_ip, save_ip_to_env
+
+
+
+
 
 app = Flask(__name__)
 log = logging.getLogger('werkzeug')
 #log.setLevel(logging.ERROR)
 CORS(app)
 # hardcoded for now, use environment variables in production
-UE_ADDRESS = "192.168.1.181"
-UE_PORT = 8008
-DRV_ADDRESS = "192.168.1.181"
-DRV_PORT = 5000
-MY_INBOUND_UDP_PORT = 3001
 
 cfd_manager = CFDManager()
 if os.getenv("IN_DOCKER", False):
@@ -126,12 +126,18 @@ if __name__ == '__main__':
         if os.environ.get("IN_DOCKER", False):
             response = requests.get(f"http://drv_server:5000/state", timeout=1)
         else:
-            response = requests.get(f"http://192.168.1.181:5000/state", timeout=1)
+            host_ip = get_host_ip()
+            if host_ip:
+                save_ip_to_env(host_ip)
+                print(f"Host IP address {host_ip} has been saved to .env file.")
+            else:
+                print("Failed to retrieve the host machine's IPv4 address")
+            response = requests.get(f"http://{os.getenv('HOST_IP')}:5000/state", timeout=1)
         if response.status_code == 200:
             print("Connected to DRV server")
         else:
             print("Error connecting to DRV server")
     except requests.exceptions.RequestException as e:
-        print("Error connecting to DRV server:", e)
+        print("Error connecting to DRV server")
 
     app.run(host='0.0.0.0', port=5001)

@@ -12,3 +12,4 @@ open3d
 pyvista==0.42.3
 msgpack-rpc-python
 trimesh
+python-dotenv
