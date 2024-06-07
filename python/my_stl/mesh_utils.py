@@ -527,8 +527,8 @@ class StlMeshUtils:
         """
         Convert a binary mask to an STL file by generating a cube for each '1'.
         Then, export the combined mesh as an STL file.
+        :param point_list:
         :param cube_size: the size of each cube in the binary mask.
-        :param binary_mask: a list of points where each point is a tuple (x, y, z) representing a '1' in the binary mask.
         :return: TriMesh object representing the binary mask.
         """
 

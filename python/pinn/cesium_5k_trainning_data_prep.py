@@ -7,7 +7,7 @@ import hashlib
 import requests
 import vtk
 
-from pyfoam_reader import OpenFoamController
+from python.open_foam_controller import OpenFoamController
 
 DRV_IP = "192.168.1.181:5000"
 WISP_IP = "127.0.0.1:5001"

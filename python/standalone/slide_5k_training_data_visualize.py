@@ -1,8 +1,7 @@
 import os.path
 
-import pandas as pd
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import pandas as pd
 
 
 def visualize_data_from_csv(csv_file_path):
@@ -10,7 +9,7 @@ def visualize_data_from_csv(csv_file_path):
     df = pd.read_csv(csv_file_path)
 
     # Filter the data to include only rows where bm is 1
-    filtered_df = df
+    filtered_df = df[df['bm'] == 1]
 
     # Determine the axis limits
     max_range = max(filtered_df[['x', 'y', 'z']].max() - filtered_df[['x', 'y', 'z']].min())
@@ -25,7 +24,7 @@ def visualize_data_from_csv(csv_file_path):
     # Front view (Y-Z plane, but with Y going back and Z going up)
     ax1 = fig.add_subplot(131, projection='3d')
     ax1.view_init(elev=90, azim=-90)
-    ax1.scatter(filtered_df['x'], filtered_df['z'], -filtered_df['y'], c='blue', marker='s', s=1) # Y-axis values are negated to appear going back
+    ax1.scatter(filtered_df['x'], filtered_df['z'], -filtered_df['y'], c='blue', marker='s', s=100) # Y-axis values are negated to appear going back
     ax1.set_xlim(mid_x - max_range * 0.5, mid_x + max_range * 0.5)
     ax1.set_ylim(mid_z - max_range * 0.5, mid_z + max_range * 0.5)
     ax1.set_zlim(-mid_y - max_range * 0.5, -mid_y + max_range * 0.5) # Inverting limits for Y-axis
@@ -36,7 +35,7 @@ def visualize_data_from_csv(csv_file_path):
 
     # Side view (Y-Z plane)
     ax2 = fig.add_subplot(132, projection='3d')
-    ax2.scatter(filtered_df['x'], filtered_df['y'], filtered_df['z'], c='red', marker='s', s=1)
+    ax2.scatter(filtered_df['x'], filtered_df['y'], filtered_df['z'], c='red', marker='s', s=100)
     ax2.view_init(elev=0, azim=0)
     ax2.set_xlim(mid_x - max_range * 0.5, mid_x + max_range * 0.5)
     ax2.set_ylim(mid_y - max_range * 0.5, mid_y + max_range * 0.5)
@@ -48,7 +47,7 @@ def visualize_data_from_csv(csv_file_path):
 
     # Top-down view (X-Y plane)
     ax3 = fig.add_subplot(133, projection='3d')
-    ax3.scatter(filtered_df['x'], filtered_df['y'], filtered_df['z'], c='green', marker='s', s=1)
+    ax3.scatter(filtered_df['x'], filtered_df['y'], filtered_df['z'], c='green', marker='s', s=100)
     ax3.view_init(elev=90, azim=-90)
     ax3.set_xlim(mid_x - max_range * 0.5, mid_x + max_range * 0.5)
     ax3.set_ylim(mid_y - max_range * 0.5, mid_y + max_range * 0.5)
@@ -62,6 +61,10 @@ def visualize_data_from_csv(csv_file_path):
     plt.show()
 
 
-
-csv_file_path = 'rolling_box_scan_test.csv'
-visualize_data_from_csv(os.path.join(csv_file_path))
+# Assuming the CSV file is named 'result_preprocessed_time.csv' and located in the current directory
+time = 50
+open_foam_case_root = "../5k_training_dataset/0_25_0_25_1_11"
+csv_file_path = 'result_preprocessed_' + str(time) + '.csv'
+# open_foam_case_root = "."
+# csv_file_path = 'rolling_box_scan_test.csv'
+visualize_data_from_csv(os.path.join(open_foam_case_root, csv_file_path))

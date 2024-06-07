@@ -1,13 +1,11 @@
 import json
+import logging
 import os
-import struct
 
 import requests
 from flask import Flask, request
-import threading
-import socket
-import logging
 from flask_cors import CORS
+
 from cfd_manager import CFDManager
 
 app = Flask(__name__)

@@ -1,9 +1,9 @@
 # Prepare 5k training data for PINN by sliding the boundary vertices in openfoam blockMeshDict file
 
 import os
-import numpy as np
-from python.pyfoam_reader import OpenFoamController
 import time
+
+from python.open_foam_controller import OpenFoamController
 
 case_root = "openFoamCase"
 foam = OpenFoamController(case_root)

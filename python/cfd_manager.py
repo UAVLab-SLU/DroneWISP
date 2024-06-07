@@ -2,7 +2,7 @@ import os
 
 import requests
 
-from pyfoam_reader import OpenFoamController
+from open_foam_controller import OpenFoamController
 from openfoam_csv_reader import FoamCSVReader
 import threading
 

@@ -17,7 +17,7 @@ def preprocess_all(foam_data_root=foam_data_root, init_filename=init_filename,
         return
     start = time.time()
     # preprocess the first file
-    foam_reader = FoamCSVReader(foam_data_root, init_filename)
+    foam_reader = FoamCSVReader(foam_data_root)
     if use_strong_preprocessing:
         foam_reader.strong_preprocess_and_replace()
     else:

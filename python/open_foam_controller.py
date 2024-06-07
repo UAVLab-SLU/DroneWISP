@@ -297,6 +297,7 @@ class OpenFoamController:
         - add binary mask col "bm', if there is value in u v w p k nut omega(not filled), set the mask to 0, otherwise 1
         - save the result to csv file
 
+        :param data_dir:
         :param range_x: int, number of value in x direction
         :param range_y: int, number of value in y direction
         :param range_z: int, number of value in z direction
@@ -1021,10 +1022,14 @@ class OpenFoamController:
 if __name__ == "__main__":
     case_root = "openFoamCase"
     foam = OpenFoamController(case_root)
-    foam.clean()
-    foam.update_wind(10, 0, 0)
+    # foam.clean()
+    # foam.update_wind(10, 0, 0)
     # foam.run()
     # print(foam.check_run_valid())
+
+    foam.wisp_save_all_result_and_preprocess(range_x=50, range_y=50, range_z=25, x_min=-25, x_max=25, y_min=-25,
+                                                y_max=25, z_min=0, z_max=25)
+
 
     # for x in [10, -10, 0]:
     #     for y in [10, -10, 0]:
