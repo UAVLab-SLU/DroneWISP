@@ -302,14 +302,14 @@ class CFDManager:
         if os.getenv("IN_DOCKER", False):
             requests.post("http://drv_server:5000/cfdFailNotify")
         else:
-            requests.post("http://192.168.1.181:5000/cfdFailNotify")
+            requests.post(f"http://{os.getenv('HOST_IP')}:5000/cfdFailNotify")
 
     @staticmethod
     def notify_ready():
         if os.getenv("IN_DOCKER", False):
             requests.post("http://drv_server:5000/cfdDoneNotify")
         else:
-            requests.post("http://192.168.1.181:5000/cfdDoneNotify")  # TODO: hard coded DRV ip
+            requests.post(f"http://{os.getenv('HOST_IP')}:5000/cfdDoneNotify")
 
     def reset_flag(self):
         """

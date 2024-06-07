@@ -3,9 +3,10 @@ import random
 import time
 import requests
 
-from pyfoam_reader import OpenFoamController
+from python.open_foam_controller import OpenFoamController
+from python.network_env import get_host_ip
 
-DRV_IP = "192.168.1.181:5000"
+DRV_IP = get_host_ip() + ":5000"
 WISP_IP = "127.0.0.1:5001"
 
 my_fav = {"latitude":41.885799407958984,"longitude":-87.624099731445312}
