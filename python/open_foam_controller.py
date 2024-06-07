@@ -186,6 +186,17 @@ class OpenFoamController:
             raise ValueError("File do not exist:", filename)
         return ParsedBlockMeshDict(filename)
 
+    def read_control_dict(self):
+        """
+        Read controlDict from OpenFOAM case
+        :return:
+        """
+        filename = os.path.join(self.case_root, "system", "controlDict")
+        if not os.path.exists(filename):
+            raise ValueError("File do not exist:", filename)
+
+        return ParsedParameterFile(filename)
+
     @staticmethod
     def vertices_to_string(vertices):
         """
@@ -269,7 +280,7 @@ class OpenFoamController:
         np.savetxt(save_path, cell_and_velocity, delimiter=",", header=header)
 
     def pinn_save_all_result_and_preprocess(self, range_x=None, range_y=None, range_z=None, x_min=None, x_max=None,
-                                            y_min=None, y_max=None, z_min=None, z_max=None):
+                                            y_min=None, y_max=None, z_min=None, z_max=None, data_dir="../5k_training_dataset"):
         """
         save the all result to csv file,
         optional param range_x, range_y, range_z to preprocess the data
@@ -286,6 +297,7 @@ class OpenFoamController:
         - add binary mask col "bm', if there is value in u v w p k nut omega(not filled), set the mask to 0, otherwise 1
         - save the result to csv file
 
+        :param data_dir:
         :param range_x: int, number of value in x direction
         :param range_y: int, number of value in y direction
         :param range_z: int, number of value in z direction
@@ -360,7 +372,6 @@ class OpenFoamController:
             sub_dir_name = str(x_min) + "_" + str(x_max) + "_" + str(y_min) + "_" + str(y_max) + "_" + str(
                 z_min) + "_" + str(z_max)
             # create sub dir if not exist
-            data_dir = "../5k_training_dataset"
             if not os.path.exists(os.path.join(data_dir, sub_dir_name)):
                 os.makedirs(os.path.join(data_dir, sub_dir_name))
             save_path = os.path.join(data_dir, sub_dir_name, f"result_preprocessed_{time}.csv")
@@ -971,14 +982,54 @@ class OpenFoamController:
             df.to_csv(save_path, index=False)
             print(f"Saved preprocessed data to {save_path}")
 
+    def update_dt(self, dt_seconds):
+        """
+        Update dt in controlDict.
+        :param dt_seconds: float, new dt value in seconds
+        """
+        control_dict = self.read_control_dict()
+        if control_dict is not None:
+            control_dict["deltaT"] = dt_seconds
+            control_dict.writeFile()
+        else:
+            raise ValueError("Failed to read controlDict.")
+
+    def update_end_time(self, end_time_seconds):
+        """
+        Update endTime in controlDict.
+        :param end_time_seconds: float, new endTime value in seconds
+        """
+        control_dict = self.read_control_dict()
+        if control_dict is not None:
+            control_dict["endTime"] = end_time_seconds
+            control_dict.writeFile()
+        else:
+            raise ValueError("Failed to read controlDict.")
+
+    def update_write_interval(self, write_interval_seconds):
+        """
+        Update writeInterval in controlDict.
+        :param write_interval_seconds: int, new writeInterval value in seconds
+        """
+        control_dict = self.read_control_dict()
+        if control_dict is not None:
+            control_dict["writeInterval"] = write_interval_seconds
+            control_dict.writeFile()
+        else:
+            raise ValueError("Failed to read controlDict.")
+
 
 if __name__ == "__main__":
     case_root = "openFoamCase"
     foam = OpenFoamController(case_root)
-    foam.clean()
-    foam.update_wind(10, 0, 0)
+    # foam.clean()
+    # foam.update_wind(10, 0, 0)
     # foam.run()
     # print(foam.check_run_valid())
+
+    foam.wisp_save_all_result_and_preprocess(range_x=50, range_y=50, range_z=25, x_min=-25, x_max=25, y_min=-25,
+                                                y_max=25, z_min=0, z_max=25)
+
 
     # for x in [10, -10, 0]:
     #     for y in [10, -10, 0]:

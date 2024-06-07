@@ -2,7 +2,7 @@ import os
 
 import requests
 
-from pyfoam_reader import OpenFoamController
+from open_foam_controller import OpenFoamController
 from openfoam_csv_reader import FoamCSVReader
 import threading
 
@@ -33,6 +33,7 @@ class CFDManager:
         self.wind_type = "uniform"  # default wind type, can be "uniform", "turbulent", "turbulent_multi_source"
         self.openfoam_controller = OpenFoamController("openFoamCase")
         self.foam_csv_reader = FoamCSVReader("openFoamCase")
+        self.DEBUG_USE_SAME_DATA = False # for debugging, use the same data for subsequent requests
 
     def get_state(self):
         return self.state
@@ -48,6 +49,11 @@ class CFDManager:
         if self.state == "cfd_running":
             print("CFD simulation is running, cannot replace mesh with binary mask")
             return False
+
+        if self.DEBUG_USE_SAME_DATA:
+            self.stl_mesh_ready = True
+            self.state = "ready"
+            return True
 
         self.state = "idle"
 
@@ -68,6 +74,7 @@ class CFDManager:
         :param request_json: raw json from the request
         expected format: {'wind_speed_x': 0, 'wind_speed_y': 0, 'wind_speed_z': 0, 'wind_type': 'uniform',
         'x_length': 50, 'y_length': 50, 'z_length': 20,
+        'dt': 1, 'end_time': 51, 'write_interval': 50,
         'v1': {'x': -50, 'y': -50, 'z': -5}, 'v2': {'x': 50, 'y': -50, 'z': -5} 'v3': {'x': 50, 'y': 50, 'z': -5},
         'v4': {'x': -50, 'y': 50, 'z': -5}, 'v5': {'x': -50, 'y': -50, 'z': 5}, 'v6': {'x': 50, 'y': -50, 'z': 5},
         'v7': {'x': 50, 'y': 50, 'z': 5}, 'v8': {'x': -50, 'y': 50, 'z': 5}}
@@ -78,6 +85,15 @@ class CFDManager:
         if self.state == "cfd_running":
             print("CFD simulation is already running")
             return False
+
+        if self.DEBUG_USE_SAME_DATA:
+            self.openfoam_case_ready = True
+            self.state = "ready"
+            # simulate a delay
+            import time
+            time.sleep(3)
+            self.notify_ready()
+            return True
 
         # type check
         if (not isinstance(request_json['wind_speed_x'], (int, float)) or
@@ -129,10 +145,34 @@ class CFDManager:
         self.state = "idle"
 
         self.openfoam_controller.update_vertices(list_vertex)
+        self.openfoam_controller.update_shm_inside_point(self.openfoam_controller.calculate_shm_inside_point(list_vertex))
         self.openfoam_controller.update_dimension(request_json['x_length'] * 2 + 1, request_json['y_length'] * 2 + 1,
                                                   request_json['z_length'])
         self.openfoam_controller.update_wind(request_json['wind_speed_x'], request_json['wind_speed_y'],
                                              request_json['wind_speed_z'], request_json['wind_type'])
+
+        if 'dt' in request_json:
+            # convert to float if not
+            if not isinstance(request_json['dt'], (int, float)):
+                try:
+                    request_json['dt'] = float(request_json['dt'])
+                except ValueError:
+                    return False
+            self.openfoam_controller.update_dt(request_json['dt'])
+        if 'end_time' in request_json:
+            if not isinstance(request_json['end_time'], (int, float)):
+                try:
+                    request_json['end_time'] = float(request_json['end_time'])
+                except ValueError:
+                    return False
+            self.openfoam_controller.update_end_time(request_json['end_time'])
+        if 'write_interval' in request_json:
+            if not isinstance(request_json['write_interval'], int):
+                try:
+                    request_json['write_interval'] = int(request_json['write_interval'])
+                except ValueError:
+                    return False
+            self.openfoam_controller.update_write_interval(request_json['write_interval'])
 
         self.openfoam_case_ready = True
         if self.openfoam_case_ready and self.stl_mesh_ready:
@@ -148,6 +188,10 @@ class CFDManager:
         # check if the simulation is already running
         if self.state == "cfd_running":
             print("CFD simulation is already running")
+            return
+
+        if self.DEBUG_USE_SAME_DATA:
+            self.state = "ready"
             return
 
         # check if variables are set
@@ -179,11 +223,7 @@ class CFDManager:
                 self.openfoam_controller.debug_failed_run()
                 self.state = "cfd_fail"
                 self.reset_flag()
-                # if in docker IN_DOCKER = True,
-                if os.getenv("IN_DOCKER", False):
-                    requests.post("http://drv_server:5000/cfdFailNotify")
-                else:
-                    requests.post("http://192.168.1.181:5000/cfdFailNotify")
+                self.notify_fail()
                 self.state = "idle"
                 return
 
@@ -198,13 +238,27 @@ class CFDManager:
             self.state = "ready"
             self.reset_flag()
             # if in docker IN_DOCKER = True,
-            if os.getenv("IN_DOCKER", False):
-                requests.post("http://drv_server:5000/cfdDoneNotify")
-            else:
-                requests.post("http://192.168.1.181:5000/cfdDoneNotify") # TODO: hard coded DRV ip
+            self.notify_ready()
+
+
 
         simulation_thread = threading.Thread(target=target_function)
         simulation_thread.start()
+
+    @staticmethod
+    def notify_fail():
+        # if in docker IN_DOCKER = True,
+        if os.getenv("IN_DOCKER", False):
+            requests.post("http://drv_server:5000/cfdFailNotify")
+        else:
+            requests.post("http://192.168.1.181:5000/cfdFailNotify")
+
+    @staticmethod
+    def notify_ready():
+        if os.getenv("IN_DOCKER", False):
+            requests.post("http://drv_server:5000/cfdDoneNotify")
+        else:
+            requests.post("http://192.168.1.181:5000/cfdDoneNotify")  # TODO: hard coded DRV ip
 
     def reset_flag(self):
         """
@@ -218,14 +272,15 @@ class CFDManager:
         """
         Get the wind vector from the preprocessed dataframe
         :param cartesian_coordinates: [x, y, z] coordinates
-        :return: wind vector [x, y, z]
+        :return: wind vector [x, y, z] or None if data is not ready
         """
-        # check if case is prepared
-        if self.state != "ready":
+        if not self.DEBUG_USE_SAME_DATA and self.state != "ready":
             print("Wind data is not ready")
             return None
-        vel = self.foam_csv_reader.get_spacial_temporal_velocity_next_time_step(cartesian_coordinates)
-        return vel
+
+        return self.foam_csv_reader.get_spacial_temporal_velocity_next_time_step(cartesian_coordinates)
 
 
-
+if __name__ == "__main__":
+    cfd_manager = CFDManager()
+    cfd_manager.openfoam_controller.wisp_save_all_result_and_preprocess()

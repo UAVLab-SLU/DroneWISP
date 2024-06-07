@@ -1,12 +1,11 @@
 import os.path
-import torch
-import torch.nn as nn
-import pandas as pd
-import numpy as np
 import time
-from python.pinn.model.dnn_gen import DnnGenNet
+
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+import torch
+
+from python.pinn.model.dnn_gen import DnnGenNet
 
 if __name__ == "__main__":
 

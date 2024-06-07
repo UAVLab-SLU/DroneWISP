@@ -1,7 +1,7 @@
 # This script is used to preprocess all the csv files in the folder
 import os
 import time
-from openfoam_csv_reader import FoamCSVReader
+from python.openfoam_csv_reader import FoamCSVReader
 
 foam_data_root = "../run/windShearTallBuilding"
 init_filename = "10ms50percentFluc_0.csv"
