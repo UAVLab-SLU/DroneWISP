@@ -12,7 +12,7 @@ runApplication decomposePar -copyZero
 runParallel snappyHexMesh -overwrite
 
 runParallel patchSummary
-runParallel potentialFoam
+# runParallel potentialFoam
 runParallel $(getApplication)
 
 runApplication reconstructParMesh -constant
