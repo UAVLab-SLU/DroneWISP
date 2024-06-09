@@ -1,6 +1,6 @@
+import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import numpy as np
 from stl import mesh
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
@@ -162,19 +162,177 @@ coordinates = [
     (-1.83, -0.23, -4.89),
     (-1.81, -0.77, -4.87)
 ]
+airsim_coordinates = [
+    (0.0, 0.0, -0.02),
+    (0.0, 0.0, -0.02),
+    (-0.0, 0.02, -0.1),
+    (-0.0, 0.04, -0.25),
+    (-0.0, 0.06, -0.48),
+    (-0.0, 0.09, -0.78),
+    (-0.0, 0.12, -1.15),
+    (-0.0, 0.16, -1.56),
+    (-0.0, 0.19, -2.02),
+    (-0.0, 0.22, -2.52),
+    (-0.0, 0.26, -3.09),
+    (-0.0, 0.29, -3.65),
+    (-0.0, 0.32, -4.26),
+    (0.0, 0.34, -4.94),
+    (0.0, 0.36, -5.56),
+    (0.0, 0.37, -6.2),
+    (0.0, 0.37, -6.8),
+    (0.0, 0.38, -7.33),
+    (-0.0, 0.39, -7.71),
+    (-0.0, 0.4, -7.98),
+    (0.0, 0.42, -8.15),
+    (0.0, 0.44, -8.23),
+    (0.01, 0.45, -8.22),
+    (0.03, 0.45, -8.13),
+    (0.05, 0.44, -7.98),
+    (0.08, 0.43, -7.78),
+    (0.12, 0.38, -7.57),
+    (0.17, 0.3, -7.4),
+    (0.23, 0.19, -7.25),
+    (0.31, 0.06, -7.13),
+    (0.39, -0.1, -7.03),
+    (0.48, -0.28, -6.94),
+    (0.58, -0.48, -6.87),
+    (0.69, -0.69, -6.82),
+    (0.8, -0.92, -6.77),
+    (0.92, -1.16, -6.74),
+    (1.05, -1.42, -6.71),
+    (1.18, -1.68, -6.69),
+    (1.32, -1.95, -6.68),
+    (1.47, -2.23, -6.66),
+    (1.62, -2.52, -6.66),
+    (1.78, -2.8, -6.65),
+    (1.94, -3.09, -6.65),
+    (2.12, -3.39, -6.65),
+    (2.3, -3.68, -6.65),
+    (2.49, -3.97, -6.65),
+    (2.7, -4.27, -6.66),
+    (2.91, -4.56, -6.66),
+    (3.13, -4.86, -6.66),
+    (3.37, -5.14, -6.67),
+    (3.63, -5.43, -6.68),
+    (3.89, -5.7, -6.68),
+    (4.17, -5.97, -6.69),
+    (4.47, -6.22, -6.69),
+    (4.78, -6.47, -6.7),
+    (5.1, -6.7, -6.71),
+    (5.45, -6.92, -6.71),
+    (5.81, -7.11, -6.72),
+    (6.19, -7.3, -6.72),
+    (6.56, -7.46, -6.73),
+    (6.98, -7.6, -6.74),
+    (7.39, -7.72, -6.74),
+    (7.83, -7.82, -6.75),
+    (8.26, -7.89, -6.76),
+    (8.71, -7.93, -6.76),
+    (9.17, -7.95, -6.77),
+    (9.63, -7.94, -6.77),
+    (10.09, -7.9, -6.78),
+    (10.58, -7.83, -6.79),
+    (11.06, -7.73, -6.8),
+    (11.51, -7.61, -6.8),
+    (11.99, -7.45, -6.81),
+    (12.45, -7.26, -6.82),
+    (12.92, -7.04, -6.83),
+    (13.36, -6.8, -6.83),
+    (13.8, -6.53, -6.84),
+    (14.22, -6.24, -6.85),
+    (14.62, -5.92, -6.86),
+    (15.02, -5.56, -6.87),
+    (15.38, -5.2, -6.87),
+    (15.74, -4.8, -6.88),
+    (16.07, -4.39, -6.89),
+    (16.38, -3.94, -6.9),
+    (16.67, -3.47, -6.9),
+    (16.93, -3.0, -6.91),
+    (17.16, -2.5, -6.92),
+    (17.37, -1.98, -6.92),
+    (17.55, -1.46, -6.93),
+    (17.69, -0.93, -6.94),
+    (17.81, -0.38, -6.94),
+    (17.89, 0.17, -6.95),
+    (17.94, 0.74, -6.95),
+    (17.96, 1.32, -6.96),
+    (17.94, 1.9, -6.96),
+    (17.89, 2.46, -6.96),
+    (17.8, 3.02, -6.97),
+    (17.68, 3.57, -6.97),
+    (17.52, 4.14, -6.97),
+    (17.34, 4.66, -6.97),
+    (17.12, 5.19, -6.98),
+    (16.87, 5.71, -6.98),
+    (16.58, 6.23, -6.98),
+    (16.26, 6.71, -6.97),
+    (15.91, 7.19, -6.97),
+    (15.54, 7.64, -6.97),
+    (15.15, 8.06, -6.97),
+    (14.71, 8.48, -6.97),
+    (14.27, 8.86, -6.97),
+    (13.79, 9.22, -6.97),
+    (13.32, 9.54, -6.96),
+    (12.81, 9.85, -6.96),
+    (12.29, 10.12, -6.96),
+    (11.74, 10.37, -6.96),
+    (11.2, 10.58, -6.96),
+    (10.64, 10.77, -6.96),
+    (10.06, 10.93, -6.96),
+    (9.47, 11.05, -6.95),
+    (8.89, 11.14, -6.95),
+    (8.31, 11.2, -6.95),
+    (7.72, 11.23, -6.95),
+    (7.12, 11.22, -6.95),
+    (6.54, 11.19, -6.95),
+    (5.95, 11.12, -6.95),
+    (5.38, 11.02, -6.94),
+    (4.82, 10.89, -6.94),
+    (4.25, 10.72, -6.94),
+    (3.71, 10.53, -6.93),
+    (3.18, 10.31, -6.93),
+    (2.67, 10.06, -6.92),
+    (2.18, 9.78, -6.91),
+    (1.71, 9.48, -6.9),
+    (1.25, 9.14, -6.9),
+    (0.82, 8.79, -6.89),
+    (0.42, 8.42, -6.88),
+    (0.05, 8.03, -6.86),
+    (-0.31, 7.61, -6.85),
+    (-0.64, 7.17, -6.84),
+    (-0.93, 6.72, -6.83),
+    (-1.19, 6.26, -6.81),
+    (-1.43, 5.78, -6.8),
+    (-1.64, 5.3, -6.79),
+    (-1.81, 4.81, -6.77),
+    (-1.96, 4.31, -6.76),
+    (-2.07, 3.81, -6.75),
+    (-2.15, 3.31, -6.74),
+    (-2.21, 2.8, -6.73),
+    (-2.23, 2.3, -6.72),
+    (-2.23, 1.79, -6.71),
+    (-2.2, 1.29, -6.7),
+    (-2.14, 0.78, -6.69),
+    (-2.06, 0.31, -6.69),
+    (-1.95, -0.18, -6.68),
+]
 
-# Convert coordinates to numpy arrays for plotting
 x, y, z = zip(*coordinates)
 x = np.array(x)
 y = np.array(y)
 z = -np.array(z)  # Invert all z values to negative
+
+x2, y2, z2 = zip(*airsim_coordinates)
+x2 = np.array(x2)
+y2 = np.array(y2)
+z2 = -np.array(z2)  # Invert all z values to negative
+
 
 # Create the planned path on a circle centered at (8, 0, 7) with radius 8 and altitude 7
 theta = np.linspace(0, 2 * np.pi, 100)
 planned_path_x = 8 + 8 * np.cos(theta)
 planned_path_y = 0 + 8 * np.sin(theta)
 planned_path_z = np.full_like(planned_path_x, 7)
-
 
 # Load the STL file from current directory
 terrain_mesh = mesh.Mesh.from_file('plot_mesh.stl')
@@ -196,28 +354,58 @@ mask = mask_x & mask_y & mask_z
 filtered_vectors = terrain_mesh.vectors[np.any(mask, axis=1)]
 
 # Create a new figure with multiple subplots
-fig = plt.figure(figsize=(18, 12))
+fig = plt.figure(figsize=(6, 12))
 
 # Define different view angles
-angles = [(60, 180), (60, 45), (60, 60), (90, 90)]
+angles = [(50, -120), (90, -180)]
+
+# Collect the handles and labels for the legend
+handles = []
+labels = []
 
 # Plot the path and terrain mesh from multiple angles
 for i, angle in enumerate(angles, start=1):
-    ax = fig.add_subplot(2, 2, i, projection='3d')
+    ax = fig.add_subplot(2, 1, i, projection='3d')
 
     # Plot the path
-    ax.plot(x, y, z, label='Path', color='red')
+    path_handle, = ax.plot(x, y, z, label='DroneWISP', color='red')
+    if i == 1:
+        handles.append(path_handle)
+        labels.append('DroneWISP')
+
+    path_handle, = ax.plot(x2, y2, z2, label='Airsim', color='blue', linestyle='dashed')
+    if i == 1:
+        handles.append(path_handle)
+        labels.append('Airsim')
 
     # Plot the planned path
-    ax.plot(planned_path_x, planned_path_y, planned_path_z, label='Planned Path', color='blue')
+    planned_path_handle, = ax.plot(planned_path_x, planned_path_y, planned_path_z, label='Planned Path', color='purple', linestyle='dotted')
+    if i == 1:
+        handles.append(planned_path_handle)
+        labels.append('Planned Path')
 
     # Plot the filtered terrain mesh
-    ax.add_collection3d(Poly3DCollection(filtered_vectors, alpha=0.1, facecolor='green'))
+    terrain_handle = ax.add_collection3d(Poly3DCollection(filtered_vectors, alpha=0.1, facecolor='green'))
+    if i == 1:
+        handles.append(terrain_handle)
+        labels.append('Terrain')
+
+    # Plot start and end points
+    ax.scatter(x[0], y[0], z[0], color='green', s=100, label='Start Point', edgecolors='black')
+    ax.scatter(x[-1], y[-1], z[-1], color='red', s=100, label='End Point', edgecolors='black')
+
+    ax.scatter(x2[0], y2[0], z2[0], color='green', s=100, label='Start Point', edgecolors='black')
+    ax.scatter(x2[-1], y2[-1], z2[-1], color='red', s=100, label='End Point', edgecolors='black')
 
     # Set labels
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
+    if i == 1:
+        ax.set_zlabel('Z')
+    else:
+        ax.set_zlabel('')  # Hide z-axis label for the second subplot
+        ax.set_zticks([])
+
 
     # Set plot limits
     ax.set_xlim([x_min, x_max])
@@ -227,15 +415,19 @@ for i, angle in enumerate(angles, start=1):
     # Set view angle
     ax.view_init(elev=angle[0], azim=angle[1])
 
-    # Add footnote
-    ax.text2D(0.05, 0.05, f'View angle: Elevation={angle[0]}, Azimuth={angle[1]}', transform=ax.transAxes)
+# Wind direction vector
+wind_direction = np.array([1, 0, 0])
+ax.quiver(0, 0, 0, wind_direction[0], wind_direction[1], wind_direction[2], color='black', label='Wind Direction')
 
 # Add a single legend with larger font size
-fig.legend(loc='upper right', fontsize=12)
-
+#fig.legend()
 
 # Adjust layout
 plt.tight_layout()
 
+# save the plot
+plt.savefig('path_with_mesh.png')
+
 # Show plot
 plt.show()
+
