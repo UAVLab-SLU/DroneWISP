@@ -20,6 +20,7 @@ class OpenFoamController:
         self.foam_stl_path = os.path.join(self.case_root, "constant", "geometry", "combined.stl")
         self.empty_openfoam_case_root = "openFoamCaseEmpty"
         self.mesh_utils = StlMeshUtils()
+        self.validate_run_script_line_separator()
 
     # async
     def run(self):
@@ -1018,6 +1019,42 @@ class OpenFoamController:
         else:
             raise ValueError("Failed to read controlDict.")
 
+    def validate_run_script_line_separator(self):
+        """
+        Validate the run script line separator. Must be LF.
+        """
+        WINDOWS_LINE_ENDING = b'\r\n'
+        UNIX_LINE_ENDING = b'\n'
+        expected_scripts = ["AllrunDocker", "Allrun", "AllcleanDocker", "Allclean"]
+
+        # Construct the full paths safely
+        scripts = [os.path.join(self.case_root, script_name) for script_name in expected_scripts]
+
+        for script in scripts:
+            # Ensure the script path is within the expected directory
+            if not os.path.commonprefix([self.case_root, script]) == self.case_root:
+                print(f"Skipping invalid path: {script}")
+                continue
+
+            try:
+                with open(script, "rb") as f:
+                    content = f.read()
+
+                if WINDOWS_LINE_ENDING in content:
+                    content = content.replace(WINDOWS_LINE_ENDING, UNIX_LINE_ENDING)
+                    with open(script, "wb") as f:
+                        f.write(content)
+                    print(f"Updated line endings in {script}")
+
+            except FileNotFoundError:
+                print(f"File not found: {script}")
+            except PermissionError:
+                print(f"Permission denied: {script}")
+            except Exception as e:
+                print(f"An error occurred while processing {script}: {e}")
+
+
+
 
 if __name__ == "__main__":
     case_root = "openFoamCase"
@@ -1027,8 +1064,8 @@ if __name__ == "__main__":
     # foam.run()
     # print(foam.check_run_valid())
 
-    foam.wisp_save_all_result_and_preprocess(range_x=50, range_y=50, range_z=25, x_min=-25, x_max=25, y_min=-25,
-                                                y_max=25, z_min=0, z_max=25)
+    #foam.wisp_save_all_result_and_preprocess(range_x=50, range_y=50, range_z=25, x_min=-25, x_max=25, y_min=-25,
+    #                                            y_max=25, z_min=0, z_max=25)
 
 
     # for x in [10, -10, 0]:
