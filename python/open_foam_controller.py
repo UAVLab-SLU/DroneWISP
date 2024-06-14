@@ -495,29 +495,29 @@ class OpenFoamController:
     def calculate_shm_inside_point(vertices):
         """
         Calculate inside point for snappyHexMeshDict from vertices.
-        The center of the box on the x, y plane with a magic offset is calculated,
-        and the z-coordinate is determined by the lowest point of the box plus the magic offset.
+        The center of the box on the x, y plane
+        and the z-coordinate is determined by the maximum z-coordinate of the vertices.
         The inside point is returned in the format "(-30 -30 0)".
 
         :param vertices: List of vertices forming a box [v1, v2, v3, v4, v5, v6, v7, v8], v_i = (x, y, z)
         :return: String, inside point as a string in the format "(x y z)"
         """
-        magic_offset = (3.0001, 3.0001, 0.43)
 
         # Sum up all x and y coordinates
         sum_x = sum(vertex[0] for vertex in vertices)
         sum_y = sum(vertex[1] for vertex in vertices)
         # Find the minimum z coordinate
         min_z = min(vertex[2] for vertex in vertices)
+        max_z = max(vertex[2] for vertex in vertices)
 
         # Calculate average x and y
         avg_x = sum_x / len(vertices)
         avg_y = sum_y / len(vertices)
 
-        # Apply magic offset to each axis
-        inside_x = avg_x + magic_offset[0]
-        inside_y = avg_y + magic_offset[1]
-        inside_z = min_z + magic_offset[2]  # Original bottom z plus the magic offset
+
+        inside_x = avg_x
+        inside_y = avg_y
+        inside_z = max_z - 0.01
 
         # Return the inside point as a string formatted as "(x y z)"
         return f"({inside_x:.4f} {inside_y:.4f} {inside_z:.4f})"
