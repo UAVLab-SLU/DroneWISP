@@ -142,14 +142,65 @@ class CFDManager:
         self.z_min = min([vertex['z'] for vertex in vertices])
         self.z_max = max([vertex['z'] for vertex in vertices])
 
+        if 'wind_type' in request_json:
+            self.wind_type = request_json['wind_type']
+            if self.wind_type not in ["uniform", "turbulent", "turbulent_multi_source"]:
+                return False
+
+            if self.wind_type != "uniform":
+                # check if the turbulent wind is set correctly
+                if 'turb_percent' not in request_json:
+                    # use default value
+                    request_json['turb_percent'] = 10
+                if not isinstance(request_json['turb_percent'], (int, float)):
+                    try:
+                        request_json['turb_percent'] = float(request_json['turb_percent'])
+                    except ValueError:
+                        request_json['turb_percent'] = 10
+                if request_json['turb_percent'] <= 0:
+                    # equivalent to uniform wind
+                    self.wind_type = "uniform"
+                    request_json['wind_type'] = "uniform"
+                    request_json['turb_percent'] = 0
+
+                # update end time if not set
+                if 'end_time' not in request_json:
+                    request_json['end_time'] = 26
+                if not isinstance(request_json['end_time'], (int, float)):
+                    try:
+                        request_json['end_time'] = float(request_json['end_time'])
+                    except ValueError:
+                        request_json['end_time'] = 26
+
+                if 'dt' not in request_json:
+                    request_json['dt'] = 1
+                if not isinstance(request_json['dt'], (int, float)):
+                    try:
+                        request_json['dt'] = float(request_json['dt'])
+                    except ValueError:
+                        request_json['dt'] = 1
+
+                request_json['write_interval'] = 1
+
+            else:
+                request_json['turb_percent'] = 0
+                request_json['wind_type'] = "uniform"
+                request_json['dt'] = 1
+                request_json['end_time'] = 51
+                request_json['write_interval'] = 50
+
+
         self.state = "idle"
 
         self.openfoam_controller.update_vertices(list_vertex)
         self.openfoam_controller.update_shm_inside_point(self.openfoam_controller.calculate_shm_inside_point(list_vertex))
         self.openfoam_controller.update_dimension(request_json['x_length'] * 2 + 1, request_json['y_length'] * 2 + 1,
                                                   request_json['z_length'])
+        self.openfoam_controller.update_end_time(request_json['end_time'])
+        self.openfoam_controller.update_write_interval(request_json['write_interval'])
+        self.openfoam_controller.update_dt(request_json['dt'])
         self.openfoam_controller.update_wind(request_json['wind_speed_x'], request_json['wind_speed_y'],
-                                             request_json['wind_speed_z'], request_json['wind_type'])
+                                             request_json['wind_speed_z'], request_json['wind_type'], request_json['turb_percent'])
 
         if 'dt' in request_json:
             # convert to float if not
