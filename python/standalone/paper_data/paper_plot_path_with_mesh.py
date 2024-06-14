@@ -317,117 +317,618 @@ airsim_coordinates = [
     (-1.95, -0.18, -6.68),
 ]
 
-x, y, z = zip(*coordinates)
-x = np.array(x)
-y = np.array(y)
-z = -np.array(z)  # Invert all z values to negative
+coordinates_up = [
+    (0.0, 0.0, -0.02),
+    (0.0, 0.0, -0.01),
+    (0.0, 0.0, -0.01),
+    (0.0, 0.0, -0.01),
+    (0.0, 0.0, -0.02),
+    (0.0, 0.0, -0.04),
+    (0.0, 0.0, -0.06),
+    (0.0, 0.0, -0.09),
+    (0.0, 0.0, -0.12),
+    (0.0, 0.0, -0.16),
+    (0.0, 0.0, -0.2),
+    (0.0, 0.0, -0.25),
+    (0.0, 0.0, -0.31),
+    (0.0, 0.0, -0.38),
+    (0.0, 0.0, -0.44),
+    (0.0, 0.0, -0.51),
+    (0.0, 0.0, -0.59),
+    (0.0, 0.0, -0.67),
+    (0.0, 0.0, -0.76),
+    (0.0, 0.0, -0.86),
+    (0.0, 0.0, -0.96),
+    (0.0, 0.0, -1.06),
+    (0.0, 0.0, -1.18),
+    (0.0, 0.0, -1.29),
+    (0.0, 0.0, -1.42),
+    (0.0, 0.0, -1.54),
+    (0.0, 0.0, -1.67),
+    (0.0, 0.0, -1.8),
+    (0.0, 0.0, -1.93),
+    (0.0, 0.0, -2.06),
+    (0.0, 0.0, -2.2),
+    (0.0, 0.0, -2.32),
+    (0.0, 0.0, -2.46),
+    (-0.0, 0.0, -2.59),
+    (-0.0, 0.0, -2.72),
+    (-0.0, 0.0, -2.84),
+    (-0.0, 0.0, -2.98),
+    (-0.0, 0.0, -3.1),
+    (-0.0, 0.0, -3.24),
+    (-0.0, 0.0, -3.36),
+    (-0.0, 0.0, -3.48),
+    (-0.0, 0.0, -3.62),
+    (-0.0, 0.0, -3.74),
+    (-0.0, 0.0, -3.88),
+    (-0.0, 0.0, -4.0),
+    (-0.0, 0.01, -4.12),
+    (-0.0, 0.01, -4.24),
+    (-0.0, 0.01, -4.38),
+    (-0.0, 0.01, -4.5),
+    (-0.0, 0.01, -4.64),
+    (-0.0, 0.01, -4.76),
+    (-0.0, 0.01, -4.88),
+    (-0.0, 0.01, -5.02),
+    (-0.01, 0.01, -5.14),
+    (-0.01, 0.01, -5.26),
+    (-0.01, 0.01, -5.4),
+    (-0.01, 0.01, -5.52),
+    (-0.01, 0.02, -5.65),
+    (-0.01, 0.02, -5.79),
+    (-0.01, 0.02, -5.91),
+    (-0.02, 0.02, -6.03),
+    (-0.02, 0.02, -6.16),
+    (-0.03, 0.02, -6.29),
+    (-0.03, 0.03, -6.41),
+    (-0.04, 0.03, -6.54),
+    (-0.05, 0.03, -6.66),
+    (-0.06, 0.03, -6.78),
+    (-0.06, 0.04, -6.91),
+    (-0.07, 0.04, -7.03),
+    (-0.08, 0.04, -7.15),
+    (-0.09, 0.04, -7.28),
+    (-0.1, 0.04, -7.4),
+    (-0.11, 0.05, -7.53),
+    (-0.12, 0.05, -7.64),
+    (-0.13, 0.05, -7.76),
+    (-0.14, 0.05, -7.88),
+    (-0.15, 0.05, -8.0),
+    (-0.16, 0.05, -8.13),
+    (-0.17, 0.05, -8.24),
+    (-0.18, 0.05, -8.35),
+    (-0.19, 0.05, -8.47),
+    (-0.2, 0.05, -8.59),
+    (-0.21, 0.05, -8.7),
+    (-0.22, 0.05, -8.8),
+    (-0.23, 0.05, -9.01),
+    (-0.24, 0.04, -9.1),
+    (-0.25, 0.04, -9.19),
+    (-0.26, 0.03, -9.38),
+    (-0.27, 0.02, -9.47),
+    (-0.28, 0.02, -9.56),
+    (-0.29, 0.01, -9.64),
+    (-0.3, 0.0, -9.73),
+    (-0.3, -0.01, -9.8),
+    (-0.31, -0.02, -9.88),
+    (-0.32, -0.03, -9.95),
+    (-0.32, -0.04, -10.02),
+    (-0.33, -0.05, -10.1),
+    (-0.33, -0.07, -10.16),
+    (-0.34, -0.08, -10.22),
+    (-0.34, -0.09, -10.29),
+    (-0.35, -0.11, -10.35),
+    (-0.35, -0.13, -10.41),
+    (-0.35, -0.14, -10.47),
+    (-0.35, -0.16, -10.52),
+    (-0.36, -0.18, -10.58),
+    (-0.36, -0.2, -10.63),
+    (-0.36, -0.22, -10.68),
+    (-0.36, -0.25, -10.73),
+    (-0.36, -0.27, -10.78),
+    (-0.36, -0.29, -10.83),
+    (-0.36, -0.32, -10.88),
+    (-0.36, -0.34, -10.92),
+    (-0.36, -0.37, -10.97),
+    (-0.36, -0.4, -11.01),
+    (-0.35, -0.43, -11.06),
+    (-0.35, -0.46, -11.1),
+    (-0.35, -0.49, -11.15),
+    (-0.34, -0.52, -11.19),
+    (-0.34, -0.55, -11.23),
+    (-0.34, -0.58, -11.28),
+    (-0.33, -0.62, -11.32),
+    (-0.33, -0.65, -11.36),
+    (-0.32, -0.68, -11.4),
+    (-0.32, -0.72, -11.44),
+    (-0.31, -0.75, -11.48),
+    (-0.31, -0.78, -11.52),
+    (-0.3, -0.82, -11.57),
+    (-0.3, -0.86, -11.61),
+    (-0.29, -0.89, -11.65),
+    (-0.28, -0.93, -11.69),
+    (-0.28, -0.96, -11.73),
+    (-0.27, -1.0, -11.78),
+    (-0.26, -1.03, -11.82),
+    (-0.26, -1.07, -11.86),
+    (-0.25, -1.11, -11.9),
+    (-0.24, -1.14, -11.94),
+    (-0.23, -1.18, -11.98),
+    (-0.23, -1.21, -12.02),
+    (-0.22, -1.25, -12.06),
+    (-0.21, -1.29, -12.1),
+    (-0.21, -1.32, -12.14),
+    (-0.2, -1.36, -12.19),
+    (-0.19, -1.39, -12.23),
+    (-0.18, -1.43, -12.27),
+    (-0.18, -1.46, -12.31),
+    (-0.17, -1.49, -12.35),
+    (-0.16, -1.53, -12.4),
+    (-0.15, -1.56, -12.44),
+    (-0.15, -1.59, -12.48),
+    (-0.14, -1.63, -12.52),
+    (-0.13, -1.66, -12.56),
+    (-0.13, -1.69, -12.61),
+    (-0.12, -1.72, -12.65),
+    (-0.11, -1.75, -12.69),
+    (-0.11, -1.78, -12.73),
+    (-0.1, -1.81, -12.77),
+    (-0.09, -1.85, -12.82),
+    (-0.09, -1.88, -12.86),
+    (-0.08, -1.91, -12.9),
+    (-0.07, -1.93, -12.94),
+    (-0.07, -1.96, -12.98),
+    (-0.06, -1.99, -13.02),
+    (-0.05, -2.02, -13.07),
+    (-0.05, -2.05, -13.11),
+    (-0.04, -2.07, -13.16),
+    (-0.04, -2.1, -13.2),
+    (-0.03, -2.13, -13.24),
+    (-0.03, -2.15, -13.29),
+    (-0.02, -2.18, -13.34),
+    (-0.02, -2.2, -13.38),
+    (-0.01, -2.23, -13.43),
+    (-0.01, -2.25, -13.48),
+    (-0.0, -2.27, -13.53),
+    (0.0, -2.3, -13.57),
+    (0.01, -2.32, -13.62),
+    (0.01, -2.34, -13.67),
+    (0.02, -2.36, -13.72),
+    (0.02, -2.38, -13.77),
+    (0.03, -2.4, -13.82),
+    (0.03, -2.42, -13.87),
+    (0.03, -2.45, -13.92),
+    (0.04, -2.46, -13.97),
+    (0.04, -2.48, -14.02),
+    (0.04, -2.5, -14.07),
+    (0.05, -2.52, -14.13),
+    (0.05, -2.54, -14.18),
+    (0.05, -2.56, -14.24),
+    (0.06, -2.57, -14.29),
+    (0.06, -2.59, -14.35),
+    (0.06, -2.61, -14.41),
+    (0.06, -2.62, -14.47),
+    (0.07, -2.64, -14.53),
+    (0.07, -2.65, -14.59),
+    (0.07, -2.67, -14.66),
+    (0.07, -2.68, -14.72),
+    (0.07, -2.69, -14.78),
+    (0.07, -2.71, -14.85),
+    (0.08, -2.72, -14.91),
+    (0.08, -2.73, -14.98),
+    (0.08, -2.74, -15.05),
+    (0.08, -2.75, -15.11),
+    (0.08, -2.76, -15.18),
+    (0.08, -2.78, -15.25),
+    (0.08, -2.79, -15.32),
+    (0.08, -2.8, -15.4),
+    (0.09, -2.81, -15.46),
+    (0.09, -2.82, -15.53),
+    (0.09, -2.82, -15.6),
+    (0.09, -2.83, -15.68),
+    (0.09, -2.84, -15.75),
+    (0.09, -2.85, -15.82),
+    (0.09, -2.86, -15.89),
+    (0.09, -2.86, -15.96),
+    (0.09, -2.87, -16.04),
+    (0.09, -2.88, -16.12),
+    (0.09, -2.88, -16.19),
+    (0.09, -2.89, -16.26),
+    (0.09, -2.89, -16.34),
+    (0.09, -2.9, -16.41),
+    (0.09, -2.9, -16.48),
+    (0.09, -2.9, -16.55),
+    (0.09, -2.91, -16.63),
+    (0.09, -2.91, -16.7),
+    (0.09, -2.91, -16.77),
+    (0.08, -2.91, -16.84),
+    (0.08, -2.92, -16.91),
+    (0.08, -2.92, -16.98),
+    (0.08, -2.92, -17.05),
+    (0.08, -2.92, -17.12),
+    (0.08, -2.92, -17.19),
+    (0.08, -2.91, -17.25),
+    (0.08, -2.91, -17.31),
+    (0.08, -2.91, -17.38),
+    (0.08, -2.91, -17.45),
+    (0.08, -2.9, -17.51),
+    (0.07, -2.9, -17.58),
+    (0.07, -2.89, -17.64),
+    (0.07, -2.89, -17.7),
+    (0.07, -2.88, -17.77),
+    (0.07, -2.87, -17.83),
+    (0.07, -2.87, -17.88),
+    (0.07, -2.86, -17.95),
+    (0.07, -2.85, -18.0),
+    (0.06, -2.84, -18.06),
+    (0.06, -2.83, -18.12),
+    (0.06, -2.82, -18.17),
+    (0.06, -2.81, -18.23),
+    (0.06, -2.8, -18.28),
+    (0.06, -2.78, -18.34),
+    (0.05, -2.77, -18.39),
+    (0.05, -2.76, -18.44),
+    (0.05, -2.74, -18.5),
+    (0.05, -2.73, -18.55),
+    (0.05, -2.71, -18.6),
+    (0.05, -2.69, -18.65),
+    (0.05, -2.68, -18.7),
+    (0.04, -2.66, -18.75),
+    (0.04, -2.64, -18.8),
+    (0.04, -2.62, -18.84),
+    (0.04, -2.6, -18.89),
+    (0.04, -2.58, -18.93),
+    (0.04, -2.56, -18.98),
+    (0.03, -2.53, -19.03),
+    (0.03, -2.51, -19.07),
+    (0.03, -2.49, -19.12),
+    (0.03, -2.46, -19.16),
+    (0.03, -2.44, -19.2),
+    (0.03, -2.41, -19.24),
+    (0.02, -2.38, -19.28),
+    (0.02, -2.36, -19.32),
+    (0.02, -2.33, -19.36),
+    (0.02, -2.3, -19.4),
+    (0.02, -2.27, -19.44),
+    (0.02, -2.24, -19.48),
+    (0.01, -2.21, -19.52),
+    (0.01, -2.18, -19.55),
+    (0.01, -2.15, -19.59),
+    (0.01, -2.12, -19.62),
+    (0.01, -2.09, -19.65),
+    (0.01, -2.05, -19.68),
+    (0.01, -2.02, -19.71),
+    (0.0, -1.99, -19.74),
+    (0.0, -1.95, -19.77),
+    (0.0, -1.92, -19.8),
+    (0.0, -1.88, -19.83),
+    (-0.0, -1.84, -19.85),
+    (-0.0, -1.8, -19.88),
+    (-0.0, -1.76, -19.91),
+    (-0.0, -1.72, -19.93),
+    (-0.01, -1.68, -19.96),
+    (-0.01, -1.64, -19.98),
+    (-0.01, -1.6, -20.01),
+]
+airsim_coordinates_up = [
+    (0.0, -0.0, -0.02), (0.0, -0.0, -0.02), (0.0, -0.01, -0.02), (0.0, -0.01, -0.02),
+    (0.0, -0.02, -0.04), (0.0, -0.04, -0.06), (0.0, -0.05, -0.08), (0.0, -0.07, -0.11),
+    (0.0, -0.09, -0.15), (0.0, -0.11, -0.2), (0.0, -0.13, -0.25), (0.0, -0.16, -0.31),
+    (-0.0, -0.18, -0.37), (-0.0, -0.21, -0.43), (-0.0, -0.24, -0.51), (-0.0, -0.27, -0.59),
+    (-0.0, -0.3, -0.67), (-0.0, -0.33, -0.75), (-0.0, -0.37, -0.84), (-0.0, -0.4, -0.93),
+    (-0.0, -0.44, -1.03), (-0.0, -0.47, -1.12), (-0.0, -0.5, -1.22), (-0.0, -0.54, -1.33),
+    (-0.0, -0.58, -1.43), (-0.0, -0.62, -1.54), (-0.0, -0.65, -1.64), (-0.0, -0.69, -1.74),
+    (-0.0, -0.73, -1.84), (-0.0, -0.77, -1.96), (-0.0, -0.8, -2.06), (-0.0, -0.84, -2.16),
+    (-0.0, -0.88, -2.28), (-0.0, -0.92, -2.38), (-0.0, -0.96, -2.49), (-0.0, -1.0, -2.6),
+    (-0.0, -1.04, -2.71), (-0.0, -1.08, -2.81), (-0.0, -1.12, -2.92), (-0.0, -1.16, -3.01),
+    (-0.0, -1.2, -3.12), (-0.0, -1.24, -3.22), (-0.0, -1.28, -3.31), (-0.0, -1.32, -3.42),
+    (-0.0, -1.36, -3.51), (-0.0, -1.4, -3.61), (-0.0, -1.44, -3.7), (-0.0, -1.48, -3.8),
+    (-0.0, -1.51, -3.89), (-0.0, -1.55, -3.98), (-0.0, -1.59, -4.07), (-0.0, -1.63, -4.16),
+    (-0.0, -1.67, -4.25), (-0.0, -1.7, -4.33), (-0.0, -1.74, -4.43), (-0.0, -1.78, -4.51),
+    (-0.0, -1.82, -4.6), (-0.0, -1.85, -4.68), (-0.0, -1.89, -4.77), (-0.0, -1.93, -4.85),
+    (-0.0, -1.96, -4.94), (-0.0, -2.0, -5.01), (-0.0, -2.03, -5.09), (-0.0, -2.07, -5.17),
+    (-0.0, -2.1, -5.25), (-0.0, -2.14, -5.33), (-0.0, -2.17, -5.41), (-0.0, -2.2, -5.48),
+    (-0.0, -2.24, -5.57), (-0.0, -2.27, -5.63), (-0.0, -2.3, -5.71), (-0.0, -2.33, -5.78),
+    (-0.0, -2.37, -5.86), (-0.0, -2.4, -5.94), (-0.0, -2.43, -6.01), (-0.0, -2.46, -6.09),
+    (-0.0, -2.49, -6.16), (-0.0, -2.52, -6.23), (-0.0, -2.55, -6.3), (-0.0, -2.58, -6.38),
+    (-0.0, -2.61, -6.45), (-0.0, -2.64, -6.52), (-0.0, -2.67, -6.59), (-0.0, -2.69, -6.66),
+    (-0.0, -2.72, -6.73), (-0.0, -2.75, -6.81), (-0.0, -2.78, -6.88), (-0.0, -2.8, -6.95),
+    (-0.0, -2.83, -7.02), (-0.0, -2.86, -7.09), (-0.0, -2.88, -7.16), (-0.0, -2.91, -7.24),
+    (-0.0, -2.93, -7.3), (-0.0, -2.96, -7.37), (-0.0, -2.98, -7.45), (-0.0, -3.01, -7.52),
+    (-0.0, -3.03, -7.58), (-0.0, -3.05, -7.66), (-0.0, -3.08, -7.73), (-0.0, -3.1, -7.8),
+    (-0.0, -3.12, -7.87), (-0.0, -3.15, -7.94), (-0.0, -3.17, -8.02), (-0.0, -3.19, -8.09),
+    (-0.0, -3.21, -8.15), (-0.0, -3.24, -8.23), (-0.0, -3.26, -8.3), (-0.0, -3.28, -8.37),
+    (0.0, -3.3, -8.44), (0.0, -3.32, -8.51), (0.0, -3.34, -8.59), (0.0, -3.36, -8.66),
+    (0.0, -3.38, -8.73), (0.0, -3.4, -8.8), (0.0, -3.42, -8.87), (0.0, -3.44, -8.95),
+    (0.0, -3.46, -9.01), (0.0, -3.48, -9.09), (0.0, -3.5, -9.16), (0.0, -3.51, -9.23),
+    (0.0, -3.53, -9.31), (0.0, -3.55, -9.38), (0.0, -3.57, -9.45), (0.0, -3.59, -9.52),
+    (0.0, -3.61, -9.6), (0.0, -3.62, -9.67), (0.0, -3.64, -9.74), (0.0, -3.66, -9.81),
+    (0.0, -3.67, -9.88), (0.0, -3.69, -9.95), (0.0, -3.71, -10.03), (0.0, -3.72, -10.1),
+    (0.0, -3.74, -10.18), (0.0, -3.75, -10.25), (0.0, -3.77, -10.33), (0.0, -3.79, -10.4),
+    (0.0, -3.8, -10.47), (0.0, -3.82, -10.55), (0.0, -3.83, -10.62), (0.0, -3.85, -10.69),
+    (0.0, -3.86, -10.76), (0.0, -3.88, -10.84), (0.0, -3.89, -10.91), (0.0, -3.91, -10.98),
+    (0.0, -3.92, -11.05), (0.0, -3.94, -11.13), (0.0, -3.95, -11.2), (0.0, -3.97, -11.28),
+    (0.0, -3.98, -11.35), (0.0, -3.99, -11.43), (0.0, -4.01, -11.5), (0.0, -4.02, -11.57),
+    (0.0, -4.03, -11.65), (0.0, -4.05, -11.72), (0.0, -4.06, -11.8), (0.0, -4.07, -11.87),
+    (0.0, -4.09, -11.95), (0.0, -4.1, -12.02), (0.0, -4.11, -12.1), (0.0, -4.13, -12.17),
+    (0.0, -4.14, -12.25), (0.0, -4.15, -12.32), (0.0, -4.17, -12.4), (0.0, -4.18, -12.47),
+    (0.0, -4.19, -12.54), (0.0, -4.2, -12.62), (0.0, -4.21, -12.69), (0.0, -4.23, -12.77),
+    (0.0, -4.24, -12.84), (0.0, -4.25, -12.91), (0.0, -4.26, -12.99), (0.0, -4.27, -13.07),
+    (0.0, -4.29, -13.14), (0.0, -4.3, -13.22), (0.0, -4.31, -13.3), (0.0, -4.32, -13.37),
+    (0.0, -4.33, -13.44), (0.0, -4.35, -13.52), (0.0, -4.36, -13.59), (0.0, -4.37, -13.67),
+    (0.0, -4.38, -13.74), (0.0, -4.39, -13.81), (0.0, -4.4, -13.89), (0.0, -4.41, -13.96),
+    (0.0, -4.42, -14.04), (0.0, -4.43, -14.11), (0.0, -4.44, -14.18), (0.0, -4.46, -14.26),
+    (0.0, -4.47, -14.33), (0.0, -4.48, -14.4), (0.0, -4.49, -14.47), (0.0, -4.5, -14.54),
+    (0.0, -4.51, -14.61), (0.0, -4.52, -14.68), (0.0, -4.53, -14.75), (0.0, -4.53, -14.82),
+    (0.0, -4.54, -14.89), (0.0, -4.55, -14.95), (0.0, -4.56, -15.02), (0.0, -4.57, -15.08),
+    (0.0, -4.58, -15.15), (0.0, -4.59, -15.21), (0.0, -4.59, -15.28), (0.0, -4.6, -15.34),
+    (0.0, -4.61, -15.4), (0.0, -4.62, -15.46), (0.0, -4.62, -15.52), (0.0, -4.63, -15.57),
+    (0.0, -4.64, -15.64), (-0.0, -4.64, -15.69), (-0.0, -4.65, -15.75), (-0.0, -4.65, -15.8),
+    (-0.0, -4.66, -15.86), (-0.0, -4.66, -15.91), (-0.0, -4.67, -15.97), (-0.0, -4.67, -16.02),
+    (-0.0, -4.67, -16.07), (-0.0, -4.68, -16.12), (-0.0, -4.68, -16.17), (-0.0, -4.68, -16.22),
+    (-0.0, -4.68, -16.27), (-0.0, -4.69, -16.32), (-0.0, -4.69, -16.37), (-0.0, -4.69, -16.42),
+    (-0.0, -4.69, -16.47), (-0.0, -4.69, -16.51), (-0.0, -4.69, -16.56), (-0.0, -4.69, -16.6),
+    (-0.0, -4.69, -16.65), (-0.0, -4.68, -16.69), (-0.0, -4.68, -16.74), (-0.0, -4.68, -16.78),
+    (-0.0, -4.68, -16.82), (-0.0, -4.67, -16.86), (-0.0, -4.67, -16.9), (-0.0, -4.67, -16.95),
+    (-0.0, -4.66, -16.99), (-0.0, -4.66, -17.03), (0.0, -4.65, -17.07), (0.0, -4.64, -17.11),
+    (0.0, -4.64, -17.14), (0.0, -4.63, -17.18), (0.0, -4.62, -17.22), (0.0, -4.62, -17.26),
+    (0.0, -4.61, -17.29), (0.0, -4.6, -17.33), (0.0, -4.59, -17.37), (0.0, -4.58, -17.41),
+    (0.0, -4.57, -17.44), (0.0, -4.56, -17.48), (0.0, -4.55, -17.52), (0.0, -4.54, -17.55),
+    (0.0, -4.53, -17.58), (0.0, -4.52, -17.62), (0.0, -4.5, -17.65), (0.0, -4.49, -17.69),
+    (0.0, -4.48, -17.72), (0.0, -4.46, -17.76), (0.0, -4.45, -17.79), (0.0, -4.43, -17.83),
+    (0.0, -4.42, -17.86), (0.0, -4.4, -17.89), (0.0, -4.39, -17.93), (0.0, -4.37, -17.96),
+    (0.0, -4.35, -17.99), (0.0, -4.34, -18.03), (0.0, -4.32, -18.06), (0.0, -4.3, -18.09),
+    (0.0, -4.28, -18.13), (0.0, -4.27, -18.16), (0.0, -4.25, -18.19), (0.0, -4.23, -18.22),
+    (0.0, -4.21, -18.25), (0.0, -4.19, -18.28), (0.0, -4.17, -18.32), (0.0, -4.15, -18.35),
+    (0.0, -4.13, -18.38), (0.0, -4.1, -18.41), (0.0, -4.08, -18.44), (0.0, -4.06, -18.47),
+    (0.0, -4.04, -18.51), (0.0, -4.02, -18.54), (0.0, -3.99, -18.57), (0.0, -3.97, -18.6),
+    (0.0, -3.95, -18.63), (0.0, -3.92, -18.66), (0.0, -3.9, -18.69), (0.0, -3.87, -18.72),
+    (0.0, -3.85, -18.75), (0.0, -3.82, -18.78), (0.0, -3.8, -18.81), (0.0, -3.77, -18.83),
+    (0.0, -3.74, -18.87), (0.0, -3.72, -18.89), (0.0, -3.69, -18.92), (0.0, -3.66, -18.95),
+    (0.0, -3.63, -18.98), (0.0, -3.61, -19.01), (0.0, -3.58, -19.04), (0.0, -3.55, -19.07),
+    (0.0, -3.52, -19.1), (0.0, -3.49, -19.13), (0.0, -3.46, -19.15), (0.0, -3.43, -19.18),
+    (0.0, -3.4, -19.21), (0.0, -3.37, -19.24), (0.0, -3.34, -19.27), (0.0, -3.31, -19.29),
+    (0.0, -3.28, -19.32), (0.0, -3.25, -19.35), (0.0, -3.22, -19.37), (0.0, -3.18, -19.4),
+    (0.0, -3.15, -19.43), (0.0, -3.12, -19.45), (0.0, -3.09, -19.48), (0.0, -3.06, -19.51),
+    (0.0, -3.02, -19.53), (0.0, -2.99, -19.56), (0.0, -2.96, -19.58), (0.0, -2.92, -19.61),
+    (0.0, -2.89, -19.63), (0.0, -2.85, -19.65), (0.0, -2.82, -19.68), (0.0, -2.78, -19.7),
+    (0.0, -2.75, -19.72), (0.0, -2.71, -19.74), (0.0, -2.68, -19.76), (0.0, -2.64, -19.78),
+    (0.0, -2.61, -19.8), (0.0, -2.57, -19.82), (0.0, -2.53, -19.84), (0.0, -2.5, -19.86),
+    (0.0, -2.46, -19.88), (0.0, -2.42, -19.9), (0.0, -2.38, -19.91), (0.0, -2.34, -19.93),
+    (0.0, -2.3, -19.95), (0.0, -2.26, -19.97), (0.0, -2.22, -19.99), (0.0, -2.18, -20.01)
+]
 
-x2, y2, z2 = zip(*airsim_coordinates)
-x2 = np.array(x2)
-y2 = np.array(y2)
-z2 = -np.array(z2)  # Invert all z values to negative
+def tower_plot():
+    x, y, z = zip(*coordinates)
+    x = np.array(x)
+    y = np.array(y)
+    z = -np.array(z)  # Invert all z values to negative
+
+    x2, y2, z2 = zip(*airsim_coordinates)
+    x2 = np.array(x2)
+    y2 = np.array(y2)
+    z2 = -np.array(z2)  # Invert all z values to negative
+    # Create the planned path on a circle centered at (8, 0, 7) with radius 8 and altitude 7
+    theta = np.linspace(0, 2 * np.pi, 100)
+    planned_path_x = 8 + 8 * np.cos(theta)
+    planned_path_y = 0 + 8 * np.sin(theta)
+    planned_path_z = np.full_like(planned_path_x, 7)
+
+    # Load the STL file from current directory
+    terrain_mesh = mesh.Mesh.from_file('plot_mesh.stl')
+
+    # Calculate the min and max ranges for x, y, and z coordinates
+    x_min, x_max = min(x.min(), planned_path_x.min()), max(x.max(), planned_path_x.max())
+    y_min, y_max = min(y.min(), planned_path_y.min()), max(y.max(), planned_path_y.max())
+    z_min, z_max = min(z.min(), planned_path_z.min()), max(z.max(), planned_path_z.max())
+
+    # Create a mask to filter the vertices within the specified ranges
+    mask_x = (terrain_mesh.vectors[:, :, 0] >= x_min) & (terrain_mesh.vectors[:, :, 0] <= x_max)
+    mask_y = (terrain_mesh.vectors[:, :, 1] >= y_min) & (terrain_mesh.vectors[:, :, 1] <= y_max)
+    mask_z = (terrain_mesh.vectors[:, :, 2] >= z_min) & (terrain_mesh.vectors[:, :, 2] <= z_max)
+
+    # Combine the masks
+    mask = mask_x & mask_y & mask_z
+
+    # Filter the vectors
+    filtered_vectors = terrain_mesh.vectors[np.any(mask, axis=1)]
+
+    # Create a new figure with multiple subplots
+    fig = plt.figure(figsize=(6, 12))
+
+    # Define different view angles
+    angles = [(50, -120), (90, -180)]
+
+    # Collect the handles and labels for the legend
+    handles = []
+    labels = []
+
+    # Plot the path and terrain mesh from multiple angles
+    for i, angle in enumerate(angles, start=1):
+        ax = fig.add_subplot(2, 1, i, projection='3d')
+
+        # Plot the path
+        path_handle, = ax.plot(x, y, z, label='DroneWISP', color='red')
+        if i == 1:
+            handles.append(path_handle)
+            labels.append('DroneWISP')
+
+        path_handle, = ax.plot(x2, y2, z2, label='Airsim', color='blue', linestyle='dashed')
+        if i == 1:
+            handles.append(path_handle)
+            labels.append('Airsim')
+
+        # Plot the planned path
+        planned_path_handle, = ax.plot(planned_path_x, planned_path_y, planned_path_z, label='Planned Path', color='purple', linestyle='dotted')
+        if i == 1:
+            handles.append(planned_path_handle)
+            labels.append('Planned Path')
+
+        # Plot the filtered terrain mesh
+        terrain_handle = ax.add_collection3d(Poly3DCollection(filtered_vectors, alpha=0.1, facecolor='green'))
+        if i == 1:
+            handles.append(terrain_handle)
+            labels.append('Terrain')
+
+        # Plot start and end points
+        ax.scatter(x[0], y[0], z[0], color='green', s=100, label='Start Point', edgecolors='black')
+        ax.scatter(x[-1], y[-1], z[-1], color='red', s=100, label='End Point', edgecolors='black')
+
+        ax.scatter(x2[0], y2[0], z2[0], color='green', s=100, label='Start Point', edgecolors='black')
+        ax.scatter(x2[-1], y2[-1], z2[-1], color='red', s=100, label='End Point', edgecolors='black')
+
+        # Set labels
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        if i == 1:
+            ax.set_zlabel('Z')
+        else:
+            ax.set_zlabel('')  # Hide z-axis label for the second subplot
+            ax.set_zticks([])
 
 
-# Create the planned path on a circle centered at (8, 0, 7) with radius 8 and altitude 7
-theta = np.linspace(0, 2 * np.pi, 100)
-planned_path_x = 8 + 8 * np.cos(theta)
-planned_path_y = 0 + 8 * np.sin(theta)
-planned_path_z = np.full_like(planned_path_x, 7)
+        # Set plot limits
+        ax.set_xlim([x_min, x_max])
+        ax.set_ylim([y_min, y_max])
+        ax.set_zlim([z_min, z_max])
 
-# Load the STL file from current directory
-terrain_mesh = mesh.Mesh.from_file('plot_mesh.stl')
+        # Set view angle
+        ax.view_init(elev=angle[0], azim=angle[1])
 
-# Calculate the min and max ranges for x, y, and z coordinates
-x_min, x_max = min(x.min(), planned_path_x.min()), max(x.max(), planned_path_x.max())
-y_min, y_max = min(y.min(), planned_path_y.min()), max(y.max(), planned_path_y.max())
-z_min, z_max = min(z.min(), planned_path_z.min()), max(z.max(), planned_path_z.max())
+    # Wind direction vector
+    wind_direction = np.array([1, 0, 0])
+    ax.quiver(0, 0, 0, wind_direction[0], wind_direction[1], wind_direction[2], color='black', label='Wind Direction')
 
-# Create a mask to filter the vertices within the specified ranges
-mask_x = (terrain_mesh.vectors[:, :, 0] >= x_min) & (terrain_mesh.vectors[:, :, 0] <= x_max)
-mask_y = (terrain_mesh.vectors[:, :, 1] >= y_min) & (terrain_mesh.vectors[:, :, 1] <= y_max)
-mask_z = (terrain_mesh.vectors[:, :, 2] >= z_min) & (terrain_mesh.vectors[:, :, 2] <= z_max)
+    # Add a single legend with larger font size
+    #fig.legend()
 
-# Combine the masks
-mask = mask_x & mask_y & mask_z
+    # Adjust layout
+    plt.tight_layout()
 
-# Filter the vectors
-filtered_vectors = terrain_mesh.vectors[np.any(mask, axis=1)]
+    # save the plot
+    plt.savefig('path_with_mesh.png')
 
-# Create a new figure with multiple subplots
-fig = plt.figure(figsize=(6, 12))
+    # Show plot
+    plt.show()
 
-# Define different view angles
-angles = [(50, -120), (90, -180)]
+def up_case_plot():
+    x, y, z = zip(*coordinates_up)
+    x = np.array(x)
+    y = np.array(y)
+    z = -np.array(z)  # Invert all z values to negative
 
-# Collect the handles and labels for the legend
-handles = []
-labels = []
+    x2, y2, z2 = zip(*airsim_coordinates_up)
+    x2 = np.array(x2)
+    y2 = np.array(y2)
+    z2 = -np.array(z2)  # Invert all z va
+    # Create the planned path, stright line [0, 0, 0] -> [0, 0, -20]
+    planned_path_x = np.zeros(100)
+    planned_path_y = np.zeros(100)
+    planned_path_z = np.linspace(0, 20, 100)
 
-# Plot the path and terrain mesh from multiple angles
-for i, angle in enumerate(angles, start=1):
-    ax = fig.add_subplot(2, 1, i, projection='3d')
+    # Load the STL file from current directory
+    terrain_mesh = mesh.Mesh.from_file('up_case.stl')
 
-    # Plot the path
-    path_handle, = ax.plot(x, y, z, label='DroneWISP', color='red')
-    if i == 1:
-        handles.append(path_handle)
-        labels.append('DroneWISP')
+    # Calculate the min and max ranges for x, y, and z coordinates
+    x_min, x_max = -20, 20
+    y_min, y_max = -20, 20
+    z_min, z_max = 0, 20
 
-    path_handle, = ax.plot(x2, y2, z2, label='Airsim', color='blue', linestyle='dashed')
-    if i == 1:
-        handles.append(path_handle)
-        labels.append('Airsim')
+    # Create a mask to filter the vertices within the specified ranges
+    mask_x = (terrain_mesh.vectors[:, :, 0] >= x_min) & (terrain_mesh.vectors[:, :, 0] <= x_max)
+    mask_y = (terrain_mesh.vectors[:, :, 1] >= y_min) & (terrain_mesh.vectors[:, :, 1] <= y_max)
+    mask_z = (terrain_mesh.vectors[:, :, 2] >= z_min+2) & (terrain_mesh.vectors[:, :, 2] <= z_max)
 
-    # Plot the planned path
-    planned_path_handle, = ax.plot(planned_path_x, planned_path_y, planned_path_z, label='Planned Path', color='purple', linestyle='dotted')
-    if i == 1:
-        handles.append(planned_path_handle)
-        labels.append('Planned Path')
+    # Combine the masks
+    mask = mask_x & mask_y & mask_z
 
-    # Plot the filtered terrain mesh
-    terrain_handle = ax.add_collection3d(Poly3DCollection(filtered_vectors, alpha=0.1, facecolor='green'))
-    if i == 1:
-        handles.append(terrain_handle)
-        labels.append('Terrain')
+    # Filter the vectors
+    filtered_vectors = terrain_mesh.vectors[np.any(mask, axis=1)]
 
-    # Plot start and end points
-    ax.scatter(x[0], y[0], z[0], color='green', s=100, label='Start Point', edgecolors='black')
-    ax.scatter(x[-1], y[-1], z[-1], color='red', s=100, label='End Point', edgecolors='black')
+    # Create a new figure with multiple subplots
+    fig = plt.figure(figsize=(6, 6))
 
-    ax.scatter(x2[0], y2[0], z2[0], color='green', s=100, label='Start Point', edgecolors='black')
-    ax.scatter(x2[-1], y2[-1], z2[-1], color='red', s=100, label='End Point', edgecolors='black')
+    # Define different view angles
+    angles = [(30, 0)]
 
-    # Set labels
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    if i == 1:
-        ax.set_zlabel('Z')
-    else:
-        ax.set_zlabel('')  # Hide z-axis label for the second subplot
-        ax.set_zticks([])
+    # Collect the handles and labels for the legend
+    handles = []
+    labels = []
+
+    # Plot the path and terrain mesh from multiple angles
+    for i, angle in enumerate(angles, start=1):
+        ax = fig.add_subplot(1, 1, i, projection='3d')
+
+        # Plot the path
+        path_handle, = ax.plot(x, y, z, label='DroneWISP', color='red')
+        if i == 1:
+            handles.append(path_handle)
+            labels.append('DroneWISP')
+
+        path_handle, = ax.plot(x2, y2, z2, label='Airsim', color='blue', linestyle='dashed')
+        if i == 1:
+            handles.append(path_handle)
+            labels.append('Airsim')
+
+        # Plot the planned path
+        planned_path_handle, = ax.plot(planned_path_x, planned_path_y, planned_path_z, label='Planned Path',
+                                       color='purple', linestyle='dotted')
+        if i == 1:
+            handles.append(planned_path_handle)
+            labels.append('Planned Path')
+
+        # Plot the filtered terrain mesh
+        terrain_handle = ax.add_collection3d(Poly3DCollection(filtered_vectors, alpha=0.1, facecolor='green'))
+        if i == 1:
+            handles.append(terrain_handle)
+            labels.append('Terrain')
+
+        # Plot start and end points
+        ax.scatter(x[0], y[0], z[0], color='green', s=100, label='Start Point', edgecolors='black')
+        ax.scatter(x[-1], y[-1], z[-1], color='red', s=100, label='End Point', edgecolors='black')
+
+        ax.scatter(x2[0], y2[0], z2[0], color='green', s=100, label='Start Point', edgecolors='black')
+        ax.scatter(x2[-1], y2[-1], z2[-1], color='red', s=100, label='End Point', edgecolors='black')
+
+        # Set labels
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+
+        if i == 0:
+            ax.set_xlabel('')  # Hide x-axis label for the first subplot
+            ax.set_xticks([])
+
+        if i == 1:
+            ax.set_zlabel('Z')
+        else:
+            ax.set_zlabel('')  # Hide z-axis label for the second subplot
+            ax.set_zticks([])
+
+        # Set plot limits
+        ax.set_xlim([x_min, x_max])
+        ax.set_ylim([y_min, y_max])
+        ax.set_zlim([z_min, z_max])
+
+        # Set view angle
+        ax.view_init(elev=angle[0], azim=angle[1])
+
+    # Wind direction vector
+    wind_direction = np.array([1, 0, 0])
+    ax.quiver(0, 0, 0, wind_direction[0], wind_direction[1], wind_direction[2], color='black', label='Wind Direction')
+
+    # Add a single legend with larger font size
+    # fig.legend()
+
+    # Adjust layout
+    plt.tight_layout()
+
+    # save the plot
+    plt.savefig('path_with_mesh2.png')
+
+    # Show plot
+    plt.show()
 
 
-    # Set plot limits
-    ax.set_xlim([x_min, x_max])
-    ax.set_ylim([y_min, y_max])
-    ax.set_zlim([z_min, z_max])
-
-    # Set view angle
-    ax.view_init(elev=angle[0], azim=angle[1])
-
-# Wind direction vector
-wind_direction = np.array([1, 0, 0])
-ax.quiver(0, 0, 0, wind_direction[0], wind_direction[1], wind_direction[2], color='black', label='Wind Direction')
-
-# Add a single legend with larger font size
-#fig.legend()
-
-# Adjust layout
-plt.tight_layout()
-
-# save the plot
-plt.savefig('path_with_mesh.png')
-
-# Show plot
-plt.show()
-
+#tower_plot()
+up_case_plot()
