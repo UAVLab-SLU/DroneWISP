@@ -19,15 +19,15 @@ def preprocess_all(foam_data_root=foam_data_root, init_filename=init_filename,
     # preprocess the first file
     foam_reader = FoamCSVReader(foam_data_root)
     if use_strong_preprocessing:
-        foam_reader.strong_preprocess_and_replace()
+        foam_reader.__strong_preprocess_and_replace()
     else:
-        foam_reader.weak_preprocess_and_replace()
+        foam_reader.__weak_preprocess_and_replace()
     file_count = 1
     while foam_reader.load_next_df() is not None:
         if use_strong_preprocessing:
-            foam_reader.strong_preprocess_and_replace()
+            foam_reader.__strong_preprocess_and_replace()
         else:
-            foam_reader.weak_preprocess_and_replace()
+            foam_reader.__weak_preprocess_and_replace()
         file_count += 1
         print("Preprocessed: " + foam_reader.csv_filename)
 

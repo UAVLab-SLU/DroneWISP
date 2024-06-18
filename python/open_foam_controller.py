@@ -4,19 +4,21 @@ import subprocess
 import pandas as pd
 from PyFoam.RunDictionary.ParsedBlockMeshDict import ParsedBlockMeshDict
 from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
+from openfoam_kd_tree_reader import FoamKDTreeReader
 from my_stl.mesh_utils import StlMeshUtils
-
+from time import time as timer
 
 class OpenFoamController:
     """
     OpenFOAM controller, run and clean OpenFOAM case, read cell center and velocity, configure case files
     """
 
-    def __init__(self, case_root):
+    def __init__(self, case_root, preprocess_mode="int_precision"):
         """
         :param case_root: OpenFOAM case root
         """
         self.case_root = case_root
+        self.preprocess_mode = preprocess_mode
         self.foam_stl_path = os.path.join(self.case_root, "constant", "geometry", "combined.stl")
         self.empty_openfoam_case_root = "openFoamCaseEmpty"
         self.mesh_utils = StlMeshUtils()
@@ -934,6 +936,7 @@ class OpenFoamController:
         :param z_max: int, maximum value in z direction
         """
         # get all time folders
+        start_time = timer()
         time_folders = self.get_time_folders()
 
         print("Time folders: ", time_folders)
@@ -953,35 +956,42 @@ class OpenFoamController:
             # Combine all results and convert to DataFrame
             data = np.column_stack((x, y, z, u, v, w))
             df = pd.DataFrame(data, columns=["x", "y", "z", "u", "v", "w"])
+            print(f"Raw data loaded, time taken: {timer() - start_time:.2f} seconds")
 
-            # Convert x, y, z to integer precision
-            df[["x", "y", "z"]] = df[["x", "y", "z"]].round().astype(int)
-
-            # Remove duplicates based on x, y, z
-            df.drop_duplicates(subset=["x", "y", "z"], keep="first", inplace=True)
-
-            # Sort data
-            df.sort_values(by=["x", "y", "z"], inplace=True)
-
-            # Fill missing data
-            if all(v is not None for v in [range_x, range_y, range_z, x_min, x_max, y_min, y_max, z_min, z_max]):
-                x_coords = np.linspace(x_min, x_max, range_x, dtype=int)
-                y_coords = np.linspace(y_min, y_max, range_y, dtype=int)
-                z_coords = np.linspace(z_min, z_max, range_z, dtype=int)
-
-                mesh = pd.DataFrame(np.array(np.meshgrid(x_coords, y_coords, z_coords, indexing='ij')).T.reshape(-1, 3),
-                                    columns=["x", "y", "z"])
-                df = pd.merge(mesh, df, on=["x", "y", "z"], how="outer")
-                df = pd.merge(mesh, df, on=["x", "y", "z"], how="left")
-
-            # Check size
-            if range_x is not None and range_y is not None and range_z is not None:
-                if len(df) != range_x * range_y * range_z:
-                    print(f"Error: Data size is not correct. Expected {range_x * range_y * range_z}, got {len(df)}")
-
+            start_time = timer()
             save_path = os.path.join(self.case_root, f"wisp_{time}.csv")
-            df.to_csv(save_path, index=False)
-            print(f"Saved preprocessed data to {save_path}")
+            if self.preprocess_mode == "kd_tree":
+                save_path = save_path.replace(".csv", ".pkl")
+                FoamKDTreeReader.preprocess_and_save_df(df, save_path)
+            else:
+                # Convert x, y, z to integer precision
+                df[["x", "y", "z"]] = df[["x", "y", "z"]].round().astype(int)
+
+                # Remove duplicates based on x, y, z
+                df.drop_duplicates(subset=["x", "y", "z"], keep="first", inplace=True)
+
+                # Sort data
+                df.sort_values(by=["x", "y", "z"], inplace=True)
+
+                # Fill missing data
+                if all(v is not None for v in [range_x, range_y, range_z, x_min, x_max, y_min, y_max, z_min, z_max]):
+                    x_coords = np.linspace(x_min, x_max, range_x, dtype=int)
+                    y_coords = np.linspace(y_min, y_max, range_y, dtype=int)
+                    z_coords = np.linspace(z_min, z_max, range_z, dtype=int)
+
+                    mesh = pd.DataFrame(np.array(np.meshgrid(x_coords, y_coords, z_coords, indexing='ij')).T.reshape(-1, 3),
+                                        columns=["x", "y", "z"])
+                    df = pd.merge(mesh, df, on=["x", "y", "z"], how="outer")
+                    df = pd.merge(mesh, df, on=["x", "y", "z"], how="left")
+
+                # Check size
+                if range_x is not None and range_y is not None and range_z is not None:
+                    if len(df) != range_x * range_y * range_z:
+                        print(f"Error: Data size is not correct. Expected {range_x * range_y * range_z}, got {len(df)}")
+
+
+                df.to_csv(save_path, index=False)
+            print(f"Saved preprocessed data to {save_path}, time taken: {timer() - start_time:.2f} seconds")
 
     def update_dt(self, dt_seconds):
         """
