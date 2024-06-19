@@ -1,11 +1,8 @@
 import os
 import pickle
-
-import pandas as pd
-import numpy as np
-from scipy.spatial import KDTree
 import time
 
+from scipy.spatial import KDTree
 
 
 class FoamKDTreeReader:

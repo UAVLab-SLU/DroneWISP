@@ -36,6 +36,7 @@ class CFDManager:
         self.wind_type = "uniform"  # default wind type, can be "uniform", "turbulent", "turbulent_multi_source"
         self.openfoam_controller = OpenFoamController("openFoamCase", preprocess_mode)
         if preprocess_mode == "kd_tree":
+            print("Using KDTree")
             self.foam_kd_tree_reader = FoamKDTreeReader("openFoamCase")
         else:
             self.foam_csv_reader = FoamCSVReader("openFoamCase")

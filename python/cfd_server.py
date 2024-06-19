@@ -22,10 +22,12 @@ CORS(app)
 
 # get cmd line args
 parser = argparse.ArgumentParser(description='CFD Server')
-parser.add_argument('--preprocess_mode', default='int_precision', type=str, help='Preprocess mode, int_precision or kd_tree')
+parser.add_argument('--preprocess_mode', default='int_precision', help='Preprocess mode, int_precision or kd_tree',required=False)
+parser.add_argument( '--host', default='0.0.0.0', help='Host address', required=False)
+parser.add_argument('--port', type=int, default=5001, help='Port number', required=False)
 print("Preprocess mode: ", parser.parse_args().preprocess_mode)
-
-cfd_manager = CFDManager(preprocess_mode=parser.parse_args().preprocess_mode)
+args = parser.parse_args()
+cfd_manager = CFDManager(preprocess_mode=args.preprocess_mode)
 if os.getenv("IN_DOCKER", False):
     ascii_art = """
 __        _____ ____  ____    ____   ___   ____ _  _______ ____  
@@ -146,4 +148,4 @@ if __name__ == '__main__':
     except requests.exceptions.RequestException as e:
         print("Error connecting to DRV server")
 
-    app.run(host='0.0.0.0', port=5001)
+    app.run(host=args.host, port=args.port)

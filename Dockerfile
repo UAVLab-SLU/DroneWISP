@@ -65,4 +65,4 @@ ENV IN_DOCKER Yes
 EXPOSE 5001
 
 # Set the command to run the application
-CMD ["python3", "cfd_server.py", "-h", "0.0.0.0", "-p", "5001"]
+CMD ["python3", "cfd_server.py","--preprocess_mode", "kd_tree", "--host", "0.0.0.0", "--port", "5001"]
