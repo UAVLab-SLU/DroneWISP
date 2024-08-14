@@ -3,7 +3,9 @@ import numpy as np
 from scipy.spatial import KDTree
 import time
 import matplotlib.pyplot as plt
+
 import psutil
+
 
 
 class CoordinateLookup:
@@ -31,6 +33,7 @@ def generate_dataframe(size):
 
 # Sizes to test
 sizes = [100, 1000, 10000, 100000, 200000, 500000, 1000000]
+
 
 # Storage for results
 build_times = []
@@ -98,6 +101,7 @@ plt.grid(True)
 
 # Plot query times
 plt.subplot(1, 3, 2)
+
 plt.plot(sizes, query_times, marker='o')
 plt.xscale('log')
 plt.yscale('log')

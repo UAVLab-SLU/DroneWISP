@@ -884,6 +884,7 @@ def up_case_plot():
             handles.append(terrain_handle)
             labels.append('Terrain')
 
+
         # Plot start and end points
         ax.scatter(x[0], y[0], z[0], color='green', s=100, label='Start Point', edgecolors='black')
         ax.scatter(x[-1], y[-1], z[-1], color='red', s=100, label='End Point', edgecolors='black')
@@ -913,6 +914,7 @@ def up_case_plot():
         # Set view angle
         ax.view_init(elev=angle[0], azim=angle[1])
 
+
     # Wind direction vector
     wind_direction = np.array([1, 0, 0])
     ax.quiver(0, 0, 0, wind_direction[0], wind_direction[1], wind_direction[2], color='black', label='Wind Direction')
@@ -930,5 +932,7 @@ def up_case_plot():
     plt.show()
 
 
+
 #tower_plot()
 up_case_plot()
+
