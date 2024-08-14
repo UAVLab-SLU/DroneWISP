@@ -24,21 +24,21 @@ class FoamCSVReader:
         self.csv_filename = None
         # self.preprocess()
 
-    def wisp_load_first_csv(self, time_folder):
+    def wisp_load_first_df(self, time_folder):
         """
         Load the first csv file in the sequence
         :param time_folder: int, the time folder number
         """
         self.csv_filename = os.path.join(self.openfoam_root, "wisp_" + str(time_folder) + ".csv")
-        self.df = self.read_csv("wisp_" + str(time_folder) + ".csv")
+        self.df = self.read_from_file("wisp_" + str(time_folder) + ".csv")
 
-    def read_csv(self, filename):
+    def read_from_file(self, filename):
         start_read = time.time()
         df = pd.read_csv(self.openfoam_root + os.sep + filename)
         print("read csv to memory time: " + str(time.time() - start_read))
         return df
 
-    def validate_data_weak(self):
+    def __validate_data_weak(self):
         """
         Check if there are any duplicate rows or skipped rows
         super expensive, only use for debugging
@@ -118,7 +118,7 @@ class FoamCSVReader:
             Read csv file helper function for threading
             :return:
             """
-            self.df = self.read_csv(self.csv_filename)
+            self.df = self.read_from_file(self.csv_filename)
 
         # Change the csv filename ex. 10ms_1.csv to 10ms_2.csv
         # Account for the case where the csv filename is 10ms_10.csv
@@ -133,17 +133,15 @@ class FoamCSVReader:
         next_filename = self.csv_filename[:underscore_index + 1] + str(next_number) + ".csv"
 
         if not os.path.isfile(self.openfoam_root + os.sep + next_filename):
-            # If the next file does not exist, do nothing
-            print("CSV file for next time step does not exist.")
             return None
         self.csv_filename = next_filename
         # do it in separate thread
-        self.df = self.read_csv(self.csv_filename)
+        self.df = self.read_from_file(self.csv_filename)
         read_thread = threading.Thread(target=read_csv_thread)
         read_thread.start()
         return read_thread
 
-    def preprocess_weak(self):
+    def __preprocess_weak(self):
         """
         For weak preprocessing, we remove all points with 0 velocity
         Preprocess current dataframe in memory
@@ -168,7 +166,7 @@ class FoamCSVReader:
         # sort by columns 1, 2, 3
         self.df = df.sort_values(by=[df.columns[0], df.columns[1], df.columns[2]])
 
-    def preprocess_strong(self):
+    def __preprocess_strong(self):
         """
         Preprocess, does not remove 0 velocity points
         1. cast columns 1, 2, 3 to nearest integer using manhattan distance
@@ -192,7 +190,7 @@ class FoamCSVReader:
         self.df = df.sort_values(by=[df.columns[0], df.columns[1], df.columns[2]])
 
         # populate missing points in the sorted dataframe
-        self.populate_missing_points_in_sorted_df_with_zero()
+        self.__populate_missing_points_in_sorted_df_with_zero()
 
     @staticmethod
     def __approximate_integer(x):
@@ -206,32 +204,32 @@ class FoamCSVReader:
         else:
             return int(x) + 1
 
-    def save_df_to_csv(self, filename):
+    def save_df_to_file(self, filename):
         self.df.to_csv(self.openfoam_root + os.sep + filename, index=False)
 
-    def strong_preprocess_and_replace(self):
+    def __strong_preprocess_and_replace(self):
         """
         strong: no empty points, all points are populated
         for training the DNN
         Preprocess the current csv file and replace the current csv file with the preprocessed one
         :return:
         """
-        self.preprocess_strong()
-        self.validate_data_strong()
-        self.save_df_to_csv(self.csv_filename)
+        self.__preprocess_strong()
+        self.__validate_data_strong()
+        self.save_df_to_file(self.csv_filename)
 
-    def weak_preprocess_and_replace(self):
+    def __weak_preprocess_and_replace(self):
         """
         weak: empty points are removed, zeros are removed
         for wind simulation.
         Preprocess the current csv file and replace the current csv file with the preprocessed one
         :return:
         """
-        self.preprocess_weak()
-        self.validate_data_weak()
-        self.save_df_to_csv(self.csv_filename)
+        self.__preprocess_weak()
+        self.__validate_data_weak()
+        self.save_df_to_file(self.csv_filename)
 
-    def populate_missing_points_in_sorted_df_with_closest(self):
+    def __populate_missing_points_in_sorted_df_with_closest(self):
         """
         Populate missing points in the sorted dataframe
         Since all points are sorted, we can just iterate through the list, and check if the next point is missing
@@ -252,7 +250,7 @@ class FoamCSVReader:
                     point[df.columns[1]] + 1) + ", " + str(point[df.columns[2]] + 1))
         self.df = df.sort_values(by=[df.columns[0], df.columns[1], df.columns[2]])
 
-    def populate_missing_points_in_sorted_df_with_zero(self):
+    def __populate_missing_points_in_sorted_df_with_zero(self):
         df = self.df
         df.set_index(["Points:0", "Points:1", "Points:2"], inplace=True)
         # Create a MultiIndex with all possible combinations of points
@@ -265,7 +263,7 @@ class FoamCSVReader:
         df.reset_index(inplace=True)
         self.df = df
 
-    def validate_data_strong(self):
+    def __validate_data_strong(self):
         # check if all points are populated
         total_points = self.df.shape[0]
         print("Total points in csv: " + str(total_points))

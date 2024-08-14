@@ -1,9 +1,11 @@
 import os
+import time
 
 import requests
 
 from open_foam_controller import OpenFoamController
 from openfoam_csv_reader import FoamCSVReader
+from openfoam_kd_tree_reader import FoamKDTreeReader
 import threading
 
 
@@ -16,7 +18,8 @@ class CFDManager:
     - setup mesh using binary mask
     """
 
-    def __init__(self):
+    def __init__(self, preprocess_mode="int_precision"):
+        self.preprocess_mode = preprocess_mode  # can be "int_precision", "kd_tree"
         self.range_x = None
         self.range_y = None
         self.range_z = None
@@ -31,9 +34,13 @@ class CFDManager:
         self.openfoam_case_ready = False
         self.stl_mesh_ready = False
         self.wind_type = "uniform"  # default wind type, can be "uniform", "turbulent", "turbulent_multi_source"
-        self.openfoam_controller = OpenFoamController("openFoamCase")
-        self.foam_csv_reader = FoamCSVReader("openFoamCase")
+        self.openfoam_controller = OpenFoamController("openFoamCase", preprocess_mode)
+        if preprocess_mode == "kd_tree":
+            self.foam_kd_tree_reader = FoamKDTreeReader("openFoamCase")
+        else:
+            self.foam_csv_reader = FoamCSVReader("openFoamCase")
         self.DEBUG_USE_SAME_DATA = False # for debugging, use the same data for subsequent requests
+
 
     def get_state(self):
         return self.state
@@ -245,6 +252,10 @@ class CFDManager:
             self.state = "ready"
             return
 
+        # reset kd tree reader
+        if self.preprocess_mode == "kd_tree":
+            self.foam_kd_tree_reader.clear_time_list()
+
         # check if variables are set
         if (self.range_x is None or self.range_y is None or self.range_z is None or
                 self.x_min is None or self.x_max is None or
@@ -264,11 +275,12 @@ class CFDManager:
         def target_function():
             self.state = "cfd_running"
             print("Running CFD simulation")
+            start_time = time.time()
             self.openfoam_controller.clean()
             self.openfoam_controller.run()
 
             if self.openfoam_controller.check_run_valid():
-                print("CFD simulation completed")
+                print(f"CFD simulation completed, time taken: {time.time() - start_time:.2f} seconds")
             else:
                 print("Error: invalid run")
                 self.openfoam_controller.debug_failed_run()
@@ -279,12 +291,18 @@ class CFDManager:
                 return
 
             print("Preprocessing CFD results")
+
+            start_time = time.time()
             self.openfoam_controller.wisp_save_all_result_and_preprocess(range_x=self.range_x, range_y=self.range_y,
                                                                          range_z=self.range_z, x_min=self.x_min, y_min=self.y_min,
                                                                          z_min=self.z_min, x_max=self.x_max, y_max=self.y_max,
                                                                          z_max=self.z_max)
-            self.foam_csv_reader.wisp_load_first_csv(int(self.openfoam_controller.get_time_folders()[0]))
+            if self.preprocess_mode == "kd_tree":
+                pass
+            else:
+                self.foam_csv_reader.wisp_load_first_df(int(self.openfoam_controller.get_time_folders()[0]))
 
+            print(f"Preprocessing CFD results completed, time taken: {time.time() - start_time:.2f} seconds")
             print("Ready to serve wind data")
             self.state = "ready"
             self.reset_flag()
@@ -329,7 +347,10 @@ class CFDManager:
             print("Wind data is not ready")
             return None
 
-        return self.foam_csv_reader.get_spacial_temporal_velocity_next_time_step(cartesian_coordinates)
+        if self.preprocess_mode == "kd_tree":
+            return self.foam_kd_tree_reader.get_spacial_temporal_velocity_next_time_step(cartesian_coordinates)
+        else:
+            return self.foam_csv_reader.get_spacial_temporal_velocity_next_time_step(cartesian_coordinates)
 
 
 if __name__ == "__main__":

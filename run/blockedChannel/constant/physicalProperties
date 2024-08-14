@@ -5,30 +5,17 @@
     \\  /    A nd           | Version:  10
      \\/     M anipulation  |
 \*---------------------------------------------------------------------------*/
-
-cuttingPlane
+FoamFile
 {
-    type            surfaces;
-    libs            ("libsampling.so");
-    writeControl    writeTime;
-
-    surfaceFormat   vtk;
-    fields          ( p U );
-
-    interpolationScheme cellPoint;
-
-    surfaces
-    (
-        yNormal
-        {
-            type            cuttingPlane;
-            planeType       pointAndNormal;
-            point           (0 0 0);
-            normal          (0 1 0);
-            interpolate     true;
-        }
-    );
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      physicalProperties;
 }
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+viscosityModel  constant;
+
+nu              [0 2 -1 0 0 0 0] 1e-05;
 
 // ************************************************************************* //

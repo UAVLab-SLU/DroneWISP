@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import os
@@ -19,22 +20,27 @@ log = logging.getLogger('werkzeug')
 CORS(app)
 # hardcoded for now, use environment variables in production
 
-cfd_manager = CFDManager()
+# get cmd line args
+parser = argparse.ArgumentParser(description='CFD Server')
+parser.add_argument('--preprocess_mode', default='int_precision', type=str, help='Preprocess mode, int_precision or kd_tree')
+print("Preprocess mode: ", parser.parse_args().preprocess_mode)
+
+cfd_manager = CFDManager(preprocess_mode=parser.parse_args().preprocess_mode)
 if os.getenv("IN_DOCKER", False):
     ascii_art = """
- ______        ______  ____    ____   ___   ____ _  _______ ____  
-|  _ \ \      / /  _ \/ ___|  |  _ \ / _ \ / ___| |/ / ____|  _ \ 
-| |_) \ \ /\ / /| | | \___ \  | | | | | | | |   | ' /|  _| | |_) |
-|  _ < \ V  V / | |_| |___) | | |_| | |_| | |___| . \| |___|  _ < 
-|_| \_\ \_/\_/  |____/|____/  |____/ \___/ \____|_|\_\_____|_| \_\ 
+__        _____ ____  ____    ____   ___   ____ _  _______ ____  
+\ \      / /_ _/ ___||  _ \  |  _ \ / _ \ / ___| |/ / ____|  _ \ 
+ \ \ /\ / / | |\___ \| |_) | | | | | | | | |   | ' /|  _| | |_) |
+  \ V  V /  | | ___) |  __/  | |_| | |_| | |___| . \| |___|  _ < 
+   \_/\_/  |___|____/|_|     |____/ \___/ \____|_|\_\_____|_| \_\
 """
 else:
     ascii_art = """
-______        ______  ____  
-|  _ \ \      / /  _ \/ ___| 
-| |_) \ \ /\ / /| | | \___ \ 
-|  _ < \ V  V / | |_| |___) |
-|_| \_\ \_/\_/  |____/|____/ 
+__        _____ ____  ____  
+\ \      / /_ _/ ___||  _ \ 
+ \ \ /\ / / | |\___ \| |_) |
+  \ V  V /  | | ___) |  __/ 
+   \_/\_/  |___|____/|_|       
 """
 print(ascii_art)
 
