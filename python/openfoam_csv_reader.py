@@ -38,6 +38,19 @@ class FoamCSVReader:
         print("read csv to memory time: " + str(time.time() - start_read))
         return df
 
+    def preprocess_single_file(self, filename, weak=True):
+        """
+        Preprocess a single file
+        :param filename: str, name of the csv file
+        :param weak: bool, weak or strong preprocessing
+        """
+        self.csv_filename = filename
+        self.df = self.read_from_file(filename)
+        if weak:
+            self.__weak_preprocess_and_replace()
+        else:
+            self.__strong_preprocess_and_replace()
+
     def __validate_data_weak(self):
         """
         Check if there are any duplicate rows or skipped rows
