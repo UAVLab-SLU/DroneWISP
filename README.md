@@ -1,11 +1,5 @@
-# DroneWISP (Wind Simulation and Prediction)
-DroneWISP, or WISP for short, is a project that aims to simulate wind conditions for a given geometry and predict the wind velocity field using a PINN model.
+# RWDS (RealWindDroneSim)
 
-(DroneWISP was previously known as RWDS, or Real Wind Drone Sim (RWDS), but was renamed to better reflect the project's goals.)
-
-DRV, or Drone Req Validator, is a project that aims to streamline the process of validating the requirements of a drone software system. available at [here](https://github.com/UAVLab-SLU/AirsimMonitors)
-
-This project uses OpenFoam to simulate realist wind conditions for a given geometry. Also propose a PINN model to predict the wind velocity field in the given geometry.
 
 ## Requirements
 - Linux or WSL (WSL preferred)
