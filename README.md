@@ -13,8 +13,8 @@
 
 ## Port reservation
 - DRV REST: port 5000
-- WISP REST: port 5001
-- WISP UDP inbound: port 3001
+- RWDS REST: port 5001
+- RWDS UDP inbound: port 3001
 - UE UDP inbound port: 8008
 - UE UDP outbound target port: 3001
 
@@ -83,11 +83,11 @@ NOT SUPPORTED
 ### install openfoam on mac
 Docker is recommended for Mac users.
 
-### WISP backend on docker
+### RWDS backend on docker
 build the docker image
 ```bash
 cd python
-docker build -t wisp_server .
+docker build -t rwds_server .
 ```
 run the docker image
 (assume you are in `python` directory)
