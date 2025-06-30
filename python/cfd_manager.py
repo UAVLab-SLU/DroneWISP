@@ -18,7 +18,7 @@ class CFDManager:
     - setup mesh using binary mask
     """
 
-    def __init__(self, preprocess_mode="int_precision"):
+    def __init__(self, preprocess_mode="int_precision", storage_method="csv"):
         self.preprocess_mode = preprocess_mode  # can be "int_precision", "kd_tree"
         self.range_x = None
         self.range_y = None

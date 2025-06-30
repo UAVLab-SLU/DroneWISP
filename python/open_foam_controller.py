@@ -1,4 +1,5 @@
 import os
+import h5py
 import numpy as np
 import subprocess
 import pandas as pd
@@ -991,6 +992,21 @@ class OpenFoamController:
 
 
                 df.to_csv(save_path, index=False)
+                # Save to raw HDF5 format
+                h5_path = save_path.replace(".csv", ".h5")
+
+                # Convert DataFrame to NumPy structured array
+                dtype = np.dtype([
+                    ("x", "i4"), ("y", "i4"), ("z", "i4"),
+                    ("u", "f4"), ("v", "f4"), ("w", "f4")
+                ])
+                structured_array = np.array(
+                    [tuple(row) for row in df[["x", "y", "z", "u", "v", "w"]].values],
+                    dtype=dtype
+                )
+
+                with h5py.File(h5_path, "w") as f:
+                    f.create_dataset("velocity", data=structured_array)
             print(f"Saved preprocessed data to {save_path}, time taken: {timer() - start_time:.2f} seconds")
 
     def update_dt(self, dt_seconds):

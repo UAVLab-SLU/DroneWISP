@@ -23,7 +23,9 @@ CORS(app)
 # get cmd line args
 parser = argparse.ArgumentParser(description='CFD Server')
 parser.add_argument('--preprocess_mode', default='int_precision', type=str, help='Preprocess mode, int_precision or kd_tree')
+parser.add_argument('--storage_method', default='csv', type=str, help='Storage method, csv or hdf5')
 print("Preprocess mode: ", parser.parse_args().preprocess_mode)
+print("Storage method: ", parser.parse_args().storage_method)
 
 cfd_manager = CFDManager(preprocess_mode=parser.parse_args().preprocess_mode)
 if os.getenv("IN_DOCKER", False):
