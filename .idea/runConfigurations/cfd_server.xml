@@ -1,14 +1,14 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="cfd server" type="PythonConfigurationType" factoryName="Python">
     <module name="zhangbohan-10" />
-    <option name="ENV_FILES" value="" />
+    <option name="ENV_FILES" value="$PROJECT_DIR$/python/venv/bin/python3.10" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
       <env name="PYTHONUNBUFFERED" value="1" />
     </envs>
     <option name="SDK_HOME" value="" />
-    <option name="SDK_NAME" value="Python 3.10.12 WSL (Ubuntu): (/home/zhangbohan/OpenFOAM/zhangbohan-10/python/venv/bin/python)" />
+    <option name="SDK_NAME" value="Python 3.10.12 WSL (Ubuntu-22.04): (/home/bohanzhang/DroneWISP/python/venv/bin/python3.10)" />
     <option name="WORKING_DIRECTORY" value="\\wsl.localhost\Ubuntu\home\zhangbohan\OpenFOAM\zhangbohan-10\python" />
     <option name="IS_MODULE_SDK" value="false" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
