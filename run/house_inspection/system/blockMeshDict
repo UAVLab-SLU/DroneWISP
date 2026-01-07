@@ -18,19 +18,19 @@ convertToMeters 1;
 
 vertices
 (
-    (-10 -20 0) // 0
-    (30 -20 0)   // 1
-    (30  20 0)   // 2
-    (-10  20 0)  // 3
-    (-10 -20 20) // 4
-    (30 -20 20)  // 5
-    (30  20 20)  // 6
-    (-10 20 20) // 7
+    (-10 -40 0) // 0
+    (30 -40 0)   // 1
+    (30  40 0)   // 2
+    (-10  40 0)  // 3
+    (-10 -40 40) // 4
+    (30 -40 40)  // 5
+    (30  40 40)  // 6
+    (-10 40 40) // 7
 );
 
 blocks
 (
-    hex (0 1 2 3 4 5 6 7) (40 40 20) simpleGrading (1 1 1)
+    hex (0 1 2 3 4 5 6 7) (40 80 40) simpleGrading (1 1 1)
 );
 
 boundary
@@ -70,7 +70,7 @@ boundary
     }
     lowerWall
     {
-        type wall;
+        type patch;
         faces
         (
             (0 3 2 1)
@@ -78,7 +78,7 @@ boundary
     }
     upperWall
     {
-        type wall;
+        type patch;
         faces
         (
             (4 5 6 7)

@@ -29,7 +29,7 @@ boundaryField
     {
         type            turbulentInlet;
         referenceField  uniform (10 0 0);
-        fluctuationScale (0.5 0.5 0.5);
+        fluctuationScale (0.1 0.1 0.1);
         value           uniform (10 0 0);
     }
 
@@ -37,28 +37,24 @@ boundaryField
     {
         type            turbulentInlet;
         referenceField  uniform (0 -10 0);
-        fluctuationScale (0.5 0.5 0.5);
+        fluctuationScale (0.1 0.1 0.1);
         value           uniform (0 -10 0);
     }
 
 
     front
     {
-       type            fixedValue;
-       value           $internalField;
+       type            zeroGradient;
     }
 
     outlet
     {
-        type            inletOutlet;
-        inletValue      uniform (0 0 0);
-        value           $internalField;
+        type            zeroGradient;
     }
 
     lowerWall
     {
-        type            fixedValue;
-        value           $internalField;
+        type            zeroGradient;
     }
 
     combinedGroup
@@ -66,7 +62,10 @@ boundaryField
         type            noSlip;
     }
 
-    #include "include/frontBackUpperPatches"
+    upperWall
+    {
+        type            zeroGradient;
+    }
 }
 
 

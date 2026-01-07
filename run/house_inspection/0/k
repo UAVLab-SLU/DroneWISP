@@ -28,32 +28,28 @@ boundaryField
     inlet
     {
         type            fixedValue;
-        value           uniform 2e-05;
+        value           uniform 0.375;
     }
 
     front
     {
-        type            fixedValue;
-        value           uniform 2e-05;
+        type            zeroGradient;
     }
 
     back
     {
         type            fixedValue;
-        value           uniform 2e-05;
+        value           uniform 0.375;
     }
 
     outlet
     {
-        type            inletOutlet;
-        inletValue      $internalField;
-        value           $internalField;
+        type            zeroGradient;
     }
 
     lowerWall
     {
-        type            kqRWallFunction;
-        value           $internalField;
+        type            zeroGradient;
     }
 
     combinedGroup
@@ -62,7 +58,10 @@ boundaryField
         value           $internalField;
     }
 
-    #include "include/frontBackUpperPatches"
+    upperWall
+    {
+        type            zeroGradient;
+    }
 }
 
 

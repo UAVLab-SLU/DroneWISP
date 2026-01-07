@@ -1,8 +1,12 @@
 #!/bin/sh
 cd ${0%/*} || exit 1    # Run from this directory
 
+# Remove results.foam if it exists (causes OpenFOAM to abort during initialization)
+rm -f results.foam
+
 # Source tutorial run functions
-. $WM_PROJECT_DIR/bin/tools/RunFunctions
+. /opt/openfoam10/etc/bashrc
+. /opt/openfoam10/bin/tools/RunFunctions
 
 runApplication surfaceFeatures
 
@@ -12,11 +16,13 @@ runApplication decomposePar -copyZero
 runParallel snappyHexMesh -overwrite
 
 runParallel patchSummary
-runParallel potentialFoam
+#runParallel potentialFoam
 runParallel $(getApplication)
 
 runApplication reconstructParMesh -constant
 runApplication reconstructPar
+postProcess -func writeCellCentres
+# this is a hack to get the cell centres written out, which is needed for the velocity field to coordinate mapping
 touch results.foam
 
 
