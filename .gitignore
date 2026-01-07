@@ -1,1 +1,26 @@
 /python/venv/
+/python/openFoamCase/log.blockMesh
+/python/openFoamCase/log.decomposePar
+/python/openFoamCase/log.patchSummary
+/python/openFoamCase/log.reconstructPar
+/python/openFoamCase/log.reconstructParMesh
+/python/openFoamCase/log.simpleFoam
+/python/openFoamCase/log.snappyHexMesh
+/python/openFoamCase/log.surfaceFeatures
+/python/openFoamCase/processor*
+# Ignore all time directories except 0/
+/python/openFoamCase/[1-9]*/
+/python/openFoamCase/[0-9][0-9]*/
+
+# Keep the 0 directory exept for specific files
+/python/openFoamCase/0/C
+/python/openFoamCase/0/Cx
+/python/openFoamCase/0/Cy
+/python/openFoamCase/0/Cz
+
+/python/openFoamCase/constant/geometry/combined.eMesh
+/python/openFoamCase/constant/extendedFeatureEdgeMesh/combined.extendedFeatureEdgeMesh
+/python/openFoamCase/constant/polyMesh/*
+/python/openFoamCase/wisp_50.csv
+/python/openFoamCase/wisp_50.h5
+/python/openFoamCase/constant/geometry/combined.stl
