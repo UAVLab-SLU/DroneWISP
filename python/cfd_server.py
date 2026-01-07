@@ -116,6 +116,7 @@ def cfd_status():
 def binary_mask():
     """
     Receive the binary mask from the UE side
+    aka, terrain voxel grid
     :returns: success message
     """
     # get binary mask from request
@@ -140,7 +141,9 @@ if __name__ == '__main__':
                 print(f"Host IP address {host_ip} has been saved to .env file.")
             else:
                 print("Failed to retrieve the host machine's IPv4 address")
-            response = requests.get(f"http://{os.getenv('HOST_IP')}:5000/state", timeout=1)
+                host_ip = os.getenv('HOST_IP')
+                print(f"Using HOST_IP from environment: {host_ip}")
+            response = requests.get(f"http://{host_ip}:5000/state", timeout=1)
         if response.status_code == 200:
             print("Connected to DRV server")
         else:
