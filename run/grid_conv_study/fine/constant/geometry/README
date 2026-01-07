@@ -1,0 +1,13 @@
+# geometry directory instructions
+
+Directory to house tri-surfaces
+
+## what is this directory for?
+The snappyHexMeshDict command will read the combined.stl file from this folder and create the combined.eMesh file
+
+## New mesh
+To replace with new mesh, rename the new file to combined.stl and replace the old combined.stl file to other name
+
+## How to run
+nothing to run here
+the upper dir Allrun script will run the snappyHexMesh command
