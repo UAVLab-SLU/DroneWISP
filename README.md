@@ -11,6 +11,7 @@ This project uses OpenFoam to simulate realist wind conditions for a given geome
 - Linux or WSL (WSL preferred)
 - OpenFoam 10
 - ParaView (optional, for visualization)
+  - WSL users: Windows ParaView is recommended (see setup below)
 
 ## Hardware suggestion
 - 6+ cores CPU
@@ -138,6 +139,27 @@ test the model: `pinn/dnn_test.py`
 
 ## How to use ParaView
 
+### Setting up Windows ParaView for WSL (Recommended)
+
+If you're using WSL and have ParaView installed on Windows, you can configure the system to use Windows ParaView instead of the WSL version. This avoids segfault issues with WSL ParaView and provides better performance.
+
+Run the setup script from the main directory:
+```bash
+cd /path/to/DroneWISP
+bash ./setup_paraview_windows.sh
+```
+
+This script will:
+- Configure your shell to use Windows ParaView (`G:\ParaView 5.13.2\bin\paraview.exe`) by default
+- Automatically convert WSL paths to Windows network paths
+- Fall back to WSL paraFoam if Windows ParaView is not found
+
+After running the script, either:
+- Open a new terminal window, or
+- Run `source ~/.bashrc` in your current terminal
+
+**Note:** If your ParaView installation is in a different location, edit `setup_paraview_windows.sh` and update the `PARAVIEW_EXE` path.
+
 ### Visualizing the results
 To visualize the results of the simulation, you can use ParaView.
 ```bash
@@ -147,7 +169,7 @@ cd {example directory}
 paraFoam
 ```
 
-since all `Allrun` scripts creates a empty `results.foam` file, when you run `paraFoam` under a case directory, it will open the case in ParaView. 
+Since all `Allrun` scripts create an empty `results.foam` file, when you run `paraFoam` under a case directory, it will open the case in ParaView. 
 But the results will not be visible, you need to change the view option to display the U, p, and other fields.
 
 ![img.png](readme_image/img.png)
@@ -207,9 +229,13 @@ optimize-vhd -Path {path to ext4.vhdx} -Mode full
 ```
 
 ### ParaView cannot be opened
-if you cannot open paraView using the command `paraFoam`
-sometime it because unusual folder name in the case folder.
-delete any that is not the default folder name, and try again.
+If you cannot open ParaView using the command `paraFoam`:
+
+1. **WSL users with segfault issues**: Use the Windows ParaView setup script (see "Setting up Windows ParaView for WSL" above). The WSL version of ParaView may segfault due to OpenGL issues.
+
+2. **Unusual folder names**: Sometimes it's because of unusual folder names in the case folder. Delete any folders that are not the default OpenFOAM folder names and try again.
+
+3. **results.foam file issues**: If OpenFOAM aborts with "invalid fileName results.foam", ensure the `results.foam` file is removed before running simulations. The `Allclean` script should handle this automatically.
 
 
 ### Allrun and Allclean cannot be executed
