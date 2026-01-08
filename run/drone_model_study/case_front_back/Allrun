@@ -1,0 +1,37 @@
+#!/bin/bash
+set -e  # Exit on error
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
+
+# Source OpenFOAM
+source /opt/openfoam10/etc/bashrc 2>/dev/null || {
+    echo "Warning: Could not source OpenFOAM. Make sure OpenFOAM is installed."
+    exit 1
+}
+
+# Generate surface features (creates combined.eMesh)
+echo "Running surfaceFeatures..."
+if [ -f constant/geometry/combined.stl ]; then
+    surfaceFeatures > log.surfaceFeatures 2>&1 || { echo "Error: surfaceFeatures failed"; exit 1; }
+    # Check if eMesh was created
+    if [ ! -f constant/geometry/combined.eMesh ]; then
+        echo "Warning: combined.eMesh not created, but continuing..."
+    fi
+else
+    echo "Error: combined.stl not found in constant/geometry/"
+    exit 1
+fi
+
+# Generate base mesh
+echo "Running blockMesh..."
+blockMesh > log.blockMesh 2>&1 || { echo "Error: blockMesh failed"; exit 1; }
+
+# Generate snappy hex mesh
+echo "Running snappyHexMesh..."
+snappyHexMesh -overwrite > log.snappyHexMesh 2>&1 || { echo "Error: snappyHexMesh failed"; exit 1; }
+
+# Run solver
+echo "Running simpleFoam..."
+simpleFoam > log.simpleFoam 2>&1 || { echo "Error: simpleFoam failed"; exit 1; }
+
+echo "Simulation complete!"

@@ -1,0 +1,168 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  10
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Which of the steps to run
+castellatedMesh true;
+snap            true;
+addLayers       false;
+
+// Geometry. Definition of all surfaces.
+geometry
+{
+    combined
+    {
+        type triSurfaceMesh;
+        file "combined.stl";
+    }
+
+    refinementBox
+    {
+        type searchableBox;
+        min (-4.0 -4.0 -1.5);
+        max ( 4.0 4.0 3.5);
+    }
+};
+
+// Settings for the castellatedMesh generation.
+castellatedMeshControls
+{
+    // Refinement parameters
+    maxLocalCells 50000;
+    maxGlobalCells 500000;
+    minRefinementCells 10;
+    maxLoadUnbalance 0.10;
+    nCellsBetweenLevels 2;
+
+    // Explicit feature edge refinement
+    // Note: OpenFOAM automatically looks in constant/geometry/ for eMesh files
+    features
+    (
+        {
+            file "combined.eMesh";
+            level 2;
+        }
+    );
+
+    // Surface based refinement
+    refinementSurfaces
+    {
+        combined
+        {
+            level (2 3);
+            patchInfo
+            {
+                type wall;
+                inGroups (combined);
+            }
+        }
+    }
+
+    resolveFeatureAngle 30;
+
+    // Region-wise refinement
+    refinementRegions
+    {
+        refinementBox
+        {
+            mode    inside;
+            level   2;
+        }
+    }
+
+    // Mesh selection
+    // NOTE: insidePoint should be OUTSIDE the drone, in the flow domain
+    // Aurelia: landing gear at z=0, center at (0,0,0)
+    // WhiteQuadrotor: center at (0,0,0), landing gear at z=-16
+    // Use a point away from drone center but in flow domain
+    insidePoint (0.0 0.0 2.0);
+
+    allowFreeStandingZoneFaces true;
+}
+
+// Settings for the snapping.
+snapControls
+{
+    nSmoothPatch 3;
+    tolerance 2.0;
+    nSolveIter 20;
+    nRelaxIter 4;
+
+    nFeatureSnapIter 5;
+    implicitFeatureSnap false;
+    explicitFeatureSnap true;
+    multiRegionFeatureSnap false;
+}
+
+// Settings for the layer addition.
+addLayersControls
+{
+    relativeSizes true;
+
+    layers
+    {
+        "(lowerWall|combined).*"
+        {
+            nSurfaceLayers 1;
+        }
+    }
+
+    expansionRatio 1.0;
+    finalLayerThickness 0.3;
+    minThickness 0.1;
+    nGrow 0;
+    featureAngle 60;
+    slipFeatureAngle 30;
+    nRelaxIter 3;
+    nSmoothSurfaceNormals 1;
+    nSmoothNormals 3;
+    nSmoothThickness 10;
+    maxFaceThicknessRatio 0.5;
+    maxThicknessToMedialRatio 0.3;
+    minMedianAxisAngle 90;
+    nBufferCellsNoExtrude 0;
+    nLayerIter 50;
+}
+
+// Generic mesh quality settings
+meshQualityControls
+{
+    maxNonOrtho 65;
+    maxBoundarySkewness 20;
+    maxInternalSkewness 4;
+    maxConcave 80;
+    minVol 1e-13;
+    minTetQuality 1e-30;
+    minArea -1;
+    minTwist 0.02;
+    minDeterminant 0.001;
+    minFaceWeight 0.02;
+    minVolRatio 0.01;
+    minTriangleTwist -1;
+    nSmoothScale 4;
+    errorReduction 0.75;
+}
+
+// Write flags
+writeFlags
+(
+    scalarLevels
+    layerSets
+    layerFields
+);
+
+mergeTolerance 1e-6;
+
+// ************************************************************************* //
+

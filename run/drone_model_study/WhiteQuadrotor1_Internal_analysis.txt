@@ -1,0 +1,87 @@
+Drone Model Wind Force Analysis
+======================================================================
+
+STL Model: WhiteQuadrotor1_Internal.stl
+Reference Wind Speed: 15.0 m/s
+
+Drag Coefficients:
+----------------------------------------------------------------------
+Front-Back (X-direction)      : D =   0.087000  (Force at 15 m/s:  19.5750 N)
+Left-Right (Y-direction)      : D =   0.090717  (Force at 15 m/s:  20.4114 N)
+Top-Down (Z-direction)        : D =   0.254999  (Force at 15 m/s:  57.3748 N)
+
+
+Wind Force Calculation Formula (Blended Drag Model):
+====================================================
+
+PHYSICS CORRECTION:
+-------------------
+The previous formula treated X, Y, Z drag independently, which is physically flawed.
+The corrected formula uses TOTAL velocity magnitude to scale drag energy, while using
+component velocities for direction and proportion.
+
+WHAT THE NUMBERS MEAN:
+----------------------
+The simulations measure forces at 15 m/s wind in each principal direction:
+  - Front-Back: Fx = 19.57 N at 15 m/s → Dx = 0.086987 N/(m/s)^2
+  - Left-Right: Fy = 20.41 N at 15 m/s → Dy = 0.090711 N/(m/s)^2
+  - Top-Down:   Fz = -57.34 N at 15 m/s → Dz = -0.254854 N/(m/s)^2
+
+The drag coefficients (Dx, Dy, Dz) include the effect of (1/2 * rho * A) implicitly.
+They represent the drag per (m/s)^2 when wind is purely in that direction.
+
+CORRECTED FORMULA (Blended Drag Model):
+---------------------------------------
+For a wind with velocity components (vx, vy, vz) and total speed ||V|| = sqrt(vx^2 + vy^2 + vz^2):
+
+  F_drag = -||V|| * [Dx*vx, Dy*vy, Dz*vz]
+
+Component-wise:
+  Fx = -||V|| * Dx * vx
+  Fy = -||V|| * Dy * vy
+  Fz = -||V|| * Dz * vz
+
+Total force magnitude:
+  F = sqrt(Fx^2 + Fy^2 + Fz^2)
+
+Where:
+  - Dx = 0.086987 N/(m/s)^2  (Front-Back drag coefficient)
+  - Dy = 0.090711 N/(m/s)^2  (Left-Right drag coefficient)
+  - Dz = -0.254854 N/(m/s)^2  (Top-Down drag coefficient)
+  - ||V|| = sqrt(vx^2 + vy^2 + vz^2) is the total wind speed magnitude
+
+WHY THIS IS BETTER:
+-------------------
+Example: Drone falling at 20 m/s (vz=-20) while moving forward at 1 m/s (vx=1)
+  - Old formula: Fx based only on 1 m/s → predicts almost zero X-drag
+  - New formula: Fx = -||V|| * Dx * vx = -sqrt(1^2 + 20^2) * Dx * 1 ≈ -20 * Dx
+  - Reality: The 20 m/s vertical flow creates turbulent wake, increasing X-drag
+  - The new formula correctly accounts for total airflow energy
+
+EXAMPLE: 15 m/s wind from 45 degrees (+x +y direction):
+-------------------------------------------------------
+  Wind vector: (10.607, 10.607, 0) m/s
+  Total speed: ||V|| = 15.0 m/s
+  
+  Fx = -15.0 * 0.086987 * 10.607 = -13.84 N
+  Fy = -15.0 * 0.090711 * 10.607 = -14.43 N
+  Fz = -15.0 * -0.254854 * 0.000 = 0.00 N
+  
+  Total force = sqrt(Fx^2 + Fy^2 + Fz^2)
+
+Python implementation:
+   import math
+   
+   def calculate_wind_force(vx, vy, vz, Dx=0.086987, Dy=0.090711, Dz=-0.254854):
+       V_mag = math.sqrt(vx**2 + vy**2 + vz**2)
+       if V_mag == 0:
+           return 0.0, 0.0, 0.0, 0.0
+       
+       # Blended drag model: F = -||V|| * [Dx*vx, Dy*vy, Dz*vz]
+       Fx = -V_mag * Dx * vx
+       Fy = -V_mag * Dy * vy
+       Fz = -V_mag * Dz * vz
+       
+       F_magnitude = math.sqrt(Fx**2 + Fy**2 + Fz**2)
+       
+       return Fx, Fy, Fz, F_magnitude
