@@ -24,3 +24,6 @@
 /python/openFoamCase/wisp_50.csv
 /python/openFoamCase/wisp_50.h5
 /python/openFoamCase/constant/geometry/combined.stl
+
+# Python bytecode cache
+**/__pycache__/
