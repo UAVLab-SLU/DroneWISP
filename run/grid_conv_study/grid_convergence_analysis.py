@@ -461,19 +461,44 @@ def main():
     """Example usage"""
     import argparse
     
-    parser = argparse.ArgumentParser(description='Grid Convergence Analysis for OpenFOAM')
-    parser.add_argument('cases', nargs='+', help='Case directories (coarse to fine)')
+    parser = argparse.ArgumentParser(
+        description='Grid Convergence Analysis for OpenFOAM',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Run from grid_conv_study directory with default cases (coarse, medium, fine):
+  python grid_convergence_analysis.py coarse medium fine
+  
+  # Run with custom output directory:
+  python grid_convergence_analysis.py coarse medium fine --output results
+  
+  # Run with custom refinement ratios:
+  python grid_convergence_analysis.py coarse medium fine --refinement-ratios 2.0 2.0
+        """
+    )
+    parser.add_argument('cases', nargs='+', 
+                       help='Case directories (coarse to fine). Can be relative or absolute paths.')
     parser.add_argument('--time', type=float, default=None, 
                        help='Time to extract results (default: last time step)')
-    parser.add_argument('--output', type=str, default='grid_convergence_results',
-                       help='Output directory for plots and report')
+    parser.add_argument('--output', type=str, default='results',
+                       help='Output directory for plots and report (default: results)')
     parser.add_argument('--refinement-ratios', nargs='+', type=float, default=None,
                        help='Refinement ratios (default: 2.0 for all)')
     
     args = parser.parse_args()
     
+    # Resolve case directories relative to current working directory
+    # This allows the script to work when run from grid_conv_study/
+    resolved_cases = []
+    for case in args.cases:
+        case_path = Path(case)
+        if not case_path.is_absolute():
+            # If relative path, resolve relative to current working directory
+            case_path = Path.cwd() / case_path
+        resolved_cases.append(str(case_path))
+    
     # Create analyzer
-    analyzer = GridConvergenceAnalyzer(args.cases, args.refinement_ratios)
+    analyzer = GridConvergenceAnalyzer(resolved_cases, args.refinement_ratios)
     
     # Collect results
     print("Collecting results from cases...")
@@ -491,13 +516,17 @@ def main():
         print(f"\nError: {e}")
         return 1
     
+    # Resolve output directory relative to current working directory
+    output_dir = Path(args.output)
+    if not output_dir.is_absolute():
+        output_dir = Path.cwd() / output_dir
+    
     # Generate plots
     print("\nGenerating plots...")
-    analyzer.plot_convergence(output_dir=args.output)
+    analyzer.plot_convergence(output_dir=output_dir)
     
     # Generate report
     print("\nGenerating report...")
-    output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
     analyzer.generate_report(output_file=output_dir / 'convergence_report.txt')
     

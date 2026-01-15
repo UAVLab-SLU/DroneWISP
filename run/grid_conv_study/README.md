@@ -78,18 +78,21 @@ This will clean all three cases (coarse, medium, fine) by running `Allclean` in 
 After all simulations complete, run the convergence analysis:
 
 ```bash
-cd /home/bohanzhang/DroneWISP/run
-python grid_convergence_analysis.py \
-    grid_conv_study/coarse \
-    grid_conv_study/medium \
-    grid_conv_study/fine \
-    --output grid_conv_study/results
+cd /home/bohanzhang/DroneWISP/run/grid_conv_study
+python grid_convergence_analysis.py coarse medium fine
+```
+
+Or with explicit output directory:
+
+```bash
+cd /home/bohanzhang/DroneWISP/run/grid_conv_study
+python grid_convergence_analysis.py coarse medium fine --output results
 ```
 
 This will generate:
-- `grid_conv_study/results/convergence_plots.png` - Convergence plots
-- `grid_conv_study/results/relative_error_plot.png` - Error analysis
-- `grid_conv_study/results/convergence_report.txt` - Detailed report
+- `results/convergence_plots.png` - Convergence plots
+- `results/relative_error_plot.png` - Error analysis
+- `results/convergence_report.txt` - Detailed report
 
 **Note**: If you run the analysis before simulations are complete, the script will provide clear error messages indicating which cases need to be run.
 
