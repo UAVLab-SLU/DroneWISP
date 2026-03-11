@@ -11,6 +11,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib.patches import Rectangle
 from matplotlib.ticker import ScalarFormatter
 import pandas as pd
 
@@ -113,26 +114,6 @@ def main() -> None:
     for stid, lat, lon in points:
         ax.text(lon, lat, stid, fontsize=9, ha="left", va="bottom", color="black")
 
-    vector_stids = {"0512W", "0514W", "0516W"}
-    df_ts = df[(df["date_time"] == args.timestamp) & (df["stid"].isin(vector_stids))]
-    if not df_ts.empty:
-        for _, row in df_ts.iterrows():
-            speed = float(row["wind_speed"])
-            direction = float(row["wind_direction"])
-            u = -speed * math.sin(math.radians(direction))
-            v = -speed * math.cos(math.radians(direction))
-            ax.quiver(
-                float(row["lon"]),
-                float(row["lat"]),
-                u,
-                v,
-                angles="xy",
-                scale_units="xy",
-                scale=0.8,
-                color="blue",
-                zorder=4,
-            )
-
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     ax.set_title(f"Study Area Stations and Wind Vectors at {args.timestamp}")
@@ -141,13 +122,60 @@ def main() -> None:
     ax.locator_params(axis="x", nbins=5)
     ax.set_xlim(extent[0], extent[1])
     ax.set_ylim(extent[2], extent[3])
+    rect = Rectangle(
+        (lon_west, lat_south),
+        lon_east - lon_west,
+        lat_north - lat_south,
+        linewidth=2.0,
+        edgecolor="magenta",
+        facecolor="none",
+        zorder=2,
+    )
+    ax.add_patch(rect)
+    # Keep vector arrows at a constant 1 cm length in display space
+    vector_stids = {"0512W", "0514W", "0516W"}
+    df_ts = df[(df["date_time"] == args.timestamp) & (df["stid"].isin(vector_stids))]
+    if not df_ts.empty:
+        arrow_length_cm = 1.0
+        length_px = arrow_length_cm / 2.54 * fig.dpi
+        for _, row in df_ts.iterrows():
+            speed = float(row["wind_speed"])
+            direction = float(row["wind_direction"])
+            u = -speed * math.sin(math.radians(direction))
+            v = -speed * math.cos(math.radians(direction))
+
+            x0 = float(row["lon"])
+            y0 = float(row["lat"])
+            p0 = ax.transData.transform((x0, y0))
+            p_dir = ax.transData.transform((x0 + u, y0 + v))
+            dpx = p_dir[0] - p0[0]
+            dpy = p_dir[1] - p0[1]
+            norm = math.hypot(dpx, dpy)
+            if norm == 0:
+                continue
+            ux = dpx / norm
+            uy = dpy / norm
+            p1 = (p0[0] + ux * length_px, p0[1] + uy * length_px)
+            x1, y1 = ax.transData.inverted().transform(p1)
+            ax.quiver(
+                x0,
+                y0,
+                x1 - x0,
+                y1 - y0,
+                angles="xy",
+                scale_units="xy",
+                scale=1.0,
+                color="blue",
+                zorder=4,
+            )
     legend_elements = [
         Line2D([0], [0], marker="o", color="w", markerfacecolor="red", markersize=8, label="Stations"),
-        Line2D([0], [0], color="blue", lw=2, label="Wind vectors"),
+        Line2D([0], [0], color="blue", lw=2, marker=">", markersize=8, label="Wind vectors"),
+        Line2D([0], [0], color="magenta", lw=2, label="Bounding box"),
     ]
     ax.legend(handles=legend_elements, loc="upper right")
-    fig.tight_layout()
-    fig.savefig(args.out, dpi=150)
+    fig.tight_layout(pad=0.2)
+    fig.savefig(args.out, dpi=150, bbox_inches="tight")
     plt.close(fig)
 
 

@@ -1,0 +1,81 @@
+================================================================================
+LOCALIZED WAKE REFINEMENT STUDY REPORT
+================================================================================
+
+Study Purpose: Address Reviewer 2 major comment #1
+  'Consider adding localized wake refinement or at least
+   discuss limitations more explicitly.'
+
+Cases (coarse to fine wake refinement):
+  Level 1: fine_wake (N/A cells)
+  Level 2: coarse_wake (N/A cells)
+  Level 3: medium_wake (N/A cells)
+
+Refinement Strategy:
+  Base mesh:    medium blockMesh (30x50x25)
+  Building box: (-1,-0.7,0) to (8,0.7,2.5) at level 2
+  Wake box:     (-20,-90,0) to (20,0,50)
+    fine_wake:   wake level 1 (baseline, ~217K cells)
+    coarse_wake: wake level 2 (~1.34M cells)
+    medium_wake: wake level 3 (~10.4M cells)
+
+
+Cd Analysis:
+--------------------------------------------------------------------------------
+  Values (coarse to fine): ['1736.029000', '1646.181000', '1370.663000']
+  Extrapolated value: 1237.336446
+  Order of accuracy (p): 1.617
+  GCI (fine mesh): 12.16%
+  Convergence ratio (R): 0.326
+  Convergence type: Uncertain
+  Relative difference (fine - medium): 20.10%
+
+  Comparison with uniform refinement:
+    Uniform GCI:  5.52%
+    Local GCI:    12.16%
+    No improvement over uniform refinement
+
+Cl Analysis:
+--------------------------------------------------------------------------------
+  Values (coarse to fine): ['-2448.107000', '-1608.789000', '-602.262600']
+  Extrapolated value: 1827.707086
+  Order of accuracy (p): 0.500
+  GCI (fine mesh): 504.34%
+  Convergence ratio (R): 0.834
+  Convergence type: Uncertain
+  Relative difference (fine - medium): 167.12%
+
+  Comparison with uniform refinement:
+    Uniform GCI:  22.27%
+    Local GCI:    504.34%
+    No improvement over uniform refinement
+
+Cm Analysis:
+--------------------------------------------------------------------------------
+  Values (coarse to fine): ['-23248.030000', '-22604.380000', '-14465.570000']
+  Extrapolated value: -13302.882857
+  Order of accuracy (p): 3.000
+  GCI (fine mesh): 10.05%
+  Convergence ratio (R): 0.079
+  Convergence type: Uncertain
+  Relative difference (fine - medium): 56.26%
+
+  Comparison with uniform refinement:
+    Uniform GCI:  2.08%
+    Local GCI:    10.05%
+    No improvement over uniform refinement
+
+
+================================================================================
+SUMMARY
+================================================================================
+
+Cd GCI (localized wake refinement): 12.16%
+Cd GCI (uniform refinement):        5.52%
+
+Localized wake refinement did not improve Cd GCI.
+This suggests the current mesh is adequate for the
+quantities of interest, or further refinement in
+other regions may be needed.
+
+================================================================================

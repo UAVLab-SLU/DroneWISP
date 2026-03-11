@@ -1,0 +1,19 @@
+#!/bin/sh
+cd ${0%/*} || exit 1    # Run from this directory
+
+# Source tutorial clean functions
+. /opt/openfoam10/etc/bashrc
+. $WM_PROJECT_DIR/bin/tools/CleanFunctions
+
+cleanCase
+cleanExplicitFeatures
+
+# Remove results.foam file that causes issues during run
+find . -maxdepth 1 -name "results*" -exec rm -f {} \;
+
+# Remove C, Cx, Cy, Cz files in all time directories
+rm -f [0-9]*/[C]*
+
+
+
+#------------------------------------------------------------------------------

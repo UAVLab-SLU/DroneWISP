@@ -73,7 +73,9 @@ class GridConvergenceAnalyzer:
             raise ValueError("Could not find header in forceCoeffs.dat")
         
         # Parse header to find column indices
-        header = lines[header_idx].split()
+        # Strip leading '#' from header line so indices match data columns
+        header_line = lines[header_idx].lstrip('#').strip()
+        header = header_line.split()
         time_idx = header.index('Time')
         cd_idx = header.index('Cd')
         cl_idx = header.index('Cl')

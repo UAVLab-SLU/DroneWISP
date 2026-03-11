@@ -10,6 +10,16 @@ Case Directories (coarse to fine):
 
 Cd Analysis:
 --------------------------------------------------------------------------------
+  Values (coarse to fine): ['1592.746000', '1691.683000', '1661.280000']
+  Extrapolated value: 1587.880665
+  Order of accuracy (p): 0.500
+  GCI (fine mesh): 5.52%
+  Convergence ratio (R): -3.254
+  Convergence type: Oscillatory convergence
+  Relative difference (fine - medium): 1.83%
+
+Cl Analysis:
+--------------------------------------------------------------------------------
   Values (coarse to fine): ['-2176.734000', '-2327.330000', '-2512.745000']
   Extrapolated value: -2960.376408
   Order of accuracy (p): 0.500
@@ -18,7 +28,7 @@ Cd Analysis:
   Convergence type: Uncertain
   Relative difference (fine - medium): 7.38%
 
-Cl Analysis:
+Cm Analysis:
 --------------------------------------------------------------------------------
   Values (coarse to fine): ['-21152.010000', '-23529.630000', '-23692.800000']
   Extrapolated value: -24086.727227
@@ -27,15 +37,5 @@ Cl Analysis:
   Convergence ratio (R): 14.571
   Convergence type: Divergence
   Relative difference (fine - medium): 0.69%
-
-Cm Analysis:
---------------------------------------------------------------------------------
-  Values (coarse to fine): ['1592.746000', '1691.683000', '1661.280000']
-  Extrapolated value: 1587.880665
-  Order of accuracy (p): 0.500
-  GCI (fine mesh): 5.52%
-  Convergence ratio (R): -3.254
-  Convergence type: Oscillatory convergence
-  Relative difference (fine - medium): 1.83%
 
 ================================================================================

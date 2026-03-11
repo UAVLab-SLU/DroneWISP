@@ -1,0 +1,18 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  10
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+
+// Timestamp: 2026-01-09T15:30:00Z
+// Station 0512W: speed=6.703 m/s, direction=149 deg
+// u = -speed*sin(dir) = -3.4523, v = -speed*cos(dir) = 5.7456
+flowVelocity         (-3.4523 5.7456 0);
+flowVelocity2        (-3.4523 5.7456 0);
+pressure             0;
+turbulentKE          0.330;
+turbulentOmega       10.0;
+
+// ************************************************************************* //

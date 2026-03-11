@@ -1,0 +1,49 @@
+================================================================================
+LOCALIZED WAKE REFINEMENT: PERFORMANCE COMPARISON
+================================================================================
+
+Comparison: coarse base mesh + localized wake refinement
+         vs fine uniform mesh
+
+Setup:
+  fine_uniform:      blockMesh 60x100x50, SHM refinementBox level 2
+  coarse_local_wake: blockMesh 15x25x12,  SHM refinementBox level 2
+                     + wakeRefinementBox (-20,-90,0)-(20,0,50) level 2
+
+--------------------------------------------------------------------------------
+CELL COUNT COMPARISON
+--------------------------------------------------------------------------------
+  fine_uniform:           475,695 cells
+  coarse_local_wake:      170,249 cells
+  Ratio (fine/local): 2.79x
+  Cell savings:       64.2%
+
+--------------------------------------------------------------------------------
+TIMING COMPARISON
+--------------------------------------------------------------------------------
+  fine_uniform:           126 seconds (2 min)
+  coarse_local_wake:       30 seconds (0 min)
+  Speedup:            4.20x
+  Time savings:       76.2%
+
+--------------------------------------------------------------------------------
+FORCE COEFFICIENT COMPARISON
+--------------------------------------------------------------------------------
+  Quantity      Fine Uniform    Coarse+Local     Abs Diff   Rel Diff (%)
+  ---------- --------------- --------------- ------------ --------------
+  Cd                1661.280        1737.967       76.687          4.62%
+  Cl               -2512.745       -2530.940       18.195          0.72%
+  Cm              -22436.420      -22755.850      319.430          1.42%
+
+--------------------------------------------------------------------------------
+EFFICIENCY METRICS
+--------------------------------------------------------------------------------
+  Cd relative difference: 4.62%
+  Cell count ratio (fine/local): 2.79x
+  Time ratio (fine/local): 4.20x
+
+  RESULT: Localized refinement achieves <5% Cd difference
+  while using 35.8% of the cells
+  and 23.8% of the compute time.
+
+================================================================================
