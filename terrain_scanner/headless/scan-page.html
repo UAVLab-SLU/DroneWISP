@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1024, height=1024" />
+  <title>Headless terrain + buildings scan</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+  <style>
+    html, body, #cesiumContainer { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <script>
+    (function() {
+      const GOOGLE_3D_TILES_ASSET_ID = 2275207;
+
+      window.runHeadlessScan = async function(options) {
+        try {
+        const {
+          originLon,
+          originLat,
+          originHeight,
+          rangeX,
+          rangeY,
+          rangeZ,
+          stepSize,
+          ionToken
+        } = options;
+
+        if (!ionToken) return { error: 'ionToken required' };
+
+        Cesium.Ion.defaultAccessToken = ionToken;
+
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+          terrainProvider: await Cesium.createWorldTerrainAsync(),
+          useDefaultRenderLoop: true,
+          requestRenderMode: false,
+          animation: false,
+          baseLayerPicker: false,
+          fullscreenButton: false,
+          geocoder: false,
+          homeButton: false,
+          infoBox: false,
+          sceneModePicker: false,
+          selectionIndicator: false,
+          timeline: false,
+          navigationHelpButton: false,
+          navigationInstructionsInitiallyVisible: false,
+          creditContainer: document.createElement('div'),
+          contextOptions: { webgl: { preserveDrawingBuffer: true } }
+        });
+
+        const scene = viewer.scene;
+        const canvas = viewer.canvas;
+        scene.globe.depthTestAgainstTerrain = true;
+
+        const resource = await Cesium.IonResource.fromAssetId(GOOGLE_3D_TILES_ASSET_ID);
+        const tileset = await Cesium.Cesium3DTileset.fromUrl(resource, {
+          maximumScreenSpaceError: 8,
+          enablePick: true
+        });
+        viewer.scene.primitives.add(tileset);
+
+        await tileset.readyPromise;
+
+        const diagonalHalf = Math.sqrt(rangeX * rangeX + rangeY * rangeY);
+        const fovY = viewer.camera.frustum.fovy ?? viewer.camera.frustum.fov ?? Cesium.Math.PI / 3;
+        const fovYHalf = fovY / 2;
+        const minHeightToSeeAll = diagonalHalf / Math.tan(fovYHalf);
+        const scanCameraHeight = Math.max(originHeight + rangeZ, minHeightToSeeAll);
+        const centerCartesian = Cesium.Cartesian3.fromDegrees(originLon, originLat, scanCameraHeight);
+        viewer.camera.setView({
+          destination: centerCartesian,
+          orientation: {
+            heading: 0,
+            pitch: Cesium.Math.toRadians(-90),
+            roll: 0
+          }
+        });
+
+        viewer.camera.moveEnd.addEventListener(function() {
+          viewer.camera.moveEnd.removeEventListener(arguments.callee);
+        });
+
+        await new Promise(function(resolve) {
+          const check = function() {
+            if (!viewer.scene.globe.tilesLoaded || !tileset.root) {
+              requestAnimationFrame(check);
+              return;
+            }
+            viewer.scene.requestRender();
+            setTimeout(resolve, 500);
+          };
+          check();
+        });
+
+        for (let f = 0; f < 30; f++) {
+          viewer.scene.requestRender();
+          await new Promise(function(r) { setTimeout(r, 400); });
+        }
+
+        const METERS_PER_DEG_LAT = 111320;
+        const latRad = originLat * (Math.PI / 180);
+        const metersPerDegLon = METERS_PER_DEG_LAT * Math.cos(latRad);
+        const halfSize = stepSize / 2;
+
+        const xs = [];
+        for (let x = -rangeX; x <= rangeX + 1e-9; x += stepSize) xs.push(Math.round(x * 1e9) / 1e9);
+        const ys = [];
+        for (let y = -rangeY; y <= rangeY + 1e-9; y += stepSize) ys.push(Math.round(y * 1e9) / 1e9);
+        const zs = [];
+        for (let z = stepSize / 2; z <= rangeZ + 1e-9; z += stepSize) zs.push(Math.round(z * 1e9) / 1e9);
+
+        const scratchCartographic = new Cesium.Cartographic();
+
+        const terrainPositions = [];
+        for (let ji = 0; ji < ys.length; ji++) {
+          for (let ii = 0; ii < xs.length; ii++) {
+            const cx = xs[ii];
+            const cy = ys[ji];
+            const dLonDeg = cx / metersPerDegLon;
+            const dLatDeg = cy / METERS_PER_DEG_LAT;
+            terrainPositions.push(Cesium.Cartographic.fromDegrees(originLon + dLonDeg, originLat + dLatDeg, 0));
+          }
+        }
+        await Cesium.sampleTerrainMostDetailed(viewer.terrainProvider, terrainPositions);
+        const terrainHeightGrid = [];
+        let idx = 0;
+        for (let ji = 0; ji < ys.length; ji++) {
+          const row = [];
+          for (let ii = 0; ii < xs.length; ii++) {
+            const h = terrainPositions[idx].height;
+            row.push(typeof h === 'number' && !isNaN(h) ? h : originHeight);
+            idx++;
+          }
+          terrainHeightGrid.push(row);
+        }
+
+        viewer.scene.requestRender();
+        await new Promise(function(r) { setTimeout(r, 100); });
+
+        const scratchCartesian3 = new Cesium.Cartesian3();
+        const scratchCartesian2 = new Cesium.Cartesian2();
+        const topSurfaceHeightGrid = [];
+        for (let ji = 0; ji < ys.length; ji++) {
+          const row = [];
+          for (let ii = 0; ii < xs.length; ii++) {
+            const cx = xs[ii];
+            const cy = ys[ji];
+            const dLonDeg = cx / metersPerDegLon;
+            const dLatDeg = cy / METERS_PER_DEG_LAT;
+            const lon = originLon + dLonDeg;
+            const lat = originLat + dLatDeg;
+            let surfaceHeight = terrainHeightGrid[ji][ii];
+            if (canvas) {
+              try {
+                const worldForProject = Cesium.Cartesian3.fromDegrees(lon, lat, originHeight + rangeZ * 0.5, scratchCartesian3);
+                const screenPos = Cesium.SceneTransforms.worldToDrawingBufferCoordinates(scene, worldForProject, scratchCartesian2);
+                const sx = screenPos && screenPos.x;
+                const sy = screenPos && screenPos.y;
+                if (typeof sx === 'number' && typeof sy === 'number' && sx >= 0 && sx < (canvas.width || 0) && sy >= 0 && sy < (canvas.height || 0)) {
+                  // Same technique as SADE-GUI DroneDragAndDrop: pickFromRay gives first hit (terrain or 3D Tiles), so building tops are used when visible.
+                  var ray = viewer.camera.getPickRay(scratchCartesian2);
+                  if (ray) {
+                    var intersection = scene.pickFromRay(ray, []);
+                    if (intersection && intersection.position) {
+                      var carto = Cesium.Cartographic.fromCartesian(intersection.position, Cesium.Ellipsoid.WGS84, scratchCartographic);
+                      var h = carto && carto.height;
+                      if (typeof h === 'number' && !isNaN(h)) {
+                        surfaceHeight = h;
+                      }
+                    }
+                  }
+                  if (surfaceHeight === terrainHeightGrid[ji][ii] && typeof scene.pickPosition === 'function' && scene.pickPositionSupported) {
+                    const picked = scene.pickPosition(scratchCartesian2, scratchCartesian3);
+                    const px = picked && picked.x;
+                    if (typeof px === 'number') {
+                      const carto = Cesium.Cartographic.fromCartesian(picked, Cesium.Ellipsoid.WGS84, scratchCartographic);
+                      const h = carto && carto.height;
+                      if (typeof h === 'number' && !isNaN(h)) {
+                        surfaceHeight = h;
+                      }
+                    }
+                  }
+                }
+              } catch (e) { }
+            }
+            row.push(surfaceHeight);
+          }
+          topSurfaceHeightGrid.push(row);
+        }
+
+        const occupiedGrid = [];
+        for (let ki = 0; ki < zs.length; ki++) {
+          const slice = [];
+          for (let ji = 0; ji < ys.length; ji++) {
+            const row = [];
+            for (let ii = 0; ii < xs.length; ii++) {
+              const cz = zs[ki];
+              const voxelBottom = cz - halfSize;
+              const topSurfaceLocalZ = topSurfaceHeightGrid[ji][ii] - originHeight;
+              const occupied = topSurfaceLocalZ >= voxelBottom - 1e-6;
+              row.push(occupied);
+            }
+            slice.push(row);
+          }
+          occupiedGrid.push(slice);
+        }
+
+        return {
+          originLon,
+          originLat,
+          originHeight,
+          stepSize,
+          xs,
+          ys,
+          zs,
+          occupiedGrid
+        };
+        } catch (e) {
+          return { error: (e && (e.message || e.reason || String(e))) || 'Unknown error' };
+        }
+      };
+    })();
+  </script>
+</body>
+</html>

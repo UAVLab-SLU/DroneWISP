@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Visual height map scan (Cesium + 3D Tiles)</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+  <style>
+    html, body, #cesiumContainer { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    #status { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: #fff; padding: 8px 12px; font-family: monospace; z-index: 1000; max-width: 80%; }
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <div id="status">Loading params...</div>
+  <script>
+    (function() {
+      const GOOGLE_3D_TILES_ASSET_ID = 2275207;
+      const METERS_PER_DEG_LAT = 111320;
+
+      function setStatus(msg) {
+        var el = document.getElementById('status');
+        if (el) el.textContent = msg;
+      }
+
+      function metersPerDegLon(latRad) {
+        return METERS_PER_DEG_LAT * Math.cos(latRad);
+      }
+
+      function buildGrid(rangeX, rangeY, stepSize) {
+        var xs = [], ys = [];
+        for (var x = -rangeX; x <= rangeX + 1e-9; x += stepSize) xs.push(Math.round(x * 1e9) / 1e9);
+        for (var y = -rangeY; y <= rangeY + 1e-9; y += stepSize) ys.push(Math.round(y * 1e9) / 1e9);
+        return { xs: xs, ys: ys };
+      }
+
+      window.runVisualScan = async function() {
+        var params;
+        try {
+          var r = await fetch('/params');
+          if (!r.ok) throw new Error('Failed to load params: ' + r.status);
+          params = await r.json();
+        } catch (e) {
+          setStatus('Error: ' + (e.message || e));
+          return;
+        }
+
+        var originLon = params.originLon;
+        var originLat = params.originLat;
+        var rangeX = params.rangeX;
+        var rangeY = params.rangeY;
+        var stepSize = params.stepSize;
+        var ionToken = params.ionToken;
+        if (!ionToken || !originLon || !originLat) {
+          setStatus('Missing originLon, originLat, or ionToken in params');
+          return;
+        }
+
+        Cesium.Ion.defaultAccessToken = ionToken;
+        setStatus('Creating viewer...');
+
+        var viewer = new Cesium.Viewer('cesiumContainer', {
+          terrainProvider: await Cesium.createWorldTerrainAsync(),
+          useDefaultRenderLoop: true,
+          animation: false,
+          baseLayerPicker: false,
+          fullscreenButton: false,
+          geocoder: false,
+          homeButton: false,
+          infoBox: false,
+          sceneModePicker: false,
+          selectionIndicator: false,
+          timeline: false,
+          navigationHelpButton: false,
+          creditContainer: document.createElement('div')
+        });
+
+        var scene = viewer.scene;
+        scene.globe.depthTestAgainstTerrain = true;
+
+        var resource = await Cesium.IonResource.fromAssetId(GOOGLE_3D_TILES_ASSET_ID);
+        var tileset = await Cesium.Cesium3DTileset.fromUrl(resource, {
+          maximumScreenSpaceError: 8,
+          enablePick: true
+        });
+        scene.primitives.add(tileset);
+        await tileset.readyPromise;
+
+        var latRad = originLat * (Math.PI / 180);
+        var mPerDegLon = metersPerDegLon(latRad);
+
+        var centerCarto = Cesium.Cartographic.fromDegrees(originLon, originLat, 0);
+        var positions = [centerCarto];
+        await Cesium.sampleTerrainMostDetailed(viewer.terrainProvider, positions);
+        var groundHeight = positions[0].height;
+        if (typeof groundHeight !== 'number' || !isFinite(groundHeight)) groundHeight = 0;
+
+        var grid = buildGrid(rangeX, rangeY, stepSize);
+        var xs = grid.xs, ys = grid.ys;
+
+        var terrainPositions = [];
+        for (var ji = 0; ji < ys.length; ji++) {
+          for (var ii = 0; ii < xs.length; ii++) {
+            var cx = xs[ii], cy = ys[ji];
+            var dLon = cx / mPerDegLon;
+            var dLat = cy / METERS_PER_DEG_LAT;
+            terrainPositions.push(Cesium.Cartographic.fromDegrees(originLon + dLon, originLat + dLat, 0));
+          }
+        }
+        await Cesium.sampleTerrainMostDetailed(viewer.terrainProvider, terrainPositions);
+
+        var terrainHeightGrid = [];
+        var idx = 0;
+        for (var j = 0; j < ys.length; j++) {
+          var row = [];
+          for (var i = 0; i < xs.length; i++) {
+            var h = terrainPositions[idx].height;
+            row.push(typeof h === 'number' && isFinite(h) ? h : groundHeight);
+            idx++;
+          }
+          terrainHeightGrid.push(row);
+        }
+
+        var diagonalHalf = Math.sqrt(rangeX * rangeX + rangeY * rangeY);
+        var fovY = viewer.camera.frustum.fovy != null ? viewer.camera.frustum.fovy : Math.PI / 3;
+        var camHeight = Math.max(groundHeight + 500, diagonalHalf / Math.tan(fovY / 2));
+        viewer.camera.setView({
+          destination: Cesium.Cartesian3.fromDegrees(originLon, originLat, camHeight),
+          orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 }
+        });
+
+        setStatus('Waiting for tiles to load...');
+        for (var f = 0; f < 40; f++) {
+          scene.requestRender();
+          await new Promise(function(resolve) { setTimeout(resolve, 200); });
+        }
+
+        var scratchCartesian3 = new Cesium.Cartesian3();
+        var scratchCartesian2 = new Cesium.Cartesian2();
+        var scratchCartographic = new Cesium.Cartographic();
+        var topSurfaceHeightGrid = [];
+        var ny = ys.length, nx = xs.length;
+        var highZ = groundHeight + 500;
+
+        setStatus('Ray casting top-down at each XY...');
+        for (var ji = 0; ji < ny; ji++) {
+          var row = [];
+          for (var ii = 0; ii < nx; ii++) {
+            var cx = xs[ii], cy = ys[ji];
+            var lon = originLon + cx / mPerDegLon;
+            var lat = originLat + cy / METERS_PER_DEG_LAT;
+            var surfaceHeight = terrainHeightGrid[ji][ii];
+            var world = Cesium.Cartesian3.fromDegrees(lon, lat, highZ, scratchCartesian3);
+            var screenPos = Cesium.SceneTransforms.worldToDrawingBufferCoordinates(scene, world, scratchCartesian2);
+            if (screenPos && screenPos.x >= 0 && screenPos.x < viewer.canvas.width && screenPos.y >= 0 && screenPos.y < viewer.canvas.height) {
+              var ray = viewer.camera.getPickRay(screenPos);
+              if (ray) {
+                var intersection = scene.pickFromRay(ray, []);
+                if (intersection && intersection.position) {
+                  var carto = Cesium.Cartographic.fromCartesian(intersection.position, Cesium.Ellipsoid.WGS84, scratchCartographic);
+                  if (carto && typeof carto.height === 'number' && isFinite(carto.height)) {
+                    surfaceHeight = carto.height;
+                  }
+                }
+              }
+            }
+            row.push(surfaceHeight);
+          }
+          topSurfaceHeightGrid.push(row);
+        }
+
+        setStatus('Sending results to server...');
+        try {
+          var res = await fetch('/result', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              xs: xs,
+              ys: ys,
+              topSurfaceHeightGrid: topSurfaceHeightGrid,
+              groundHeight: groundHeight,
+              originLon: originLon,
+              originLat: originLat
+            })
+          });
+          if (!res.ok) throw new Error('Server returned ' + res.status);
+          setStatus('Scan complete. You can close this window.');
+        } catch (e) {
+          setStatus('Error sending results: ' + (e.message || e));
+        }
+      };
+
+      window.addEventListener('load', function() {
+        window.runVisualScan();
+      });
+    })();
+  </script>
+</body>
+</html>

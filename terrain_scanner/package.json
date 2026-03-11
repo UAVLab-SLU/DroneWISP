@@ -1,0 +1,31 @@
+{
+  "name": "terrain_scanner",
+  "version": "1.0.0",
+  "description": "Voxel-style terrain mesh export from Cesium World Terrain (same source as SADE-GUI), output as STL with origin at given lat/lon ground height.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest",
+    "scan": "node src/cli.js"
+  },
+  "keywords": [
+    "cesium",
+    "terrain",
+    "stl",
+    "mesh"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@loaders.gl/3d-tiles": "^4.3.4",
+    "@loaders.gl/core": "^4.3.4",
+    "@loaders.gl/gltf": "^4.3.4",
+    "cesium": "^1.117.0",
+    "commander": "^11.0.0",
+    "open": "^10.2.0"
+  },
+  "optionalDependencies": {
+    "puppeteer": "^23.11.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
