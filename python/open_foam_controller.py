@@ -1,4 +1,5 @@
 import os
+import shutil
 import h5py
 import numpy as np
 import subprocess
@@ -386,23 +387,15 @@ class OpenFoamController:
         """
         Replace mesh in OpenFOAM case
         :param stl_file_name: stl file name
-        :return: None
+        :return: bool
         """
         old_filename = os.path.join(self.case_root, "constant", "geometry", "combined.stl")
-        # make a temp copy at current folder
-        temp_filename = os.path.join(os.getcwd(), "combined.stl")
-        os.system("cp " + old_filename + " " + temp_filename)
-
-        # replace mesh
         try:
-            os.system("cp " + stl_file_name + " " + old_filename)
-        except:
+            shutil.copy2(stl_file_name, old_filename)
+            return True
+        except Exception:
             print("Error: replace mesh failed")
-            os.system("cp " + temp_filename + " " + old_filename)
-            return
-
-        # clean temp file
-        os.system("rm " + temp_filename)
+            return False
 
     def replace_mesh_with_binary_mask(self, binary_mask):
         """

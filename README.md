@@ -102,6 +102,43 @@ run the docker image
 docker compose up
 ```
 
+### Workflow Runner batch interface
+Use `compose.workflow-runner.yaml` to run a one-shot CFD job that accepts an STL terrain, wind definitions, and a target CSV path.
+
+Local example:
+```bash
+bash run_wr_job.sh \
+  --stl /home/bohanzhang/DroneWISP/4drone_Test_site_V36_mono_smooth.stl \
+  --output /home/bohanzhang/DroneWISP/out/wind.csv \
+  --wind-file /home/bohanzhang/DroneWISP/sim_config_3_drone.json
+```
+
+The wrapper extracts `environment.wind` when you pass a full simulation config JSON. It also supports `--wind-json` if WR already renders the wind payload directly.
+
+Compose contract:
+- `WR_INPUT_STL_DIR`: host directory that contains the STL file
+- `WR_INPUT_STL_FILE`: STL basename inside that directory
+- `WR_OUTPUT_DIR`: host directory where the merged CSV should be written
+- `WR_OUTPUT_FILE`: output CSV basename
+- `WR_WIND_JSON`: JSON array or object describing the wind input. A full config JSON with `environment.wind` also works
+
+Optional environment values:
+- `WR_PREPROCESS_MODE`: defaults to `int_precision`
+- `WR_DIRECTION_CONVENTION`: `to` by default. Set `from` if wind directions describe the source direction instead of the flow direction
+- `WR_CONTROL_JSON`: optional JSON object with `dt`, `end_time`, and `write_interval`
+- `WR_BOUNDS_JSON`: optional JSON object with `x_min`, `x_max`, `y_min`, `y_max`, `z_min`, `z_max`. When supplied, the runner clips the STL to that box before solving
+- `WR_MESH_PADDING_JSON`: optional auto-bounds padding JSON, defaults to `{"xy":1,"z_min":1,"z_max":1}`
+- `WR_FILL_MISSING`: defaults to `false`. Set `true` to backfill missing integer grid cells in the exported CSV
+
+Multi-source wind handling:
+- wind vectors are averaged component-wise
+- the merged run is treated as `Turbulent Wind` if any source is turbulent
+- `fluctuation_percentage` is taken as the maximum source value when turbulence is enabled
+
+Notes:
+- the exported CSV is a single merged file with columns `time,x,y,z,u,v,w`
+- large terrain meshes should usually provide `WR_BOUNDS_JSON` or a pre-clipped STL, otherwise the OpenFOAM domain may become too large to solve efficiently
+
 ## Directory Structure
 all OpenFOAM research scenarios are in the run directory
 ```bash

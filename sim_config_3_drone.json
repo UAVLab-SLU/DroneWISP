@@ -1,0 +1,157 @@
+{
+	"drones": {
+		"66bd1c6424d7228b330662ca": {
+			"allow_api_always": false,
+			"color": "#FFCCCC",
+			"default_vehicle_state": "",
+			"drone_id": "66bd1c6424d7228b330662ca",
+			"drone_model": "AureliaX6Pro",
+			"enable_collision_passthrough": false,
+			"enable_collisions": false,
+			"enable_trace": false,
+			"fcu_id": 1,
+			"flight_controller": "",
+			"home_location": {
+				"altitude": 144.57814714753533,
+				"latitude": 41.87150894455491,
+				"longitude": -87.61888545597697
+			},
+			"name": "Drone-0528",
+			"pitch": 0,
+			"roll": 0,
+			"sensors": "",
+			"type": "MultiRotor",
+			"vehicle_type": "",
+			"yaw": 0
+		},
+		"66bd1c6424d7228b330662cd": {
+			"allow_api_always": false,
+			"color": "#CCFFCC",
+			"default_vehicle_state": "",
+			"drone_id": "66bd1c6424d7228b330662cd",
+			"drone_model": "AureliaX6Pro",
+			"enable_collision_passthrough": false,
+			"enable_collisions": false,
+			"enable_trace": false,
+			"fcu_id": 2,
+			"flight_controller": "",
+			"home_location": {
+				"altitude": 144.6227220699356,
+				"latitude": 41.8718503477724,
+				"longitude": -87.61891865511566
+			},
+			"name": "Drone-709e",
+			"pitch": 0,
+			"roll": 0,
+			"sensors": "",
+			"type": "MultiRotor",
+			"vehicle_type": "",
+			"yaw": 0
+		},
+		"66bd1c6424d7228b330662ce": {
+			"allow_api_always": false,
+			"color": "#CCCCFF",
+			"default_vehicle_state": "",
+			"drone_id": "66bd1c6424d7228b330662ce",
+			"drone_model": "VOXLm500",
+			"enable_collision_passthrough": false,
+			"enable_collisions": false,
+			"enable_trace": false,
+			"fcu_id": 3,
+			"flight_controller": "",
+			"home_location": {
+				"altitude": 144.3269198537973,
+				"latitude": 41.87231047371516,
+				"longitude": -87.61889204374619
+			},
+			"name": "Drone-41fd",
+			"pitch": 0,
+			"roll": 0,
+			"sensors": "",
+			"type": "MultiRotor",
+			"vehicle_type": "",
+			"yaw": 0
+		}
+	},
+	"environment": {
+		"description": "241214",
+		"name": "125421",
+		"origin": {
+			"height": 145.26528163908696,
+			"latitude": 41.87211786915547,
+			"longitude": -87.61890768911918,
+			"name": "Specify Region",
+			"radius": 0.3
+		},
+		"sade_zones": {
+			"66bd1c6424d7228b330662cb": {
+				"altitude": 300,
+				"sade_id": "66bd1c6424d7228b330662cb",
+				"sade_name": "Sade-b138",
+				"vertices": [
+					{
+						"latitude": 41.87623298922609,
+						"longitude": -87.61570832225507
+					},
+					{
+						"latitude": 41.87623298922609,
+						"longitude": -87.60933762213742
+					},
+					{
+						"latitude": 41.86901928186111,
+						"longitude": -87.60933762213742
+					},
+					{
+						"latitude": 41.86901928186111,
+						"longitude": -87.61570832225507
+					}
+				]
+			},
+			"66bd1c6424d7228b330662cc": {
+				"altitude": 400,
+				"sade_id": "66bd1c6424d7228b330662cc",
+				"sade_name": "Sade-ae26",
+				"vertices": [
+					{
+						"latitude": 41.8749172548627,
+						"longitude": -87.63135243280266
+					},
+					{
+						"latitude": 41.8749172548627,
+						"longitude": -87.6241770301703
+					},
+					{
+						"latitude": 41.86802638893507,
+						"longitude": -87.6241770301703
+					},
+					{
+						"latitude": 41.86802638893507,
+						"longitude": -87.63135243280266
+					}
+				]
+			}
+		},
+		"time": "2024-08-14T21:06:38.179000Z",
+		"time_of_day": "17:06:38",
+		"use_geo": true,
+		"wind": [
+			{
+				"fluctuation_percentage": 5.5,
+				"wind_direction": "NE",
+				"wind_type": "Constant Wind",
+				"wind_velocity": 4.2
+			},
+			{
+				"fluctuation_percentage": 40.0,
+				"wind_direction": "SW",
+				"wind_type": "Turbulent Wind",
+				"wind_velocity": 6
+			}
+		]
+	},
+	"software_pilot_info": {
+		"type": "commit",
+		"commit_id": "e4de7ec6f1b1558ab0097cdfd8e65b205c4d4448",
+		"pr_number": ""
+	}
+}
