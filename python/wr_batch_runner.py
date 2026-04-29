@@ -40,7 +40,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-csv", default=os.getenv("WR_OUTPUT_CSV_PATH"))
     parser.add_argument("--wind-json", default=os.getenv("WR_WIND_JSON"))
     parser.add_argument("--case-root", default=os.getenv("WR_CASE_ROOT", "openFoamCase"))
-    parser.add_argument("--preprocess-mode", default=os.getenv("WR_PREPROCESS_MODE", "int_precision"))
     parser.add_argument(
         "--direction-convention",
         default=os.getenv("WR_DIRECTION_CONVENTION", "to"),
@@ -329,21 +328,18 @@ def export_merged_csv(
     fill_missing: bool,
     bounds: dict[str, int] | None,
 ) -> None:
-    frames: list[pd.DataFrame] = []
     time_folders = controller.get_time_folders()
     if not time_folders:
         raise RuntimeError("No OpenFOAM time folders were produced.")
-    for time_folder in time_folders:
-        cell, velocity = controller.read_cell_and_velocity(time_folder)
-        if cell is None or velocity is None:
-            raise RuntimeError(f"Failed to read cell and velocity data for time {time_folder}.")
-        frame = preprocess_velocity_dataframe(cell, velocity, fill_missing, bounds)
-        frame.insert(0, "time", float(time_folder))
-        frames.append(frame)
-    merged = pd.concat(frames, ignore_index=True)
+    final_time_folder = time_folders[-1]
+    cell, velocity = controller.read_cell_and_velocity(final_time_folder)
+    if cell is None or velocity is None:
+        raise RuntimeError(f"Failed to read cell and velocity data for time {final_time_folder}.")
+    frame = preprocess_velocity_dataframe(cell, velocity, fill_missing, bounds)
     output_csv.parent.mkdir(parents=True, exist_ok=True)
-    merged.to_csv(output_csv, index=False)
-    print(f"Saved merged CSV to {output_csv}")
+    output_csv.unlink(missing_ok=True)
+    frame.to_csv(output_csv, index=False)
+    print(f"Exported final time step {final_time_folder} to {output_csv}", flush=True)
 
 
 def main() -> None:
@@ -384,7 +380,7 @@ def main() -> None:
     print("Simulation bounds:", json.dumps(bounds))
 
     try:
-        controller = OpenFoamController(args.case_root, args.preprocess_mode)
+        controller = OpenFoamController(args.case_root)
         configure_case(controller, terrain_stl, bounds, wind, controls)
         controller.run()
         if not controller.check_run_valid():

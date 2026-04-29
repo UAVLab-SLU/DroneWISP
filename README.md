@@ -123,7 +123,6 @@ Compose contract:
 - `WR_WIND_JSON`: JSON array or object describing the wind input. A full config JSON with `environment.wind` also works
 
 Optional environment values:
-- `WR_PREPROCESS_MODE`: defaults to `int_precision`
 - `WR_DIRECTION_CONVENTION`: `to` by default. Set `from` if wind directions describe the source direction instead of the flow direction
 - `WR_CONTROL_JSON`: optional JSON object with `dt`, `end_time`, and `write_interval`
 - `WR_BOUNDS_JSON`: optional JSON object with `x_min`, `x_max`, `y_min`, `y_max`, `z_min`, `z_max`. When supplied, the runner clips the STL to that box before solving
@@ -136,7 +135,7 @@ Multi-source wind handling:
 - `fluctuation_percentage` is taken as the maximum source value when turbulence is enabled
 
 Notes:
-- the exported CSV is a single merged file with columns `time,x,y,z,u,v,w`
+- the exported CSV contains only the final time step with columns `x,y,z,u,v,w`
 - large terrain meshes should usually provide `WR_BOUNDS_JSON` or a pre-clipped STL, otherwise the OpenFOAM domain may become too large to solve efficiently
 
 ## Directory Structure

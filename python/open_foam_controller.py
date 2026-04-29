@@ -49,12 +49,10 @@ class OpenFoamController:
         """
         print("Running OpenFOAM case: ", self.case_root)
         if os.environ.get("IN_DOCKER", False):
-            proc = subprocess.Popen(["./AllcleanDocker"],
-                                    shell=True,
+            proc = subprocess.Popen(["bash", "./AllcleanDocker"],
                                     cwd=self.case_root)
         else:
-            proc = subprocess.Popen(["bash ./Allclean"],
-                                    shell=True,
+            proc = subprocess.Popen(["bash", "./Allclean"],
                                     cwd=self.case_root)
 
         proc.wait()

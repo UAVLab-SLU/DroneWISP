@@ -5,7 +5,6 @@ STL_PATH=""
 OUTPUT_CSV=""
 WIND_JSON=""
 WIND_FILE=""
-PREPROCESS_MODE="int_precision"
 DIRECTION_CONVENTION="to"
 CONTROL_JSON=""
 BOUNDS_JSON=""
@@ -23,7 +22,6 @@ Options:
   --output PATH
   --wind-json JSON
   --wind-file PATH
-  --preprocess-mode MODE
   --direction-convention to|from
   --control-json JSON
   --bounds-json JSON
@@ -66,10 +64,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --wind-file)
       WIND_FILE="$2"
-      shift 2
-      ;;
-    --preprocess-mode)
-      PREPROCESS_MODE="$2"
       shift 2
       ;;
     --direction-convention)
@@ -135,11 +129,10 @@ export WR_INPUT_STL_FILE="$INPUT_STL_FILE"
 export WR_OUTPUT_DIR="$OUTPUT_DIR"
 export WR_OUTPUT_FILE="$OUTPUT_FILE"
 export WR_WIND_JSON="$WIND_JSON"
-export WR_PREPROCESS_MODE="$PREPROCESS_MODE"
 export WR_DIRECTION_CONVENTION="$DIRECTION_CONVENTION"
 export WR_CONTROL_JSON="$CONTROL_JSON"
 export WR_BOUNDS_JSON="$BOUNDS_JSON"
 export WR_MESH_PADDING_JSON="$MESH_PADDING_JSON"
 export WR_FILL_MISSING="$FILL_MISSING"
 
-docker compose -f "$COMPOSE_FILE" run --rm wisp_wr_job
+docker compose -f "$COMPOSE_FILE" run --build --rm wisp_wr_job
