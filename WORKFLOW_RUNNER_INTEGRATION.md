@@ -14,7 +14,7 @@ Use [`compose.workflow-runner.yaml`](//wsl.localhost/Ubuntu-22.04/home/bohanzhan
 
 The WR-facing service is a one-shot batch job:
 - it receives an STL terrain file
-- it receives wind input as JSON
+- it receives one simulation config JSON file
 - it writes one output CSV
 - it exits when the job is complete
 
@@ -26,31 +26,56 @@ WR must provide these values:
 | --- | --- |
 | `WR_INPUT_STL_DIR` | Host directory that contains the terrain STL |
 | `WR_INPUT_STL_FILE` | STL filename inside `WR_INPUT_STL_DIR` |
+| `WR_INPUT_CONFIG_DIR` | Host directory that contains the simulation config JSON |
+| `WR_INPUT_CONFIG_FILE` | Config filename inside `WR_INPUT_CONFIG_DIR` |
 | `WR_OUTPUT_DIR` | Host directory where the result CSV will be written |
 | `WR_OUTPUT_FILE` | Output CSV filename inside `WR_OUTPUT_DIR` |
-| `WR_WIND_JSON` | Wind definition JSON |
 
 ## Optional Inputs
 
-WR may provide these values when needed:
+WR does not need to provide separate wind JSON, bounds JSON, control JSON, padding JSON, or preprocess parameters.
 
-| Variable | Meaning | Default |
+## Config Contract
+
+The runner reads wind definitions from the single config file.
+
+Expected location:
+- `environment.wind.sources`
+
+The runner also accepts the older `environment.wind` array and a top-level `wind` field for backward compatibility.
+
+Current wind object shape:
+
+```json
+{
+  "environment": {
+    "origin": {
+      "radius": 0.3
+    },
+    "wind": {
+      "sources": [
+        {
+          "wind_velocity": 4.2,
+          "wind_direction": "NE",
+          "wind_type": "Constant Wind",
+          "fluctuation_percentage": 5.5
+        }
+      ],
+      "height_cells": 10,
+      "scale": 1.0
+    }
+  }
+}
+```
+
+Config fields:
+
+| Field | Meaning | Default |
 | --- | --- | --- |
-| `WR_DIRECTION_CONVENTION` | Interpret wind direction as `to` or `from` | `to` |
-| `WR_CONTROL_JSON` | Optional runtime control JSON with `dt`, `end_time`, `write_interval` | internal defaults |
-| `WR_BOUNDS_JSON` | Optional clipping / simulation bounds JSON | auto-derived from STL |
-| `WR_MESH_PADDING_JSON` | Optional padding JSON used only when bounds are auto-derived | `{"xy":1,"z_min":1,"z_max":1}` |
-| `WR_FILL_MISSING` | Whether to backfill missing integer grid cells in the exported CSV | `false` |
-
-WR should not provide any preprocess-mode parameter.
-
-## Wind Input Contract
-
-`WR_WIND_JSON` may be:
-- a single wind object
-- an array of wind objects
-- a larger JSON object that contains `wind`
-- a larger JSON object that contains `environment.wind`
+| `environment.wind.sources` | Wind source array | required in the new schema |
+| `environment.wind.height_cells` | Number of CFD cells in the vertical direction | `10` |
+| `environment.wind.scale` | Uniform STL scale factor in `(0, 1]` | `1.0` |
+| `environment.origin.radius` | Region radius from the simulation config | unchanged |
 
 Minimum required fields for each wind object:
 
@@ -88,24 +113,27 @@ If multiple wind definitions are supplied:
 - `fluctuation_percentage` is taken as the maximum provided value among the sources
 - if turbulence is selected but no positive fluctuation is given, a default turbulence percentage is used internally
 
-## Bounds Contract
+## Mesh Scale And Height Cells
 
-If `WR_BOUNDS_JSON` is supplied, it must be:
+`environment.wind.scale` is the config-controlled computation limit.
 
-```json
-{
-  "x_min": -16,
-  "x_max": 16,
-  "y_min": -16,
-  "y_max": 16,
-  "z_min": -2,
-  "z_max": 11
-}
-```
+There is no hardcoded maximum effective `x` or `y` cell count in the runner; WR controls that through the config value.
 
-If `WR_BOUNDS_JSON` is not supplied:
-- bounds are auto-derived from the STL
-- `WR_MESH_PADDING_JSON` is applied
+When `scale` is less than `1.0`:
+- the full STL is uniformly scaled by that factor in `x`, `y`, and `z`
+- the STL is not sliced or clipped
+- triangle count stays unchanged
+- exported `x,y,z` coordinates are mapped back to the original STL scale
+- the solver adds a small fixed clearance around the STL, so exported coordinates can extend slightly beyond the STL extents after inverse scaling
+
+Example:
+- input STL `x`: `400`
+- configured `scale`: `0.5`
+- solver-scale `x`: `200`
+
+`environment.wind.height_cells` is used directly as the CFD `z` cell count. It is not multiplied by `scale`.
+
+The input STL is expected to be box-like in most runs, with `z` usually being the least predictable dimension.
 
 ## Output Contract
 
@@ -122,7 +150,7 @@ x,y,z,u,v,w
 ```
 
 Column meanings:
-- `x`, `y`, `z`: integer grid location
+- `x`, `y`, `z`: output location in the source STL coordinate scale
 - `u`, `v`, `w`: velocity components at that grid point
 
 No `time` column is written.
@@ -145,45 +173,42 @@ services:
     environment:
       WR_INPUT_STL_DIR: /host/input
       WR_INPUT_STL_FILE: terrain.stl
+      WR_INPUT_CONFIG_DIR: /host/config
+      WR_INPUT_CONFIG_FILE: sim_config_3_drone_new.json
       WR_OUTPUT_DIR: /host/output
       WR_OUTPUT_FILE: wind.csv
-      WR_WIND_JSON: '[{"wind_velocity":4.2,"wind_direction":"NE"}]'
-      WR_DIRECTION_CONVENTION: to
     volumes:
       - /host/input:/wr/input:ro
+      - /host/config:/wr/config:ro
       - /host/output:/wr/output
 ```
 
-## Example Wind Payloads
-
-Single-source example:
+## Example Config Fragment
 
 ```json
-[
-  {
-    "wind_velocity": 4.2,
-    "wind_direction": "NE",
-    "wind_type": "Constant Wind",
-    "fluctuation_percentage": 5.5
+{
+  "environment": {
+    "origin": {
+      "radius": 0.3
+    },
+    "wind": {
+      "sources": [
+        {
+          "wind_velocity": 5,
+          "wind_direction": "W",
+          "wind_type": "Constant Wind",
+          "fluctuation_percentage": 0.0
+        },
+        {
+          "wind_velocity": 3,
+          "wind_direction": "SE",
+          "wind_type": "Constant Wind",
+          "fluctuation_percentage": 0.0
+        }
+      ],
+      "height_cells": 10,
+      "scale": 1.0
+    }
   }
-]
-```
-
-Multi-source example:
-
-```json
-[
-  {
-    "wind_velocity": 4.2,
-    "wind_direction": "NE",
-    "wind_type": "Constant Wind",
-    "fluctuation_percentage": 5.5
-  },
-  {
-    "wind_velocity": 6.0,
-    "wind_direction": "SW",
-    "wind_type": "Turbulent Wind",
-    "fluctuation_percentage": 40.0
-  }
-]
+}
 ```

@@ -8,12 +8,15 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-
+import trimesh
 from my_stl.mesh_utils import StlMeshUtils
 from open_foam_controller import OpenFoamController
 
 
-DEFAULT_PADDING = {"xy": 1, "z_min": 1, "z_max": 1}
+DEFAULT_DIRECTION_CONVENTION = "to"
+DEFAULT_HEIGHT_CELLS = 10
+DEFAULT_ENVIRONMENT_SCALE = 1.0
+INTERNAL_BOUND_PADDING = {"xy": 1, "z_min": 1, "z_max": 1}
 COMPASS_UNIT_VECTORS = {
     "N": (0.0, 1.0),
     "NNE": (math.sin(math.radians(22.5)), math.cos(math.radians(22.5))),
@@ -38,91 +41,80 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a single WR CFD job and export one merged CSV.")
     parser.add_argument("--stl-path", default=os.getenv("WR_INPUT_STL_PATH"))
     parser.add_argument("--output-csv", default=os.getenv("WR_OUTPUT_CSV_PATH"))
-    parser.add_argument("--wind-json", default=os.getenv("WR_WIND_JSON"))
+    parser.add_argument("--config-path", default=os.getenv("WR_INPUT_CONFIG_PATH"))
     parser.add_argument("--case-root", default=os.getenv("WR_CASE_ROOT", "openFoamCase"))
-    parser.add_argument(
-        "--direction-convention",
-        default=os.getenv("WR_DIRECTION_CONVENTION", "to"),
-        choices=["to", "from"],
-    )
-    parser.add_argument("--control-json", default=os.getenv("WR_CONTROL_JSON"))
-    parser.add_argument("--bounds-json", default=os.getenv("WR_BOUNDS_JSON"))
-    parser.add_argument("--mesh-padding-json", default=os.getenv("WR_MESH_PADDING_JSON"))
-    parser.add_argument("--fill-missing", default=os.getenv("WR_FILL_MISSING", "false"))
     return parser.parse_args()
 
 
-def parse_bool(value: Any) -> bool:
-    if isinstance(value, bool):
-        return value
-    if value is None:
-        return False
-    return str(value).strip().lower() in {"1", "true", "yes", "on"}
-
-
-def parse_json(value: str | None, label: str) -> Any:
-    if value in (None, ""):
-        return None
+def load_config_payload(config_path: Path) -> dict[str, Any]:
     try:
-        return json.loads(value)
+        payload = json.loads(config_path.read_text())
     except json.JSONDecodeError as exc:
-        raise ValueError(f"Invalid JSON for {label}: {exc}") from exc
-
-
-def parse_wind_payload(wind_json: str | None) -> list[dict[str, Any]]:
-    payload = parse_json(wind_json, "wind_json")
-    if payload is None:
-        raise ValueError("WR_WIND_JSON or --wind-json is required.")
-    if isinstance(payload, dict):
-        if isinstance(payload.get("environment"), dict) and "wind" in payload["environment"]:
-            payload = payload["environment"]["wind"]
-        elif "wind" in payload:
-            payload = payload["wind"]
-        else:
-            payload = [payload]
-    if not isinstance(payload, list) or not payload:
-        raise ValueError("Wind payload must be a non-empty object or array.")
-    normalized: list[dict[str, Any]] = []
-    for item in payload:
-        if not isinstance(item, dict):
-            raise ValueError("Each wind definition must be an object.")
-        normalized.append(item)
-    return normalized
-
-
-def parse_padding(padding_json: str | None) -> dict[str, int]:
-    if padding_json in (None, ""):
-        return DEFAULT_PADDING.copy()
-    payload = parse_json(padding_json, "mesh_padding_json")
-    if isinstance(payload, (int, float)):
-        padding_value = int(math.ceil(float(payload)))
-        return {"xy": padding_value, "z_min": padding_value, "z_max": padding_value}
+        raise ValueError(f"Invalid simulation config JSON: {exc}") from exc
     if not isinstance(payload, dict):
-        raise ValueError("mesh_padding_json must be a number or object.")
-    xy = int(math.ceil(float(payload.get("xy", 0))))
+        raise ValueError("Simulation config JSON must be an object.")
+    return payload
+
+
+def parse_wind_config_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    environment = payload.get("environment") if isinstance(payload.get("environment"), dict) else {}
+    origin = environment.get("origin") if isinstance(environment.get("origin"), dict) else {}
+    if "wind" in environment:
+        wind_payload = environment["wind"]
+    elif "wind" in payload:
+        wind_payload = payload["wind"]
+    else:
+        raise ValueError("Simulation config must contain wind or environment.wind.")
+
+    height_cells = DEFAULT_HEIGHT_CELLS
+    environment_scale = DEFAULT_ENVIRONMENT_SCALE
+    if isinstance(wind_payload, dict):
+        if "sources" in wind_payload:
+            sources_payload = wind_payload["sources"]
+        elif "wind_velocity" in wind_payload and "wind_direction" in wind_payload:
+            sources_payload = [wind_payload]
+        else:
+            raise ValueError("Wind object must contain sources or a single wind definition.")
+        if "height_cells" in wind_payload and wind_payload["height_cells"] is not None:
+            height_cells = parse_height_cells(wind_payload["height_cells"])
+        if "scale" in wind_payload and wind_payload["scale"] is not None:
+            environment_scale = parse_environment_scale(wind_payload["scale"])
+    else:
+        sources_payload = wind_payload
+
+    if not isinstance(sources_payload, list) or not sources_payload:
+        raise ValueError("Wind sources must be a non-empty array.")
+    normalized: list[dict[str, Any]] = []
+    for item in sources_payload:
+        if not isinstance(item, dict):
+            raise ValueError("Each wind source must be an object.")
+        normalized.append(item)
     return {
-        "xy": xy,
-        "z_min": int(math.ceil(float(payload.get("z_min", payload.get("z", 0))))),
-        "z_max": int(math.ceil(float(payload.get("z_max", payload.get("z", 0))))),
+        "sources": normalized,
+        "height_cells": height_cells,
+        "scale": environment_scale,
+        "radius": origin.get("radius"),
     }
 
 
-def normalize_bounds(bounds_payload: dict[str, Any]) -> dict[str, int]:
-    required_keys = ["x_min", "x_max", "y_min", "y_max", "z_min", "z_max"]
-    missing = [key for key in required_keys if key not in bounds_payload]
-    if missing:
-        raise ValueError(f"Bounds JSON is missing keys: {', '.join(missing)}")
-    bounds = {
-        "x_min": math.floor(float(bounds_payload["x_min"])),
-        "x_max": math.ceil(float(bounds_payload["x_max"])),
-        "y_min": math.floor(float(bounds_payload["y_min"])),
-        "y_max": math.ceil(float(bounds_payload["y_max"])),
-        "z_min": math.floor(float(bounds_payload["z_min"])),
-        "z_max": math.ceil(float(bounds_payload["z_max"])),
-    }
-    if bounds["x_min"] >= bounds["x_max"] or bounds["y_min"] >= bounds["y_max"] or bounds["z_min"] >= bounds["z_max"]:
-        raise ValueError("Bounds min values must be smaller than max values.")
-    return bounds
+def parse_height_cells(value: Any) -> int:
+    if isinstance(value, bool):
+        raise ValueError("wind.height_cells must be an integer.")
+    if isinstance(value, float) and not value.is_integer():
+        raise ValueError("wind.height_cells must be an integer.")
+    height_cells = int(value)
+    if height_cells < 1:
+        raise ValueError("wind.height_cells must be greater than or equal to 1.")
+    return height_cells
+
+
+def parse_environment_scale(value: Any) -> float:
+    if isinstance(value, bool):
+        raise ValueError("wind.scale must be a float in the range (0, 1].")
+    environment_scale = float(value)
+    if environment_scale <= 0 or environment_scale > 1:
+        raise ValueError("wind.scale must be in the range (0, 1].")
+    return environment_scale
 
 
 def load_mesh_bounds(stl_path: Path) -> tuple[float, float, float, float, float, float]:
@@ -133,15 +125,15 @@ def load_mesh_bounds(stl_path: Path) -> tuple[float, float, float, float, float,
     return tuple(mesh_utils.pv_mesh.bounds)
 
 
-def build_auto_bounds(stl_path: Path, padding: dict[str, int]) -> dict[str, int]:
+def build_simulation_bounds(stl_path: Path) -> dict[str, int]:
     mesh_bounds = load_mesh_bounds(stl_path)
     return {
-        "x_min": math.floor(mesh_bounds[0]) - padding["xy"],
-        "x_max": math.ceil(mesh_bounds[1]) + padding["xy"],
-        "y_min": math.floor(mesh_bounds[2]) - padding["xy"],
-        "y_max": math.ceil(mesh_bounds[3]) + padding["xy"],
-        "z_min": math.floor(mesh_bounds[4]) - padding["z_min"],
-        "z_max": math.ceil(mesh_bounds[5]) + padding["z_max"],
+        "x_min": math.floor(mesh_bounds[0]) - INTERNAL_BOUND_PADDING["xy"],
+        "x_max": math.ceil(mesh_bounds[1]) + INTERNAL_BOUND_PADDING["xy"],
+        "y_min": math.floor(mesh_bounds[2]) - INTERNAL_BOUND_PADDING["xy"],
+        "y_max": math.ceil(mesh_bounds[3]) + INTERNAL_BOUND_PADDING["xy"],
+        "z_min": math.floor(mesh_bounds[4]) - INTERNAL_BOUND_PADDING["z_min"],
+        "z_max": math.ceil(mesh_bounds[5]) + INTERNAL_BOUND_PADDING["z_max"],
     }
 
 
@@ -158,15 +150,61 @@ def build_box_vertices(bounds: dict[str, int]) -> list[tuple[int, int, int]]:
     ]
 
 
-def maybe_clip_stl(source_stl: Path, bounds: dict[str, int], explicit_bounds: bool) -> tuple[Path, Path | None]:
-    if not explicit_bounds:
-        return source_stl, None
-    vertices = build_box_vertices(bounds)
+def measure_mesh_lengths(source_bounds: tuple[float, float, float, float, float, float]) -> dict[str, float]:
+    return {
+        "x": float(source_bounds[1] - source_bounds[0]),
+        "y": float(source_bounds[3] - source_bounds[2]),
+        "z": float(source_bounds[5] - source_bounds[4]),
+    }
+
+
+def build_scaling_transform(
+    source_bounds: tuple[float, float, float, float, float, float],
+    scale_factor: float,
+) -> dict[str, Any]:
+    source_min = np.array([source_bounds[0], source_bounds[2], source_bounds[4]], dtype=float)
+    if scale_factor <= 0:
+        raise ValueError("Computed STL scale factor must be positive.")
+    translation = source_min - (source_min * scale_factor)
+
+    return {
+        "scale_factor": scale_factor,
+        "translation": translation.tolist(),
+        "source_bounds": list(source_bounds),
+        "source_lengths": measure_mesh_lengths(source_bounds),
+    }
+
+
+def apply_forward_scaling(points: np.ndarray, scaling_transform: dict[str, Any]) -> np.ndarray:
+    scale_factor = float(scaling_transform["scale_factor"])
+    translation = np.asarray(scaling_transform["translation"], dtype=float)
+    return (points * scale_factor) + translation
+
+
+def apply_inverse_scaling(points: np.ndarray, scaling_transform: dict[str, Any]) -> np.ndarray:
+    scale_factor = float(scaling_transform["scale_factor"])
+    translation = np.asarray(scaling_transform["translation"], dtype=float)
+    return (points - translation) / scale_factor
+
+
+def maybe_scale_stl(source_stl: Path, environment_scale: float) -> tuple[Path, Path | None, dict[str, Any] | None]:
+    source_bounds = load_mesh_bounds(source_stl)
+    if math.isclose(environment_scale, 1.0, rel_tol=0.0, abs_tol=1e-12):
+        return source_stl, None, None
+
+    print(f"Applying wind.scale to STL geometry. Applied scaling factor: {environment_scale:.9f}")
+    scaling_transform = build_scaling_transform(source_bounds, environment_scale)
+    mesh = trimesh.load_mesh(str(source_stl), file_type="stl", process=False)
+    if isinstance(mesh, trimesh.Scene):
+        mesh = trimesh.util.concatenate(tuple(mesh.geometry.values()))
+    if not isinstance(mesh, trimesh.Trimesh):
+        raise RuntimeError(f"Failed to load STL mesh for scaling: {source_stl}")
     handle, temp_path = tempfile.mkstemp(prefix="dronewisp_wr_", suffix=".stl")
     os.close(handle)
-    clipped_stl = Path(temp_path)
-    StlMeshUtils.clip_and_save_mesh(vertices, str(source_stl), str(clipped_stl))
-    return clipped_stl, clipped_stl
+    scaled_stl = Path(temp_path)
+    mesh.vertices = apply_forward_scaling(np.array(mesh.vertices, dtype=float), scaling_transform)
+    mesh.export(str(scaled_stl))
+    return scaled_stl, scaled_stl, scaling_transform
 
 
 def cleanup_case_artifacts(case_root: Path) -> None:
@@ -239,23 +277,10 @@ def aggregate_wind_definitions(wind_definitions: list[dict[str, Any]], direction
     }
 
 
-def resolve_control_settings(aggregate_wind: dict[str, Any], control_json: str | None) -> dict[str, float | int]:
+def resolve_control_settings(aggregate_wind: dict[str, Any]) -> dict[str, float | int]:
     if aggregate_wind["wind_type"] == "turbulent":
-        resolved: dict[str, float | int] = {"dt": 1.0, "end_time": 26.0, "write_interval": 1}
-    else:
-        resolved = {"dt": 1.0, "end_time": 51.0, "write_interval": 50}
-    payload = parse_json(control_json, "control_json")
-    if payload is None:
-        return resolved
-    if not isinstance(payload, dict):
-        raise ValueError("control_json must be an object.")
-    if "dt" in payload:
-        resolved["dt"] = float(payload["dt"])
-    if "end_time" in payload:
-        resolved["end_time"] = float(payload["end_time"])
-    if "write_interval" in payload:
-        resolved["write_interval"] = int(payload["write_interval"])
-    return resolved
+        return {"dt": 1.0, "end_time": 26.0, "write_interval": 1}
+    return {"dt": 1.0, "end_time": 51.0, "write_interval": 50}
 
 
 def configure_case(
@@ -264,16 +289,12 @@ def configure_case(
     bounds: dict[str, int],
     wind: dict[str, Any],
     controls: dict[str, float | int],
+    height_cells: int,
 ) -> None:
     vertices = build_box_vertices(bounds)
     x_size = bounds["x_max"] - bounds["x_min"] + 1
     y_size = bounds["y_max"] - bounds["y_min"] + 1
-    z_size = bounds["z_max"] - bounds["z_min"] + 1
-    if max(x_size, y_size, z_size) > 200:
-        print(
-            "Warning: simulation box is large. Consider passing WR_BOUNDS_JSON with a tighter region or a pre-clipped STL."
-        )
-        print(f"Simulation box size: {x_size} x {y_size} x {z_size}")
+    z_size = height_cells
 
     cleanup_case_artifacts(Path(controller.case_root))
     controller.clean()
@@ -322,11 +343,23 @@ def preprocess_velocity_dataframe(
     return frame
 
 
+def restore_output_scale(frame: pd.DataFrame, scaling_transform: dict[str, Any] | None) -> pd.DataFrame:
+    if scaling_transform is None:
+        return frame
+    restored_frame = frame.copy()
+    restored_coords = apply_inverse_scaling(restored_frame[["x", "y", "z"]].to_numpy(dtype=float), scaling_transform)
+    restored_frame[["x", "y", "z"]] = np.round(restored_coords, 6)
+    restored_frame.sort_values(by=["x", "y", "z"], inplace=True)
+    restored_frame.reset_index(drop=True, inplace=True)
+    return restored_frame
+
+
 def export_merged_csv(
     controller: OpenFoamController,
     output_csv: Path,
     fill_missing: bool,
     bounds: dict[str, int] | None,
+    scaling_transform: dict[str, Any] | None,
 ) -> None:
     time_folders = controller.get_time_folders()
     if not time_folders:
@@ -336,6 +369,7 @@ def export_merged_csv(
     if cell is None or velocity is None:
         raise RuntimeError(f"Failed to read cell and velocity data for time {final_time_folder}.")
     frame = preprocess_velocity_dataframe(cell, velocity, fill_missing, bounds)
+    frame = restore_output_scale(frame, scaling_transform)
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     output_csv.unlink(missing_ok=True)
     frame.to_csv(output_csv, index=False)
@@ -348,27 +382,31 @@ def main() -> None:
         raise SystemExit("Missing STL path. Set WR_INPUT_STL_PATH or pass --stl-path.")
     if not args.output_csv:
         raise SystemExit("Missing output CSV path. Set WR_OUTPUT_CSV_PATH or pass --output-csv.")
+    if not args.config_path:
+        raise SystemExit("Missing config path. Set WR_INPUT_CONFIG_PATH or pass --config-path.")
 
     stl_path = Path(args.stl_path)
     output_csv = Path(args.output_csv)
+    config_path = Path(args.config_path)
     if not stl_path.is_file():
         raise SystemExit(f"STL file does not exist: {stl_path}")
+    if not config_path.is_file():
+        raise SystemExit(f"Simulation config file does not exist: {config_path}")
 
-    wind_definitions = parse_wind_payload(args.wind_json)
-    wind = aggregate_wind_definitions(wind_definitions, args.direction_convention)
-    controls = resolve_control_settings(wind, args.control_json)
-    fill_missing = parse_bool(args.fill_missing)
+    config_payload = load_config_payload(config_path)
+    wind_config = parse_wind_config_from_payload(config_payload)
+    wind_definitions = wind_config["sources"]
+    wind = aggregate_wind_definitions(wind_definitions, DEFAULT_DIRECTION_CONVENTION)
+    controls = resolve_control_settings(wind)
 
-    bounds_payload = parse_json(args.bounds_json, "bounds_json")
-    explicit_bounds = bounds_payload is not None
-    if explicit_bounds:
-        if not isinstance(bounds_payload, dict):
-            raise SystemExit("bounds_json must be an object.")
-        bounds = normalize_bounds(bounds_payload)
-    else:
-        bounds = build_auto_bounds(stl_path, parse_padding(args.mesh_padding_json))
-
-    terrain_stl, temporary_stl = maybe_clip_stl(stl_path, bounds, explicit_bounds)
+    terrain_stl, temporary_stl, scaling_transform = maybe_scale_stl(stl_path, wind_config["scale"])
+    bounds = build_simulation_bounds(terrain_stl)
+    print("Resolved wind config:", json.dumps({
+        "source_count": len(wind_definitions),
+        "height_cells": wind_config["height_cells"],
+        "scale": wind_config["scale"],
+        "radius": wind_config["radius"],
+    }))
     print("Resolved wind vector:", json.dumps({
         "wind_speed_x": round(wind["wind_speed_x"], 6),
         "wind_speed_y": round(wind["wind_speed_y"], 6),
@@ -378,15 +416,24 @@ def main() -> None:
         "direction_deg": round(wind["direction_deg"], 6),
     }))
     print("Simulation bounds:", json.dumps(bounds))
+    if scaling_transform is not None:
+        print("Applied STL scaling:", json.dumps({
+            "scale_factor": round(float(scaling_transform["scale_factor"]), 9),
+            "source_bounds": scaling_transform["source_bounds"],
+            "source_lengths": {
+                axis: round(float(length), 6)
+                for axis, length in scaling_transform["source_lengths"].items()
+            },
+        }))
 
     try:
         controller = OpenFoamController(args.case_root)
-        configure_case(controller, terrain_stl, bounds, wind, controls)
+        configure_case(controller, terrain_stl, bounds, wind, controls, wind_config["height_cells"])
         controller.run()
         if not controller.check_run_valid():
             controller.debug_failed_run()
             raise RuntimeError("OpenFOAM run failed validation.")
-        export_merged_csv(controller, output_csv, fill_missing, bounds if fill_missing else None)
+        export_merged_csv(controller, output_csv, False, None, scaling_transform)
     finally:
         if temporary_stl is not None:
             temporary_stl.unlink(missing_ok=True)

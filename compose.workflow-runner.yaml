@@ -8,16 +8,13 @@ services:
     environment:
       WR_INPUT_STL_DIR: ${WR_INPUT_STL_DIR:-.}
       WR_INPUT_STL_FILE: ${WR_INPUT_STL_FILE:-30x30x10.stl}
+      WR_INPUT_CONFIG_DIR: ${WR_INPUT_CONFIG_DIR:-./wr_examples}
+      WR_INPUT_CONFIG_FILE: ${WR_INPUT_CONFIG_FILE:-sim_config_3_drone_new.json}
       WR_OUTPUT_DIR: ${WR_OUTPUT_DIR:-./out}
       WR_OUTPUT_FILE: ${WR_OUTPUT_FILE:-wind.csv}
-      WR_WIND_JSON: ${WR_WIND_JSON:-}
-      WR_DIRECTION_CONVENTION: ${WR_DIRECTION_CONVENTION:-to}
-      WR_CONTROL_JSON: ${WR_CONTROL_JSON:-}
-      WR_BOUNDS_JSON: ${WR_BOUNDS_JSON:-}
-      WR_MESH_PADDING_JSON: ${WR_MESH_PADDING_JSON:-}
-      WR_FILL_MISSING: ${WR_FILL_MISSING:-false}
       IN_DOCKER: "Yes"
     volumes:
       - '${WR_INPUT_STL_DIR:-.}:/wr/input:ro'
+      - '${WR_INPUT_CONFIG_DIR:-./wr_examples}:/wr/config:ro'
       - '${WR_OUTPUT_DIR:-./out}:/wr/output'
     command: ["/bin/bash", "/home/wisp/wr/run_wr_job.sh"]

@@ -1,0 +1,29 @@
+{
+  "environment": {
+    "origin": {
+      "height": 145.26528163908696,
+      "latitude": 41.87211786915547,
+      "longitude": -87.61890768911918,
+      "name": "Specify Region",
+      "radius": 0.3
+    },
+    "wind": {
+      "sources": [
+        {
+          "fluctuation_percentage": 0.0,
+          "wind_direction": "W",
+          "wind_type": "Constant Wind",
+          "wind_velocity": 5
+        },
+        {
+          "fluctuation_percentage": 0.0,
+          "wind_direction": "SE",
+          "wind_type": "Constant Wind",
+          "wind_velocity": 3
+        }
+      ],
+      "height_cells": 10,
+      "scale": 1.0
+    }
+  }
+}

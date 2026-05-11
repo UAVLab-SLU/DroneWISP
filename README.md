@@ -103,31 +103,31 @@ docker compose up
 ```
 
 ### Workflow Runner batch interface
-Use `compose.workflow-runner.yaml` to run a one-shot CFD job that accepts an STL terrain, wind definitions, and a target CSV path.
+Use `compose.workflow-runner.yaml` to run a one-shot CFD job that accepts an STL terrain, one simulation config JSON, and a target CSV path.
 
 Local example:
 ```bash
 bash run_wr_job.sh \
   --stl /home/bohanzhang/DroneWISP/4drone_Test_site_V36_mono_smooth.stl \
-  --output /home/bohanzhang/DroneWISP/out/wind.csv \
-  --wind-file /home/bohanzhang/DroneWISP/sim_config_3_drone.json
+  --config /home/bohanzhang/DroneWISP/wr_examples/sim_config_3_drone_new.json \
+  --output /home/bohanzhang/DroneWISP/out/wind.csv
 ```
 
-The wrapper extracts `environment.wind` when you pass a full simulation config JSON. It also supports `--wind-json` if WR already renders the wind payload directly.
+The runner reads wind definitions from the single config file, using `environment.wind.sources` in the current schema. The older `environment.wind` array remains supported.
 
 Compose contract:
 - `WR_INPUT_STL_DIR`: host directory that contains the STL file
 - `WR_INPUT_STL_FILE`: STL basename inside that directory
+- `WR_INPUT_CONFIG_DIR`: host directory that contains the simulation config JSON
+- `WR_INPUT_CONFIG_FILE`: config filename inside that directory
 - `WR_OUTPUT_DIR`: host directory where the merged CSV should be written
 - `WR_OUTPUT_FILE`: output CSV basename
-- `WR_WIND_JSON`: JSON array or object describing the wind input. A full config JSON with `environment.wind` also works
 
-Optional environment values:
-- `WR_DIRECTION_CONVENTION`: `to` by default. Set `from` if wind directions describe the source direction instead of the flow direction
-- `WR_CONTROL_JSON`: optional JSON object with `dt`, `end_time`, and `write_interval`
-- `WR_BOUNDS_JSON`: optional JSON object with `x_min`, `x_max`, `y_min`, `y_max`, `z_min`, `z_max`. When supplied, the runner clips the STL to that box before solving
-- `WR_MESH_PADDING_JSON`: optional auto-bounds padding JSON, defaults to `{"xy":1,"z_min":1,"z_max":1}`
-- `WR_FILL_MISSING`: defaults to `false`. Set `true` to backfill missing integer grid cells in the exported CSV
+Current wind config shape:
+- `environment.wind.sources`: array of wind source objects
+- `environment.wind.height_cells`: integer number of CFD cells in the vertical direction, defaults to `10`
+- `environment.wind.scale`: uniform mesh scale factor in `(0, 1]`, defaults to `1.0`
+- `environment.origin.radius`: region radius, unchanged from the simulation config
 
 Multi-source wind handling:
 - wind vectors are averaged component-wise
@@ -136,7 +136,11 @@ Multi-source wind handling:
 
 Notes:
 - the exported CSV contains only the final time step with columns `x,y,z,u,v,w`
-- large terrain meshes should usually provide `WR_BOUNDS_JSON` or a pre-clipped STL, otherwise the OpenFOAM domain may become too large to solve efficiently
+- `wind.scale` controls mesh scaling and therefore the horizontal CFD cell count
+- there is no hardcoded maximum effective `x` or `y` cell count in the runner
+- `wind.height_cells` directly controls the CFD `z` cell count and is not multiplied by `wind.scale`
+- the solver adds a small fixed clearance around the STL, so exported coordinates can extend slightly beyond the STL extents after inverse scaling
+- the WR-side input STL is expected to be box-like in most runs, with `z` being the least predictable dimension
 
 ## Directory Structure
 all OpenFOAM research scenarios are in the run directory
