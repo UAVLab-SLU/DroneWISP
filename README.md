@@ -102,6 +102,46 @@ run the docker image
 docker compose up
 ```
 
+### Workflow Runner batch interface
+Use `compose.workflow-runner.yaml` to run a one-shot CFD job that accepts an STL terrain, one simulation config JSON, and a target CSV path.
+
+Local example:
+```bash
+bash run_wr_job.sh \
+  --stl /home/bohanzhang/DroneWISP/4drone_Test_site_V36_mono_smooth.stl \
+  --config /home/bohanzhang/DroneWISP/wr_examples/sim_config_3_drone_new.json \
+  --output /home/bohanzhang/DroneWISP/out/wind.csv
+```
+
+The runner reads wind definitions from the single config file, using `environment.wind.sources` in the current schema. The older `environment.wind` array remains supported.
+
+Compose contract:
+- `WR_INPUT_STL_DIR`: host directory that contains the STL file
+- `WR_INPUT_STL_FILE`: STL basename inside that directory
+- `WR_INPUT_CONFIG_DIR`: host directory that contains the simulation config JSON
+- `WR_INPUT_CONFIG_FILE`: config filename inside that directory
+- `WR_OUTPUT_DIR`: host directory where the merged CSV should be written
+- `WR_OUTPUT_FILE`: output CSV basename
+
+Current wind config shape:
+- `environment.wind.sources`: array of wind source objects
+- `environment.wind.height_cells`: integer number of CFD cells in the vertical direction, defaults to `10`
+- `environment.wind.scale`: uniform mesh scale factor in `(0, 1]`, defaults to `1.0`
+- `environment.origin.radius`: region radius, unchanged from the simulation config
+
+Multi-source wind handling:
+- wind vectors are averaged component-wise
+- the merged run is treated as `Turbulent Wind` if any source is turbulent
+- `fluctuation_percentage` is taken as the maximum source value when turbulence is enabled
+
+Notes:
+- the exported CSV contains only the final time step with columns `x,y,z,u,v,w`
+- `wind.scale` controls mesh scaling and therefore the horizontal CFD cell count
+- there is no hardcoded maximum effective `x` or `y` cell count in the runner
+- `wind.height_cells` directly controls the CFD `z` cell count and is not multiplied by `wind.scale`
+- the solver adds a small fixed clearance around the STL, so exported coordinates can extend slightly beyond the STL extents after inverse scaling
+- the WR-side input STL is expected to be box-like in most runs, with `z` being the least predictable dimension
+
 ## Directory Structure
 all OpenFOAM research scenarios are in the run directory
 ```bash
