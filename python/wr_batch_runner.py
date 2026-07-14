@@ -38,11 +38,15 @@ COMPASS_UNIT_VECTORS = {
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run a single WR CFD job and export one merged CSV.")
+    parser = argparse.ArgumentParser(
+        description="Run a single WR CFD job and export one merged CSV."
+    )
     parser.add_argument("--stl-path", default=os.getenv("WR_INPUT_STL_PATH"))
     parser.add_argument("--output-csv", default=os.getenv("WR_OUTPUT_CSV_PATH"))
     parser.add_argument("--config-path", default=os.getenv("WR_INPUT_CONFIG_PATH"))
-    parser.add_argument("--case-root", default=os.getenv("WR_CASE_ROOT", "openFoamCase"))
+    parser.add_argument(
+        "--case-root", default=os.getenv("WR_CASE_ROOT", "openFoamCase")
+    )
     return parser.parse_args()
 
 
@@ -57,8 +61,14 @@ def load_config_payload(config_path: Path) -> dict[str, Any]:
 
 
 def parse_wind_config_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    environment = payload.get("environment") if isinstance(payload.get("environment"), dict) else {}
-    origin = environment.get("origin") if isinstance(environment.get("origin"), dict) else {}
+    environment = (
+        payload.get("environment")
+        if isinstance(payload.get("environment"), dict)
+        else {}
+    )
+    origin = (
+        environment.get("origin") if isinstance(environment.get("origin"), dict) else {}
+    )
     if "wind" in environment:
         wind_payload = environment["wind"]
     elif "wind" in payload:
@@ -74,13 +84,33 @@ def parse_wind_config_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
         elif "wind_velocity" in wind_payload and "wind_direction" in wind_payload:
             sources_payload = [wind_payload]
         else:
-            raise ValueError("Wind object must contain sources or a single wind definition.")
+            raise ValueError(
+                "Wind object must contain sources or a single wind definition."
+            )
         if "height_cells" in wind_payload and wind_payload["height_cells"] is not None:
             height_cells = parse_height_cells(wind_payload["height_cells"])
         if "scale" in wind_payload and wind_payload["scale"] is not None:
             environment_scale = parse_environment_scale(wind_payload["scale"])
+    elif isinstance(wind_payload, list):
+        # Backend sends wind as list[WindSchema] where each entry has
+        # nested sources[] (c.f. EnvironmentSchema.wind: list[WindSchema]).
+        # Flatten to individual source dicts, matching workflow_runner.py behavior.
+        sources_payload = []
+        for item in wind_payload:
+            if not isinstance(item, dict):
+                continue
+            if "sources" in item and isinstance(item["sources"], list):
+                sources_payload.extend(
+                    s for s in item["sources"] if isinstance(s, dict)
+                )
+            elif "wind_velocity" in item or "wind_direction" in item:
+                sources_payload.append(item)
+            if "height_cells" in item and item["height_cells"] is not None:
+                height_cells = parse_height_cells(item["height_cells"])
+            if "scale" in item and item["scale"] is not None:
+                environment_scale = parse_environment_scale(item["scale"])
     else:
-        sources_payload = wind_payload
+        raise ValueError("Wind config must be a JSON object or array.")
 
     if not isinstance(sources_payload, list) or not sources_payload:
         raise ValueError("Wind sources must be a non-empty array.")
@@ -150,7 +180,9 @@ def build_box_vertices(bounds: dict[str, int]) -> list[tuple[int, int, int]]:
     ]
 
 
-def measure_mesh_lengths(source_bounds: tuple[float, float, float, float, float, float]) -> dict[str, float]:
+def measure_mesh_lengths(
+    source_bounds: tuple[float, float, float, float, float, float],
+) -> dict[str, float]:
     return {
         "x": float(source_bounds[1] - source_bounds[0]),
         "y": float(source_bounds[3] - source_bounds[2]),
@@ -162,7 +194,9 @@ def build_scaling_transform(
     source_bounds: tuple[float, float, float, float, float, float],
     scale_factor: float,
 ) -> dict[str, Any]:
-    source_min = np.array([source_bounds[0], source_bounds[2], source_bounds[4]], dtype=float)
+    source_min = np.array(
+        [source_bounds[0], source_bounds[2], source_bounds[4]], dtype=float
+    )
     if scale_factor <= 0:
         raise ValueError("Computed STL scale factor must be positive.")
     translation = source_min - (source_min * scale_factor)
@@ -175,24 +209,32 @@ def build_scaling_transform(
     }
 
 
-def apply_forward_scaling(points: np.ndarray, scaling_transform: dict[str, Any]) -> np.ndarray:
+def apply_forward_scaling(
+    points: np.ndarray, scaling_transform: dict[str, Any]
+) -> np.ndarray:
     scale_factor = float(scaling_transform["scale_factor"])
     translation = np.asarray(scaling_transform["translation"], dtype=float)
     return (points * scale_factor) + translation
 
 
-def apply_inverse_scaling(points: np.ndarray, scaling_transform: dict[str, Any]) -> np.ndarray:
+def apply_inverse_scaling(
+    points: np.ndarray, scaling_transform: dict[str, Any]
+) -> np.ndarray:
     scale_factor = float(scaling_transform["scale_factor"])
     translation = np.asarray(scaling_transform["translation"], dtype=float)
     return (points - translation) / scale_factor
 
 
-def maybe_scale_stl(source_stl: Path, environment_scale: float) -> tuple[Path, Path | None, dict[str, Any] | None]:
+def maybe_scale_stl(
+    source_stl: Path, environment_scale: float
+) -> tuple[Path, Path | None, dict[str, Any] | None]:
     source_bounds = load_mesh_bounds(source_stl)
     if math.isclose(environment_scale, 1.0, rel_tol=0.0, abs_tol=1e-12):
         return source_stl, None, None
 
-    print(f"Applying wind.scale to STL geometry. Applied scaling factor: {environment_scale:.9f}")
+    print(
+        f"Applying wind.scale to STL geometry. Applied scaling factor: {environment_scale:.9f}"
+    )
     scaling_transform = build_scaling_transform(source_bounds, environment_scale)
     mesh = trimesh.load_mesh(str(source_stl), file_type="stl", process=False)
     if isinstance(mesh, trimesh.Scene):
@@ -202,7 +244,9 @@ def maybe_scale_stl(source_stl: Path, environment_scale: float) -> tuple[Path, P
     handle, temp_path = tempfile.mkstemp(prefix="dronewisp_wr_", suffix=".stl")
     os.close(handle)
     scaled_stl = Path(temp_path)
-    mesh.vertices = apply_forward_scaling(np.array(mesh.vertices, dtype=float), scaling_transform)
+    mesh.vertices = apply_forward_scaling(
+        np.array(mesh.vertices, dtype=float), scaling_transform
+    )
     mesh.export(str(scaled_stl))
     return scaled_stl, scaled_stl, scaling_transform
 
@@ -238,27 +282,40 @@ def direction_to_unit_vector(direction: Any, convention: str) -> tuple[float, fl
     return (-x_value, -y_value) if convention == "from" else (x_value, y_value)
 
 
-def aggregate_wind_definitions(wind_definitions: list[dict[str, Any]], direction_convention: str) -> dict[str, Any]:
+def aggregate_wind_definitions(
+    wind_definitions: list[dict[str, Any]], direction_convention: str
+) -> dict[str, Any]:
     vector_x = 0.0
     vector_y = 0.0
     fluctuation_values: list[float] = []
     has_turbulence = False
     for item in wind_definitions:
         if "wind_velocity" not in item or "wind_direction" not in item:
-            raise ValueError("Each wind definition must include wind_velocity and wind_direction.")
+            raise ValueError(
+                "Each wind definition must include wind_velocity and wind_direction."
+            )
         velocity = float(item["wind_velocity"])
-        dir_x, dir_y = direction_to_unit_vector(item["wind_direction"], direction_convention)
+        dir_x, dir_y = direction_to_unit_vector(
+            item["wind_direction"], direction_convention
+        )
         vector_x += velocity * dir_x
         vector_y += velocity * dir_y
-        if "fluctuation_percentage" in item and item["fluctuation_percentage"] is not None:
+        if (
+            "fluctuation_percentage" in item
+            and item["fluctuation_percentage"] is not None
+        ):
             fluctuation_values.append(float(item["fluctuation_percentage"]))
-        has_turbulence = has_turbulence or normalize_wind_type(item.get("wind_type")) == "turbulent"
+        has_turbulence = (
+            has_turbulence or normalize_wind_type(item.get("wind_type")) == "turbulent"
+        )
     count = len(wind_definitions)
     avg_x = vector_x / count
     avg_y = vector_y / count
     speed = math.hypot(avg_x, avg_y)
     if math.isclose(speed, 0.0, abs_tol=1e-9):
-        raise ValueError("Averaged wind vector is zero. The source wind definitions cancel each other out.")
+        raise ValueError(
+            "Averaged wind vector is zero. The source wind definitions cancel each other out."
+        )
     angle_deg = (math.degrees(math.atan2(avg_x, avg_y)) + 360.0) % 360.0
     wind_type = "turbulent" if has_turbulence else "uniform"
     turb_percent = max(fluctuation_values) if fluctuation_values else 0.0
@@ -322,7 +379,16 @@ def preprocess_velocity_dataframe(
     bounds: dict[str, int] | None,
 ) -> pd.DataFrame:
     frame = pd.DataFrame(
-        np.column_stack((cell[:, 0], cell[:, 1], cell[:, 2], velocity[:, 0], velocity[:, 1], velocity[:, 2])),
+        np.column_stack(
+            (
+                cell[:, 0],
+                cell[:, 1],
+                cell[:, 2],
+                velocity[:, 0],
+                velocity[:, 1],
+                velocity[:, 2],
+            )
+        ),
         columns=["x", "y", "z", "u", "v", "w"],
     )
     frame[["x", "y", "z"]] = frame[["x", "y", "z"]].round().astype(int)
@@ -336,18 +402,24 @@ def preprocess_velocity_dataframe(
         y_coords = np.arange(bounds["y_min"], bounds["y_max"] + 1, dtype=int)
         z_coords = np.arange(bounds["z_min"], bounds["z_max"] + 1, dtype=int)
         mesh = pd.DataFrame(
-            np.array(np.meshgrid(x_coords, y_coords, z_coords, indexing="ij")).T.reshape(-1, 3),
+            np.array(
+                np.meshgrid(x_coords, y_coords, z_coords, indexing="ij")
+            ).T.reshape(-1, 3),
             columns=["x", "y", "z"],
         )
         frame = mesh.merge(frame, on=["x", "y", "z"], how="left")
     return frame
 
 
-def restore_output_scale(frame: pd.DataFrame, scaling_transform: dict[str, Any] | None) -> pd.DataFrame:
+def restore_output_scale(
+    frame: pd.DataFrame, scaling_transform: dict[str, Any] | None
+) -> pd.DataFrame:
     if scaling_transform is None:
         return frame
     restored_frame = frame.copy()
-    restored_coords = apply_inverse_scaling(restored_frame[["x", "y", "z"]].to_numpy(dtype=float), scaling_transform)
+    restored_coords = apply_inverse_scaling(
+        restored_frame[["x", "y", "z"]].to_numpy(dtype=float), scaling_transform
+    )
     restored_frame[["x", "y", "z"]] = np.round(restored_coords, 6)
     restored_frame.sort_values(by=["x", "y", "z"], inplace=True)
     restored_frame.reset_index(drop=True, inplace=True)
@@ -367,7 +439,9 @@ def export_merged_csv(
     final_time_folder = time_folders[-1]
     cell, velocity = controller.read_cell_and_velocity(final_time_folder)
     if cell is None or velocity is None:
-        raise RuntimeError(f"Failed to read cell and velocity data for time {final_time_folder}.")
+        raise RuntimeError(
+            f"Failed to read cell and velocity data for time {final_time_folder}."
+        )
     frame = preprocess_velocity_dataframe(cell, velocity, fill_missing, bounds)
     frame = restore_output_scale(frame, scaling_transform)
     output_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -381,9 +455,13 @@ def main() -> None:
     if not args.stl_path:
         raise SystemExit("Missing STL path. Set WR_INPUT_STL_PATH or pass --stl-path.")
     if not args.output_csv:
-        raise SystemExit("Missing output CSV path. Set WR_OUTPUT_CSV_PATH or pass --output-csv.")
+        raise SystemExit(
+            "Missing output CSV path. Set WR_OUTPUT_CSV_PATH or pass --output-csv."
+        )
     if not args.config_path:
-        raise SystemExit("Missing config path. Set WR_INPUT_CONFIG_PATH or pass --config-path.")
+        raise SystemExit(
+            "Missing config path. Set WR_INPUT_CONFIG_PATH or pass --config-path."
+        )
 
     stl_path = Path(args.stl_path)
     output_csv = Path(args.output_csv)
@@ -399,36 +477,55 @@ def main() -> None:
     wind = aggregate_wind_definitions(wind_definitions, DEFAULT_DIRECTION_CONVENTION)
     controls = resolve_control_settings(wind)
 
-    terrain_stl, temporary_stl, scaling_transform = maybe_scale_stl(stl_path, wind_config["scale"])
+    terrain_stl, temporary_stl, scaling_transform = maybe_scale_stl(
+        stl_path, wind_config["scale"]
+    )
     bounds = build_simulation_bounds(terrain_stl)
-    print("Resolved wind config:", json.dumps({
-        "source_count": len(wind_definitions),
-        "height_cells": wind_config["height_cells"],
-        "scale": wind_config["scale"],
-        "radius": wind_config["radius"],
-    }))
-    print("Resolved wind vector:", json.dumps({
-        "wind_speed_x": round(wind["wind_speed_x"], 6),
-        "wind_speed_y": round(wind["wind_speed_y"], 6),
-        "wind_speed_z": 0.0,
-        "wind_type": wind["wind_type"],
-        "turb_percent": round(wind["turb_percent"], 6),
-        "direction_deg": round(wind["direction_deg"], 6),
-    }))
+    print(
+        "Resolved wind config:",
+        json.dumps(
+            {
+                "source_count": len(wind_definitions),
+                "height_cells": wind_config["height_cells"],
+                "scale": wind_config["scale"],
+                "radius": wind_config["radius"],
+            }
+        ),
+    )
+    print(
+        "Resolved wind vector:",
+        json.dumps(
+            {
+                "wind_speed_x": round(wind["wind_speed_x"], 6),
+                "wind_speed_y": round(wind["wind_speed_y"], 6),
+                "wind_speed_z": 0.0,
+                "wind_type": wind["wind_type"],
+                "turb_percent": round(wind["turb_percent"], 6),
+                "direction_deg": round(wind["direction_deg"], 6),
+            }
+        ),
+    )
     print("Simulation bounds:", json.dumps(bounds))
     if scaling_transform is not None:
-        print("Applied STL scaling:", json.dumps({
-            "scale_factor": round(float(scaling_transform["scale_factor"]), 9),
-            "source_bounds": scaling_transform["source_bounds"],
-            "source_lengths": {
-                axis: round(float(length), 6)
-                for axis, length in scaling_transform["source_lengths"].items()
-            },
-        }))
+        print(
+            "Applied STL scaling:",
+            json.dumps(
+                {
+                    "scale_factor": round(float(scaling_transform["scale_factor"]), 9),
+                    "source_bounds": scaling_transform["source_bounds"],
+                    "source_lengths": {
+                        axis: round(float(length), 6)
+                        for axis, length in scaling_transform["source_lengths"].items()
+                    },
+                }
+            ),
+        )
 
     try:
         controller = OpenFoamController(args.case_root)
-        configure_case(controller, terrain_stl, bounds, wind, controls, wind_config["height_cells"])
+        configure_case(
+            controller, terrain_stl, bounds, wind, controls, wind_config["height_cells"]
+        )
         controller.run()
         if not controller.check_run_valid():
             controller.debug_failed_run()
